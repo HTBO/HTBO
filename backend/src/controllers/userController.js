@@ -30,18 +30,28 @@ const registerUser = async(req, res) => {
         const passwordHash = await bcrypt.hash(password, salt);
 
         const newUser = await User.create({
-            username, email, passwordHash, avatarUrl: req.body.avatarUrl || undefined
+            username,
+            email,
+            passwordHash,
+            avatarUrl: req.body.avatarUrl || undefined
         });
 
         const token = generateToken(newUser)
 
+        res.status(201).json({
+            _id: newUser._id,
+            username: newUser.username,
+            email: newUser.email,
+            avatarUrl: newUser.avatarUrl,
+            token
+        });
     } catch(err){
         console.log(`${err.message} reg err`);
-        res.status(500).json({error: 'Server error'})
+        res.status(500).json({error: 'Server error'});
         
     }
-}
+};
 
-exports.getUsers = async(req, res) => {
-
-}
+module.exports = {
+    registerUser,
+};

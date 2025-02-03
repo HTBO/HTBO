@@ -62,11 +62,13 @@ const userSchema = new mongoose.Schema({
     }
 });
 
-UserSchema.virtual(('profileUrl').get(function() {
-    return `/users/$this.username`
-}));
+userSchema.virtual('profileUrl').get(function() {
+    return `/users/${this.username}`;
+});
 
-UserSchema.methods.addFriend = function(userId){
+
+
+userSchema.methods.addFriend = function(userId){
     if(!this.friends.some(f =>f.userId.equals(userId))){
         this.friends.push({userId, status: 'pending'})
     }
