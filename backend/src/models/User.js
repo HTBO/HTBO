@@ -75,6 +75,13 @@ userSchema.methods.addFriend = function(userId){
     return this.save();
 };
 
+userSchema.methods.removeFriend = function(userId){
+    if (!this.friends.some(f => f.userId.equals(userId))) {
+        this.friends.splice(userId, 1);
+    }
+    return this.save();
+}
+
 const User = mongoose.model('User', userSchema)
 
 module.exports = User;
