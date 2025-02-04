@@ -160,10 +160,8 @@ const updateUser = async (req, res) => {
                     }
                     friend.status = status;
                     addUser.status = status;
-                    await user.save();
-                    await addUser.save();
-                    console.log(friend);
-                    console.log(addUser);
+                    await user.statusUpdate();
+                    await addedFriend.statusUpdate();
                     break;
                     
                 default:
@@ -185,8 +183,8 @@ const updateUser = async (req, res) => {
         }
 
         const updatedUser = await User.findById(user.id)
-            .select('-passwordHash') // Exclude password hash
-            .populate('friends.userId', 'username avatarUrl'); // Populate friend details
+            .select('-passwordHash')
+            .populate('friends.userId', 'username avatarUrl');
 
         res.status(200).json(updatedUser);
     } catch (error) {
@@ -208,6 +206,14 @@ const updateUser = async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 };
+
+// {
+//     "friendAction": {
+//       "action": "update-status", 
+//       "friendId": "67a10f25d8074d134344b672",
+//       "status": "accepted"
+//     }
+//   }
 
 const deleteUser = async (req, res) => {
     try {

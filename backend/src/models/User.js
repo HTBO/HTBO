@@ -82,6 +82,11 @@ userSchema.methods.removeFriend = function(userId){
     return this.save();
 }
 
+userSchema.methods.statusUpdate = function(userId, status){
+    this.friends.some(f => f.userId.equals(userId)).status = status;
+    return this.save();
+}
+
 const User = mongoose.model('User', userSchema)
 
 module.exports = User;
