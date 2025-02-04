@@ -1,4 +1,5 @@
 const User = require('../models/User')
+const Game = require('../models/Game')
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
@@ -167,6 +168,23 @@ const updateUser = async (req, res) => {
                 default:
                     return res.status(400).json({ error: 'Invalid friend action' });
             }
+        } else if(req.body.gameAction){
+            const { gameId, action } = req.body.gameAction;
+            if(!mongoose.Types.ObjectId.isValid(gameId))
+                return res.status(400).json({ error: 'Invalid game ID'});
+            const addedGame = await Game.findById(gameId);
+            console.log(addedGame);
+            switch (action) {
+                case "add":
+                    await user.addGame(gameId);
+                    break;
+                case "remove":
+                    await user.removeGame(addedGame);
+                    break;
+                default:
+                    break;
+            }
+            
         } else {
             const updates = Object.keys(req.body);
             const allowedUpdates = ['username', 'email'];

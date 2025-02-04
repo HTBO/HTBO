@@ -9,11 +9,10 @@ const storeSchema = new mongoose.Schema({
     trim: true,
     maxlength: 50
   },
-  address: {
+  logoUrl: {
     type: String,
-    required: [true, 'A cím kötelező'],
-    trim: true,
-    maxlength: 100
+    required: [true, 'A logó kötelező'],
+    match: [/^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/, 'Érvénytelen URL formátum']
   },
   website: {
     type: String,

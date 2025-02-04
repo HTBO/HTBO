@@ -13,6 +13,17 @@ const friendSchema = new mongoose.Schema({
     },
 }, {_id: false});
 
+const gamesSchema = new mongoose.Schema({
+    gameId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Game',
+        required: true
+    },
+    status: {
+        type: String,
+        enum: ['add', 'remove']
+    }
+},{_id: false});
 
 const userSchema = new mongoose.Schema({
     username: {
@@ -41,10 +52,7 @@ const userSchema = new mongoose.Schema({
         default: "https://www.google.com/url?sa=i&url=https%3A%2F%2Fmusic.apple.com%2Fgb%2Fartist%2Fnigger-killer%2F1441569506&psig=AOvVaw2ayi4c1XZwl9951BFj8MGe&ust=1738660171095000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCOCEh4GUp4sDFQAAAAAdAAAAABAE"
     },
     friends: [friendSchema],
-    games: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Game'
-    }],
+    games: [gamesSchema],
     createdAt: {
         type: Date
     },
@@ -84,6 +92,20 @@ userSchema.methods.removeFriend = function(userId){
 
 userSchema.methods.statusUpdate = function(userId, status){
     this.friends.some(f => f.userId.equals(userId)).status = status;
+    return this.save();
+}
+
+userSchema.methods.addGame = function(gameId, status){
+    if(!this.games.some(g => g.gameId.equals(gameId))){
+        this.games.push({gameId, status: status})
+    }
+    return this.save()
+}
+
+userSchema.methods.removeGame = function(gameId){
+    if(!this.games.some(g => g.gameId.equals(gameId))){
+        this.games.splice(gameId, 1);
+    }
     return this.save();
 }
 

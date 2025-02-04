@@ -59,8 +59,9 @@ const getGameById = async (req, res) => {
 
 const getAllGames = async (req, res) => {
     try {
-
-        const { name, sortBy } = req.query;
+        
+        const { name,  sortBy } = req.query;
+        // console.log(name);
         const filter = {};
         const sortOptions = {};
 
@@ -75,7 +76,7 @@ const getAllGames = async (req, res) => {
 
         const games = await Game.find(filter)
             .sort(sortOptions)
-            .populate('stores.storeId', 'name');
+            .populate(['stores.storeId', 'name']);
 
         res.status(200).json(games);
 
