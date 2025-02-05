@@ -1,5 +1,19 @@
 const mongoose = require('mongoose');
 
+
+const participantSchema = new mongoose.Schema({
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    status: {
+        type: String,
+        enum: ['pending', 'accepted', 'rejected'],
+        default: 'pending'
+    },
+}, {_id: false});
+
 const sessionSchema = new mongoose.Schema({
     hostId: {
         type: mongoose.Types.ObjectId,
@@ -23,13 +37,7 @@ const sessionSchema = new mongoose.Schema({
         type: String,
         default: "Not described"
     },
-    participants: [{
-        type: mongoose.Types.ObjectId,
-        ref: 'User',
-        required: [true, 'Please provide participants'],
-        unique: true,
-        trim: true
-    }],
+    participants: [participantSchema],
     // groups: [gamesSchema],
     createdAt: {
         type: Date

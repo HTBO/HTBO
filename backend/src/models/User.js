@@ -1,4 +1,6 @@
 const mongoose = require('mongoose');
+const Session = require('../models/Session')
+
 
 const friendSchema = new mongoose.Schema({
     userId: {
@@ -25,6 +27,20 @@ const gamesSchema = new mongoose.Schema({
     }
 },{_id: false});
 
+const sessionSchema = new mongoose.Schema({
+    hostId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Session',
+        required: true
+    },
+    status: {
+        type: String,
+        enum: ['pending', 'accepted', 'rejected'],
+        default: 'pending'
+    },
+}, {_id: false});
+
+
 const userSchema = new mongoose.Schema({
     username: {
         type: String,
@@ -49,10 +65,11 @@ const userSchema = new mongoose.Schema({
     },
     avatarUrl: {
         type: String,
-        default: "https://www.google.com/url?sa=i&url=https%3A%2F%2Fmusic.apple.com%2Fgb%2Fartist%2Fnigger-killer%2F1441569506&psig=AOvVaw2ayi4c1XZwl9951BFj8MGe&ust=1738660171095000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCOCEh4GUp4sDFQAAAAAdAAAAABAE"
+        default: "https://static.vecteezy.com/system/resources/previews/002/318/271/non_2x/user-profile-icon-free-vector.jpg"
     },
     friends: [friendSchema],
     games: [gamesSchema],
+    sessions: [sessionSchema],
     createdAt: {
         type: Date
     },
@@ -105,6 +122,22 @@ userSchema.methods.addGame = function(gameId, status){
 userSchema.methods.removeGame = function(gameId){
     if(!this.games.some(g => g.gameId.equals(gameId))){
         this.games.splice(gameId, 1);
+    }
+    return this.save();
+}
+
+userSchema.methods.addSession = function (sessionId) {
+    if (!this.sessions.some(s => s.hostId.equals(sessionId))) {
+        this.sessions.push({hostId: sessionId, status: "pending"})        
+    }
+    return this.save();
+}
+
+userSchema.methods.removeSession = function(sessionId){
+    if(this.sessions.some(s => s.hostId.equals(sessionId))){
+        console.log(this.sessions);
+        
+        this.sessions.splice({hostId: sessionId}, 1);
     }
     return this.save();
 }

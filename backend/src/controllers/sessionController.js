@@ -5,11 +5,6 @@ const Session = require('../models/Session')
 const createSession = async (req, res) => {
     try {
         const { hostId, gameId, scheduledAt, participants} = req.body;
-        const participantsArray = Array.isArray(participants) ? participants : [];
-
-        if (!Array.isArray(participants)) {
-            return res.status(400).json({ error: "Participants must be an array" });
-        }
         const existingSession = await Session.findOne({ hostId });
         if (existingSession) {
             return res.status(400).json({ error: "Host already exists" });
@@ -22,9 +17,7 @@ const createSession = async (req, res) => {
             hostId,
             gameId,
             scheduledAt,
-            participants: participantsArray.map(participant => ({
-                username: participant.username
-            }))
+            participants
         });
 
         res.status(201).json(newSession);
@@ -41,16 +34,28 @@ const createSession = async (req, res) => {
     }
 };
 
-// Hibás kérés
 // {
 //     "hostId": "67a0bd1948ecd7e2acb87884",
 //     "gameId": "67a20b9d334cbdd7c560a091",
 //     "scheduledAt": "2025-02-04T12:44:13.298+00:00",
 //     "participants": {
-//       "username": "67a10f25d8074d134344b672"
+//       "userId": "67a10f25d8074d134344b672",
+//       "status": "pending"
 //     }
 //   }
 
+const getAllSessions = async(req, res) => {
+    try {
+        const session = await Session.find();
+        res.status(200).json(session);
+    } catch (error) {
+        console.error('Error during listing games:', error.message);
+        res.status(500).json({ error: 'Server error' });
+    }
+}
+
+
 module.exports = {
-    createSession
+    createSession,
+    getAllSessions
 }
