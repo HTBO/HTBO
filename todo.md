@@ -1,5 +1,5 @@
 sessionController: 
     -hostId != participantId
-    -participantId sessionsei közé felvenni a sessiont
-    -PATCH sessions
+    -hostId sessionsei közé felvenni a sessiont
+    -PATCH sessions half done
     -DEL sessions

@@ -28,7 +28,7 @@ const gamesSchema = new mongoose.Schema({
 },{_id: false});
 
 const sessionSchema = new mongoose.Schema({
-    hostId: {
+    sessionId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Session',
         required: true

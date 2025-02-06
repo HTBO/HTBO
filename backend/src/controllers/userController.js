@@ -163,7 +163,7 @@ const updateUser = async (req, res) => {
             if(!mongoose.Types.ObjectId.isValid(gameId))
                 return res.status(400).json({ error: 'Invalid game ID'});
             const addedGame = await Game.findById(gameId);
-            console.log(addedGame);
+            // console.log(addedGame);
             switch (action) {
                 case "add":
                     await user.addGame(gameId);

@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 
 const participantSchema = new mongoose.Schema({
-    userId: {
+    user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
@@ -11,23 +11,19 @@ const participantSchema = new mongoose.Schema({
         type: String,
         enum: ['pending', 'accepted', 'rejected'],
         default: 'pending'
-    },
-}, {_id: false});
+    }
+  }, {_id: false})
 
 const sessionSchema = new mongoose.Schema({
     hostId: {
         type: mongoose.Types.ObjectId,
         ref: 'User',
-        required: [true, 'Please provide a host ID'],
-        unique: true,
-        trim: true,
+        required: [true, 'Please provide a host ID']
     },
     gameId: {
         type: mongoose.Types.ObjectId,
         ref: 'Game',
-        required: [true, 'Please provide an game'],
-        unique: true,
-        trim: true,
+        required: [true, 'Please provide an game']
     },
     scheduledAt: {
         type: Date,
@@ -55,6 +51,12 @@ const sessionSchema = new mongoose.Schema({
         }
     }
 });
+
+sessionSchema.methods.addParticipant = function(userId){
+    if(!this.participants.some(p => p.user.equals(userId)))
+        this.participants.push({user: userId, status: 'pending'})
+    return this.save();
+}
 
 const Session = mongoose.model('Session', sessionSchema)
 
