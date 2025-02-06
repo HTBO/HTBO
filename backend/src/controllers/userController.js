@@ -3,26 +3,26 @@ const Game = require('../models/Game')
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
-const {validationResult} = require('express-validator');
+const { validationResult } = require('express-validator');
 
 const generateToken = (user) => {
     return jwt.sign(
-        {id: user._id},
+        { id: user._id },
         process.env.JWT_SECRET,
-        {expiresIn: process.env.JWT_EXPIRES_IN || '1h'}
+        { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
     )
 }
 
-const registerUser = async(req, res) => {
+const registerUser = async (req, res) => {
     const errors = validationResult(req)
-    if(!errors.isEmpty()){
-        return res.status(400).json({errors: errors.array()});
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
     }
     try {
-        const { username, email, password} = req.body;
+        const { username, email, password } = req.body;
 
-        const existingUser = await User.findOne({$or: [{username}, {email}]})
-        if (existingUser){
+        const existingUser = await User.findOne({ $or: [{ username }, { email }] })
+        if (existingUser) {
             return res.status(400).json({
                 error: existingUser.username === username ? 'Username already exists' : 'Email already registered'
             })
@@ -47,10 +47,10 @@ const registerUser = async(req, res) => {
             avatarUrl: newUser.avatarUrl,
             token
         });
-    } catch(err){
+    } catch (err) {
         console.log(`${err.message} reg err`);
-        res.status(500).json({error: 'Server error'});
-        
+        res.status(500).json({ error: 'Server error' });
+
     }
 };
 
@@ -67,19 +67,19 @@ const getAllUsers = async (req, res) => {
 const getUserById = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
-        
+
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
-        
+
         res.status(200).json(user);
     } catch (error) {
         console.error(error.message);
-        
+
         if (error.name === 'CastError') {
             return res.status(400).json({ error: 'Invalid user ID format' });
         }
-        
+
         res.status(500).json({ error: 'Server error' });
     }
 };
@@ -95,7 +95,7 @@ const getUserById = async (req, res) => {
 //             return res.status(404).json({ error: 'User not found' });
 //         }
 
-        
+
 
 //         const updates = Object.keys(req.body);
 //         const allowedUpdates = ['username', 'email', 'password'];
@@ -105,7 +105,7 @@ const getUserById = async (req, res) => {
 
 //         if (!isValidOperation) 
 //             return res.status(400).send({ error: 'Invalid updates!' });
-        
+
 //         if (!user) 
 //             return res.status(404).send();
 //         res.send(user);
@@ -123,18 +123,20 @@ const updateUser = async (req, res) => {
     const friendActions = ['pending', 'accepted', 'rejected']
     try {
         const user = await User.findById(req.params.id);
-        if (!user) 
+        if (!user)
             return res.status(404).json({ error: 'User not found' });
 
         if (req.body.friendAction) {
             const { action, friendId, status } = req.body.friendAction;
-            
-            if (!mongoose.Types.ObjectId.isValid(friendId)) 
+
+            if (!mongoose.Types.ObjectId.isValid(friendId))
                 return res.status(400).json({ error: 'Invalid friend ID format' });
-            
+
 
             const addedFriend = await User.findById(friendId);
-            switch(action) {
+            if (!addedFriend)
+                return res.status(404).json({ error: 'User to add not found' })
+            switch (action) {
                 case 'add':
                     await user.addFriend(friendId);
                     await addedFriend.addFriend(user);
@@ -149,10 +151,10 @@ const updateUser = async (req, res) => {
                 case 'update-status':
                     const friend = user.friends.find(friend => friend.userId.equals(friendId));
                     // console.log(req.params.id);
-                    
+
                     const addUser = addedFriend.friends.find(friend => friend.userId.equals(req.params.id))
-                    
-                    
+
+
                     if (!friend) {
                         return res.status(404).json({ error: 'Friend not found' });
                     }
@@ -164,31 +166,55 @@ const updateUser = async (req, res) => {
                     await user.statusUpdate();
                     await addedFriend.statusUpdate();
                     break;
-                    
+
                 default:
                     return res.status(400).json({ error: 'Invalid friend action' });
             }
         } else if(req.body.gameAction){
             const { gameId, action } = req.body.gameAction;
-            if(!mongoose.Types.ObjectId.isValid(gameId))
-                return res.status(400).json({ error: 'Invalid game ID'});
-            const addedGame = await Game.findById(gameId);
-            console.log(addedGame);
-            switch (action) {
-                case "add":
-                    await user.addGame(gameId);
-                    break;
-                case "remove":
-                    await user.removeGame(addedGame);
-                    break;
-                default:
-                    break;
+            
+            // Convert string ID to ObjectId
+            const gameObjectId = new mongoose.Types.ObjectId(gameId);
+
+            if (!mongoose.Types.ObjectId.isValid(gameId)) {
+                return res.status(400).json({ error: 'Invalid game ID format' });
             }
             
+            // Check if game exists
+            const gameExists = await Game.exists({ _id: gameObjectId });
+            if (!gameExists) {
+                return res.status(404).json({ error: 'Game not found' });
+            }
+        
+            switch (action) {
+                case "add":
+                    // Check if user already has the game (using ObjectId)
+                    if (user.games.some(g => g.gameId.equals(gameObjectId))) {
+                        return res.status(400).json({ error: 'Game already in collection' });
+                    }
+                    await user.editUserGames(gameObjectId, "add");
+                    break;
+        
+                case "remove":
+                    // Check if user has the game (using ObjectId)
+                    if (!user.games.some(g => g.gameId.equals(gameObjectId))) {
+                        console.log(user.games);
+                        console.log(gameObjectId);
+                        
+                        
+                        return res.status(400).json({ error: 'Game not in collection' });
+                    }
+                    // await user.removeGame(gameObjectId);
+                    await user.editUserGames(gameObjectId, "remove");
+                    break;
+        
+                default:
+                    return res.status(400).json({ error: 'Invalid game action' });
+            }
         } else {
             const updates = Object.keys(req.body);
             const allowedUpdates = ['username', 'email'];
-            const isValidOperation = updates.every(update => 
+            const isValidOperation = updates.every(update =>
                 allowedUpdates.includes(update)
             );
 
@@ -207,15 +233,15 @@ const updateUser = async (req, res) => {
         res.status(200).json(updatedUser);
     } catch (error) {
         console.error(error.message);
-        
+
         if (error.name === 'CastError') {
             return res.status(400).json({ error: 'Invalid user ID format' });
         }
-        
+
         if (error.name === 'ValidationError') {
             return res.status(400).json({ error: error.message });
         }
-        
+
         if (error.code === 11000) {
             const field = Object.keys(error.keyPattern)[0];
             return res.status(400).json({ error: `${field} already exists` });
@@ -236,19 +262,19 @@ const updateUser = async (req, res) => {
 const deleteUser = async (req, res) => {
     try {
         const user = await User.findByIdAndDelete(req.params.id);
-        
+
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
-        
+
         res.status(200).json({ message: 'User deleted successfully' });
     } catch (error) {
         console.error(error.message);
-        
+
         if (error.name === 'CastError') {
             return res.status(400).json({ error: 'Invalid user ID format' });
         }
-        
+
         res.status(500).json({ error: 'Server error' });
     }
 };
