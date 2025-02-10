@@ -1,5 +1,18 @@
-sessionController: 
-    -hostId != participantId
-    -hostId sessionsei közé felvenni a sessiont
-    -PATCH sessions half done
-    -DEL sessions
+# TODO
+### Notifications
+    - Notifications.js
+    - notificationsController.js
+    - notificationsRoutes.js
+---
+
+### Groups
+    - Groups.js
+    - groupsController.js
+    - groupsRoutes.js
+---
+
+### Sessions
+
+### sessionController: 
+    - PATCH sessions: change gameId, description, time
+
