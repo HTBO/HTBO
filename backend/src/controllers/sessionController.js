@@ -5,17 +5,19 @@ const User = require('../models/User');
 
 const createSession = async (req, res) => {
     try {
-        const { hostId, gameId, scheduledAt, participants } = req.body;
+        const { hostId, gameId, scheduledAt, description, participants } = req.body;
 
-        // const existingSession = await Session.findOne({ hostId });
-        // if (existingSession) {
-        //     return res.status(400).json({ error: "Host already has a session" });
-        // }
+        const existingSession = await Session.findOne({ hostId });
+        if (existingSession) {
+            return res.status(400).json({ error: "Host already has a session" });
+        }
 
+        console.log("fine");
         const newSession = await Session.create({
             hostId,
             gameId,
             scheduledAt,
+            description,
             participants
         });
 
@@ -33,7 +35,10 @@ const createSession = async (req, res) => {
                     }
                 }
             );
+            await User.updateOne({_id: hostId}, {$addToSet: {sessions: {sessionId: newSession._id, status: "host"}}});
+            console.log("fine2");
         }
+        
         res.status(201).json(newSession);
 
     } catch (error) {
@@ -50,7 +55,7 @@ const createSession = async (req, res) => {
 // POST http://localhost:3000/api/sessions
 // {
 //     "hostId": "67a10f25d8074d134344b672",
-//     "gameId": "67a20b9d334cbdd7c560a091",
+//     "gameId": "67a9de322127c4b4fa1c9a7f",
 //     "scheduledAt": "2025-02-04T12:44:13.298+00:00",
 //     "participants": [
 //     {
@@ -75,33 +80,33 @@ const getSessionById = async (req, res) => {
     try {
         const session = await Session.findById(req.params.id);
         console.log(req.params.id);
-        
+
         if (!session) {
             return res.status(404).json({ error: 'Session not found' });
         }
-        
+
         res.status(200).json(session);
     } catch (error) {
         console.error(error.message);
         console.log('asdasd ');
-        
+
         if (error.name === 'CastError') {
             return res.status(400).json({ error: 'Invalid session ID format' });
         }
-        
+
         res.status(500).json({ error: 'Server error' });
     }
 }
-
+// GET http://localhost:3000/api/sessions/67a9e1d3e6e31fe30522aa5a
 const updateSession = async (req, res) => {
     try {
         const session = await Session.findById(req.params.id)
-        if(!session)
-            return res.status(404).json({error: 'Session not found'});
-        if(req.body.addParticipant){
-            const {user, status} = req.body.addParticipant;
-            if(!mongoose.Types.ObjectId.isValid(user))
-                return res.status(400).json({ error: 'Invalid game ID'});
+        if (!session)
+            return res.status(404).json({ error: 'Session not found' });
+        if (req.body.addParticipant) {
+            const { user, status } = req.body.addParticipant;
+            if (!mongoose.Types.ObjectId.isValid(user))
+                return res.status(400).json({ error: 'Invalid game ID' });
 
             switch (status) {
                 case "add":
@@ -109,15 +114,9 @@ const updateSession = async (req, res) => {
                     await User.updateMany(
                         { _id: user },
                         {
-                            $addToSet: {
-                                sessions: {
-                                    sessionId: session._id,
-                                    status: "pending"
-                                }
-                            }
-                        }
-                    );
-                    
+                            $addToSet:
+                                { sessions: { sessionId: session._id, status: "pending" } }
+                        });
                     break;
                 case "remove":
 
@@ -128,7 +127,7 @@ const updateSession = async (req, res) => {
         } else {
             const updates = Object.keys(req.body);
             const allowedUpdates = ['user', 'status'];
-            const isValidOperation = updates.every(update => 
+            const isValidOperation = updates.every(update =>
                 allowedUpdates.includes(update)
             );
 
@@ -140,15 +139,15 @@ const updateSession = async (req, res) => {
         }
     } catch (error) {
         console.error(error.message);
-        
+
         if (error.name === 'CastError') {
             return res.status(400).json({ error: 'Invalid user ID format' });
         }
-        
+
         if (error.name === 'ValidationError') {
             return res.status(400).json({ error: error.message });
         }
-        
+
         if (error.code === 11000) {
             const field = Object.keys(error.keyPattern)[0];
             return res.status(400).json({ error: `${field} already exists` });
@@ -158,10 +157,40 @@ const updateSession = async (req, res) => {
     }
 }
 
+const deleteSession = async (req, res) => {
+    try {
+      const session = await Session.findByIdAndDelete(req.params.id);
+      
+      if (!session) {
+        return res.status(404).json({ message: 'Session not found' });
+      }
+
+      const userIds = [
+        session.hostId,
+        ...session.participants.map(p => p.user)
+      ].filter((value, index, self) => 
+        self.findIndex(v => v.toString() === value.toString()) === index
+      );
+
+      await User.updateMany(
+        { _id: { $in: userIds } },
+        { $pull: { sessions: session._id } }
+      );
+  
+      res.status(200).json({ message: 'Session deleted successfully' });
+    } catch (error) {
+      res.status(500).json({ 
+        message: 'Error deleting session',
+        error: error.message 
+      });
+    }
+  };
+// DELETE http://localhost:3000/api/sessions/67a9e0874d2e24d71f7ee48f
 
 module.exports = {
     createSession,
     getAllSessions,
     getSessionById,
-    updateSession
+    updateSession,
+    deleteSession
 }

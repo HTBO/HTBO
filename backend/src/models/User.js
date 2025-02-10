@@ -128,16 +128,14 @@ userSchema.methods.removeGame = function(gameId){
 
 userSchema.methods.addSession = function (sessionId) {
     if (!this.sessions.some(s => s.hostId.equals(sessionId))) {
-        this.sessions.push({hostId: sessionId, status: "pending"})        
+        this.sessions.push({sessionId: sessionId, status: "pending"})        
     }
     return this.save();
 }
 
 userSchema.methods.removeSession = function(sessionId){
-    if(this.sessions.some(s => s.hostId.equals(sessionId))){
-        console.log(this.sessions);
-        
-        this.sessions.splice({hostId: sessionId}, 1);
+    if(this.sessions.some(s => s.sessionId.equals(sessionId))){
+        this.sessions.splice({sessionId: sessionId}, 1);
     }
     return this.save();
 }

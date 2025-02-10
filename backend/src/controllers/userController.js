@@ -183,9 +183,12 @@ const updateUser = async (req, res) => {
             // console.log(addedSession);
             switch (action) {
                 case "add":
+                    console.log("adding: " + sessionId);
                     await user.addSession(sessionId);
                     break;
                 case "remove":
+                    console.log("removing: " + sessionId);
+                    
                     await user.removeSession(sessionId);
                     break;
                 default:

@@ -6,6 +6,6 @@ router.post('/', sessionController.createSession);
 router.get('/', sessionController.getAllSessions);
 router.get('/:id', sessionController.getSessionById);
 router.patch('/:id', sessionController.updateSession);
-// router.delete('/:id', gameController.deleteGame);
+router.delete('/:id', sessionController.deleteSession);
 
 module.exports = router;
