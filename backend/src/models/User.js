@@ -1,4 +1,6 @@
 const mongoose = require('mongoose');
+const Session = require('../models/Session')
+
 
 const friendSchema = new mongoose.Schema({
     userId: {
@@ -20,6 +22,33 @@ const gamesSchema = new mongoose.Schema({
         required: true
     }
 }, { _id: false });
+
+const sessionSchema = new mongoose.Schema({
+    sessionId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Session',
+        required: true
+    },
+    status: {
+        type: String,
+        enum: ['pending', 'accepted', 'rejected'],
+        default: 'pending'
+    },
+}, {_id: false});
+
+const groupSchema = new mongoose.Schema({
+    groupId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Group',
+        required: true
+    },
+    status: {
+        type: String,
+        enum: ['pending', 'accepted', 'rejected'],
+        default: 'pending'
+    },
+}, {_id: false});
+
 
 const userSchema = new mongoose.Schema({
     username: {
@@ -45,10 +74,12 @@ const userSchema = new mongoose.Schema({
     },
     avatarUrl: {
         type: String,
-        default: "https://www.google.com/url?sa=i&url=https%3A%2F%2Fmusic.apple.com%2Fgb%2Fartist%2Fnigger-killer%2F1441569506&psig=AOvVaw2ayi4c1XZwl9951BFj8MGe&ust=1738660171095000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCOCEh4GUp4sDFQAAAAAdAAAAABAE"
+        default: "https://static.vecteezy.com/system/resources/previews/002/318/271/non_2x/user-profile-icon-free-vector.jpg"
     },
     friends: [friendSchema],
     games: [gamesSchema],
+    sessions: [sessionSchema],
+    groups: [groupSchema],
     createdAt: {
         type: Date
     },
@@ -115,6 +146,20 @@ userSchema.methods.editUserGames = function (gameId, status) {
 // userSchema.methods.removeGame = function(gameId){
 //     return this.save();
 // }
+
+userSchema.methods.addSession = function (sessionId) {
+    if (!this.sessions.some(s => s.hostId.equals(sessionId))) {
+        this.sessions.push({sessionId: sessionId, status: "pending"})        
+    }
+    return this.save();
+}
+
+userSchema.methods.removeSession = function(sessionId){
+    if(this.sessions.some(s => s.sessionId.equals(sessionId))){
+        this.sessions.splice({sessionId: sessionId}, 1);
+    }
+    return this.save();
+}
 
 const User = mongoose.model('User', userSchema)
 

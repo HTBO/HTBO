@@ -1,5 +1,6 @@
 const User = require('../models/User')
 const Game = require('../models/Game')
+const Session = require('../models/Session')
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
@@ -64,6 +65,8 @@ const getAllUsers = async (req, res) => {
     }
 };
 
+// GET http://localhost:3000/api/users
+
 const getUserById = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
@@ -84,49 +87,38 @@ const getUserById = async (req, res) => {
     }
 };
 
-// const updateUser = async (req, res) => {
-//     try {
-//         const user = await User.findByIdAndUpdate(
-//             req.params.id,
-//             req.body,
-//             { new: true, runValidators: true }
-//         );
-//         if (!user) {
-//             return res.status(404).json({ error: 'User not found' });
-//         }
 
+//GET http://localhost:3000/api/users/67a33d47a02aabac387293c3
 
-
-//         const updates = Object.keys(req.body);
-//         const allowedUpdates = ['username', 'email', 'password'];
-//         const isValidOperation = updates.every(update => 
-//             allowedUpdates.includes(update)
-//         );
-
-//         if (!isValidOperation) 
-//             return res.status(400).send({ error: 'Invalid updates!' });
-
-//         if (!user) 
-//             return res.status(404).send();
-//         res.send(user);
-//     } catch (error) {
-//         console.error(error.message);
-//         if (error.name === 'CastError') 
-//             return res.status(400).json({ error: 'Invalid user ID format' });
-//         if (error.name === 'ValidationError') 
-//             return res.status(400).json({ error: error.message });
-//         res.status(500).json({ error: 'Server error' });
-//     }
-// };
 
 const updateUser = async (req, res) => {
-    const friendActions = ['pending', 'accepted', 'rejected']
     try {
         const user = await User.findById(req.params.id);
         if (!user)
             return res.status(404).json({ error: 'User not found' });
-
+        
         if (req.body.friendAction) {
+            // PATCH http://localhost:3000/api/users/67a33d47a02aabac387293c3
+            // {
+            //     "friendAction": {
+            //       "action": "add", 
+            //       "friendId": "67a10f25d8074d134344b672"
+            //     }
+            //   }
+            // {
+            //     "friendAction": {
+            //       "action": "update-status", 
+            //       "friendId": "67a10f25d8074d134344b672",
+            //       "status": "accepted"
+            //     }
+            //   }
+            // {
+            //     "friendAction": {
+            //       "action": "remove", 
+            //       "friendId": "67a10f25d8074d134344b672"
+            //     }
+            //   }
+            const friendActions = ['pending', 'accepted', 'rejected']
             const { action, friendId, status } = req.body.friendAction;
 
             if (!mongoose.Types.ObjectId.isValid(friendId))
@@ -172,20 +164,11 @@ const updateUser = async (req, res) => {
             }
         } else if(req.body.gameAction){
             const { gameId, action } = req.body.gameAction;
-            
-            // Convert string ID to ObjectId
-            const gameObjectId = new mongoose.Types.ObjectId(gameId);
+            if(!mongoose.Types.ObjectId.isValid(gameId))
+                return res.status(400).json({ error: 'Invalid game ID'});
+            const addedGame = await Game.findById(gameId);
+            // console.log(addedGame);
 
-            if (!mongoose.Types.ObjectId.isValid(gameId)) {
-                return res.status(400).json({ error: 'Invalid game ID format' });
-            }
-            
-            // Check if game exists
-            const gameExists = await Game.exists({ _id: gameObjectId });
-            if (!gameExists) {
-                return res.status(404).json({ error: 'Game not found' });
-            }
-        
             switch (action) {
                 case "add":
                     // Check if user already has the game (using ObjectId)
@@ -210,6 +193,25 @@ const updateUser = async (req, res) => {
         
                 default:
                     return res.status(400).json({ error: 'Invalid game action' });
+            }
+        } else if(req.body.sessionAction){
+            const { sessionId, action } = req.body.sessionAction;
+            if(!mongoose.Types.ObjectId.isValid(sessionId))
+                return res.status(400).json({ error: 'Invalid session ID'});
+            const addedSession = await Session.findById(sessionId);
+            // console.log(addedSession);
+            switch (action) {
+                case "add":
+                    console.log("adding: " + sessionId);
+                    await user.addSession(sessionId);
+                    break;
+                case "remove":
+                    console.log("removing: " + sessionId);
+                    
+                    await user.removeSession(sessionId);
+                    break;
+                default:
+                    break;
             }
         } else {
             const updates = Object.keys(req.body);
@@ -250,14 +252,6 @@ const updateUser = async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 };
-
-// {
-//     "friendAction": {
-//       "action": "update-status", 
-//       "friendId": "67a10f25d8074d134344b672",
-//       "status": "accepted"
-//     }
-//   }
 
 const deleteUser = async (req, res) => {
     try {

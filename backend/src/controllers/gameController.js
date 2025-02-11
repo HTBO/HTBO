@@ -6,9 +6,7 @@ const createGame = async (req, res) => {
         const { name, description, publisher, releaseYear, stores } = req.body;
 
         const existingGame = await Game.findOne({ name });
-        if (existingGame) {
-            return res.status(400).json({ error: "The game's name is already taken" });
-        }
+        if (existingGame) return res.status(400).json({ error: "The game's name is already taken" });
 
         const newGame = await Game.create({
             name,
@@ -25,15 +23,27 @@ const createGame = async (req, res) => {
 
     } catch (error) {
         console.error('Error during creation:', error.message);
-        
+
         if (error.name === 'ValidationError') {
             const messages = Object.values(error.errors).map(err => err.message);
             return res.status(400).json({ errors: messages });
         }
-        
+
         res.status(500).json({ error: 'Server error' });
     }
 };
+
+// POST http://localhost:3000/api/games
+// {
+//     "name": "CS2",
+//     "description": "Klasszikus lövöldözős játék",
+//     "publisher": "Valve",
+//     "releaseYear": 2022,
+//     "stores": [{
+//       "storeId": "67a0e6f79df8e495ea176e47",
+//       "link": "https://store.steampowered.com/app/730/CounterStrike_2/"
+//         }]
+//     }
 
 const getGameById = async (req, res) => {
     try {
@@ -48,19 +58,19 @@ const getGameById = async (req, res) => {
 
     } catch (error) {
         console.error('Error:', error.message);
-        
+
         if (error.name === 'CastError') {
             return res.status(400).json({ error: 'Invalid game ID' });
         }
-        
+
         res.status(500).json({ error: 'Server error' });
     }
 };
 
 const getAllGames = async (req, res) => {
     try {
-        
-        const { name,  sortBy } = req.query;
+
+        const { name, sortBy } = req.query;
         // console.log(name);
         const filter = {};
         const sortOptions = {};
@@ -90,7 +100,7 @@ const updateGame = async (req, res) => {
     try {
         const updates = Object.keys(req.body);
         const allowedUpdates = ['name', 'description', "publisher", "releaseYear", 'stores'];
-        const isValidOperation = updates.every(update => 
+        const isValidOperation = updates.every(update =>
             allowedUpdates.includes(update)
         );
 
@@ -112,20 +122,20 @@ const updateGame = async (req, res) => {
 
     } catch (error) {
         console.error('Error during update:', error.message);
-        
+
         if (error.name === 'CastError') {
             return res.status(400).json({ error: 'Invalid game ID' });
         }
-        
+
         if (error.name === 'ValidationError') {
             const messages = Object.values(error.errors).map(err => err.message);
             return res.status(400).json({ errors: messages });
         }
-        
+
         if (error.code === 11000) {
             return res.status(400).json({ error: "The game's name is already taken" });
         }
-        
+
         res.status(500).json({ error: 'Server error' });
     }
 };
@@ -133,20 +143,20 @@ const updateGame = async (req, res) => {
 const deleteGame = async (req, res) => {
     try {
         const game = await Game.findByIdAndDelete(req.params.id);
-        
+
         if (!game) {
             return res.status(404).json({ error: 'Game not found' });
         }
-        
+
         res.status(200).json({ message: 'Game has been deleted' });
 
     } catch (error) {
         console.error('Error during deletion:', error.message);
-        
+
         if (error.name === 'CastError') {
             return res.status(400).json({ error: 'Invalid game ID' });
         }
-        
+
         res.status(500).json({ error: 'Server error' });
     }
 };
