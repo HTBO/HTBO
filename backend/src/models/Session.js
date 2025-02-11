@@ -34,7 +34,10 @@ const sessionSchema = new mongoose.Schema({
         default: "Not described"
     },
     participants: [participantSchema],
-    // groups: [gamesSchema],
+    groups: {
+      type: mongoose.Types.ObjectId,
+      ref: 'Group'
+    },
     createdAt: {
         type: Date
     },

@@ -1,11 +1,12 @@
 const mongoose = require('mongoose');
 const Session = require('../models/Session')
 const User = require('../models/User');
+const Group = require('../models/Group');
 
 
 const createSession = async (req, res) => {
     try {
-        const { hostId, gameId, scheduledAt, description, participants: reqParticipants } = req.body;
+        const { hostId, gameId, scheduledAt, description, participants: reqParticipants, groups} = req.body;
 
 
         if (!mongoose.Types.ObjectId.isValid(hostId)) {
@@ -16,6 +17,8 @@ const createSession = async (req, res) => {
         if (!host) {
             return res.status(404).json({ error: "Host not found" });
         }
+
+        // const invitedGroups = await Group.findOne({groupId})
 
         const existingSession = await Session.findOne({ hostId });
         if (existingSession) {

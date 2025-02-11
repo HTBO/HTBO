@@ -40,6 +40,19 @@ const sessionSchema = new mongoose.Schema({
     },
 }, {_id: false});
 
+const groupSchema = new mongoose.Schema({
+    groupId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Group',
+        required: true
+    },
+    status: {
+        type: String,
+        enum: ['pending', 'accepted', 'rejected'],
+        default: 'pending'
+    },
+}, {_id: false});
+
 
 const userSchema = new mongoose.Schema({
     username: {
@@ -70,6 +83,7 @@ const userSchema = new mongoose.Schema({
     friends: [friendSchema],
     games: [gamesSchema],
     sessions: [sessionSchema],
+    groups: [groupSchema],
     createdAt: {
         type: Date
     },
