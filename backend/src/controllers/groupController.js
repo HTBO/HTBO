@@ -112,7 +112,7 @@ const updateGroup = async (req, res) => {
                 { _id: memberId },
                 { $addToSet: { groups: { groupId: group._id, status: 'pending' } } }
             );
-            console.log(group._id);
+            // console.log(group._id);
             
             return res.json(group);
             
