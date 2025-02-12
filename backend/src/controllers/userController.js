@@ -79,6 +79,7 @@ const getUserById = async (req, res) => {
     } catch (error) {
         console.error(error.message);
 
+
         if (error.name === 'CastError') {
             return res.status(400).json({ error: 'Invalid user ID format' });
         }
@@ -102,6 +103,7 @@ const getUserByUsername = async (req, res) => {
     } catch (error) {
         console.error(error.message);
 
+
         if (error.name === 'CastError') {
             return res.status(400).json({ error: 'Invalid user ID format' });
         }
@@ -110,7 +112,9 @@ const getUserByUsername = async (req, res) => {
     }
 };
 
+
 //GET http://localhost:3000/api/users/67a33d47a02aabac387293c3
+
 
 const updateUser = async (req, res) => {
     try {
@@ -153,6 +157,7 @@ const updateUser = async (req, res) => {
                         return res.status(400).json({ error: 'Users cannot add themselves' });
                     if (user.friends.some(p => p.userId.toString() == friendId.toString())) 
                         return res.status(400).json({ error: 'User already added' });
+
                     await user.addFriend(friendId);
                     await addedFriend.addFriend(user);
                     break;
@@ -191,18 +196,34 @@ const updateUser = async (req, res) => {
                 return res.status(400).json({ error: 'Invalid game ID' });
             const addedGame = await Game.findById(gameId);
             // console.log(addedGame);
+
             switch (action) {
                 case "add":
-                    await user.addGame(gameId);
+                    // Check if user already has the game (using ObjectId)
+                    if (user.games.some(g => g.gameId.equals(gameObjectId))) {
+                        return res.status(400).json({ error: 'Game already in collection' });
+                    }
+                    await user.editUserGames(gameObjectId, "add");
                     break;
+        
                 case "remove":
-                    await user.removeGame(addedGame);
+                    // Check if user has the game (using ObjectId)
+                    if (!user.games.some(g => g.gameId.equals(gameObjectId))) {
+                        console.log(user.games);
+                        console.log(gameObjectId);
+                        
+                        
+                        return res.status(400).json({ error: 'Game not in collection' });
+                    }
+                    // await user.removeGame(gameObjectId);
+                    await user.editUserGames(gameObjectId, "remove");
                     break;
+        
                 default:
-                    break;
+                    return res.status(400).json({ error: 'Invalid game action' });
             }
-
         } else if (req.body.sessionAction) {
+
             const { sessionId, action } = req.body.sessionAction;
             if (!mongoose.Types.ObjectId.isValid(sessionId))
                 return res.status(400).json({ error: 'Invalid session ID' });
