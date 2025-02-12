@@ -79,6 +79,31 @@ const getUserById = async (req, res) => {
     } catch (error) {
         console.error(error.message);
 
+
+        if (error.name === 'CastError') {
+            return res.status(400).json({ error: 'Invalid user ID format' });
+        }
+
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+const getUserByUsername = async (req, res) => {
+    try {
+        // console.log((req.params));
+        const { username } = req.params;
+        // console.log(username);
+
+        const user = await User.findOne({ username })
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        res.status(200).json({ user })
+
+    } catch (error) {
+        console.error(error.message);
+
+
         if (error.name === 'CastError') {
             return res.status(400).json({ error: 'Invalid user ID format' });
         }
@@ -96,7 +121,7 @@ const updateUser = async (req, res) => {
         const user = await User.findById(req.params.id);
         if (!user)
             return res.status(404).json({ error: 'User not found' });
-        
+
         if (req.body.friendAction) {
             // PATCH http://localhost:3000/api/users/67a33d47a02aabac387293c3
             // {
@@ -126,10 +151,13 @@ const updateUser = async (req, res) => {
 
 
             const addedFriend = await User.findById(friendId);
-            if (!addedFriend)
-                return res.status(404).json({ error: 'User to add not found' })
             switch (action) {
-                case 'add':
+                case 'add':  
+                    if (user._id.toString() === friendId.toString())
+                        return res.status(400).json({ error: 'Users cannot add themselves' });
+                    if (user.friends.some(p => p.userId.toString() == friendId.toString())) 
+                        return res.status(400).json({ error: 'User already added' });
+
                     await user.addFriend(friendId);
                     await addedFriend.addFriend(user);
                     break;
@@ -162,10 +190,10 @@ const updateUser = async (req, res) => {
                 default:
                     return res.status(400).json({ error: 'Invalid friend action' });
             }
-        } else if(req.body.gameAction){
+        } else if (req.body.gameAction) {
             const { gameId, action } = req.body.gameAction;
-            if(!mongoose.Types.ObjectId.isValid(gameId))
-                return res.status(400).json({ error: 'Invalid game ID'});
+            if (!mongoose.Types.ObjectId.isValid(gameId))
+                return res.status(400).json({ error: 'Invalid game ID' });
             const addedGame = await Game.findById(gameId);
             // console.log(addedGame);
 
@@ -194,10 +222,11 @@ const updateUser = async (req, res) => {
                 default:
                     return res.status(400).json({ error: 'Invalid game action' });
             }
-        } else if(req.body.sessionAction){
+        } else if (req.body.sessionAction) {
+
             const { sessionId, action } = req.body.sessionAction;
-            if(!mongoose.Types.ObjectId.isValid(sessionId))
-                return res.status(400).json({ error: 'Invalid session ID'});
+            if (!mongoose.Types.ObjectId.isValid(sessionId))
+                return res.status(400).json({ error: 'Invalid session ID' });
             const addedSession = await Session.findById(sessionId);
             // console.log(addedSession);
             switch (action) {
@@ -207,7 +236,7 @@ const updateUser = async (req, res) => {
                     break;
                 case "remove":
                     console.log("removing: " + sessionId);
-                    
+
                     await user.removeSession(sessionId);
                     break;
                 default:
@@ -276,6 +305,7 @@ const deleteUser = async (req, res) => {
 module.exports = {
     getAllUsers,
     getUserById,
+    getUserByUsername,
     registerUser,
     updateUser,
     deleteUser

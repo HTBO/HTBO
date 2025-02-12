@@ -43,7 +43,7 @@ const createSession = async (req, res) => {
             }
         }
 
-        console.log("fine");
+        // console.log("fine");
         const newSession = await Session.create({
             hostId,
             gameId,
@@ -114,7 +114,7 @@ const getAllSessions = async (req, res) => {
 const getSessionById = async (req, res) => {
     try {
         const session = await Session.findById(req.params.id);
-        console.log(req.params.id);
+        // console.log(req.params.id);
 
         if (!session) {
             return res.status(404).json({ error: 'Session not found' });
@@ -123,7 +123,6 @@ const getSessionById = async (req, res) => {
         res.status(200).json(session);
     } catch (error) {
         console.error(error.message);
-        console.log('asdasd ');
 
         if (error.name === 'CastError') {
             return res.status(400).json({ error: 'Invalid session ID format' });

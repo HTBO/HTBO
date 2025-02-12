@@ -18,4 +18,11 @@
     - PATCH sessions: change gameId, description, time
     - PATCH sessions: invite through groups, invite every member of the group
     
+### Users
+    - User and Friend adding, FRONTEND handling (User can confirm the Friend's add)
+    - User deletion should affect sessions and groups
 
+### userAPI.test
+    - gameHandling
+    - groupHandling
+    - sessionHandling
