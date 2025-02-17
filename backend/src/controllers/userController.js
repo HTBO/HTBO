@@ -55,6 +55,25 @@ const registerUser = async (req, res) => {
     }
 };
 
+const loginUser = async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(401).json({ error: 'Authentication failed' });
+        }
+        const passwordMatch = await bcrypt.compare(password, user.passwordHash);
+        if (!passwordMatch) {
+            return res.status(401).json({ error: 'Authentication failed' });
+        }
+        token = generateToken(user);
+        res.status(200).json({ token })
+    } catch (err) {
+        console.log(`${err.message} login error.`);
+        res.status(500).json({ error: 'Login failed' });
+    }
+}
+
 const getAllUsers = async (req, res) => {
     try {
         const users = await User.find();
@@ -152,10 +171,10 @@ const updateUser = async (req, res) => {
 
             const addedFriend = await User.findById(friendId);
             switch (action) {
-                case 'add':  
+                case 'add':
                     if (user._id.toString() === friendId.toString())
                         return res.status(400).json({ error: 'Users cannot add themselves' });
-                    if (user.friends.some(p => p.userId.toString() == friendId.toString())) 
+                    if (user.friends.some(p => p.userId.toString() == friendId.toString()))
                         return res.status(400).json({ error: 'User already added' });
 
                     await user.addFriend(friendId);
@@ -205,20 +224,20 @@ const updateUser = async (req, res) => {
                     }
                     await user.editUserGames(gameObjectId, "add");
                     break;
-        
+
                 case "remove":
                     // Check if user has the game (using ObjectId)
                     if (!user.games.some(g => g.gameId.equals(gameObjectId))) {
                         console.log(user.games);
                         console.log(gameObjectId);
-                        
-                        
+
+
                         return res.status(400).json({ error: 'Game not in collection' });
                     }
                     // await user.removeGame(gameObjectId);
                     await user.editUserGames(gameObjectId, "remove");
                     break;
-        
+
                 default:
                     return res.status(400).json({ error: 'Invalid game action' });
             }
@@ -307,6 +326,7 @@ module.exports = {
     getUserById,
     getUserByUsername,
     registerUser,
+    loginUser,
     updateUser,
     deleteUser
 };
