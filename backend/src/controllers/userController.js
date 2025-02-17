@@ -16,18 +16,14 @@ const generateToken = (user) => {
 
 const registerUser = async (req, res) => {
     const errors = validationResult(req)
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
+    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
     try {
         const { username, email, password } = req.body;
 
         const existingUser = await User.findOne({ $or: [{ username }, { email }] })
-        if (existingUser) {
-            return res.status(400).json({
+        if (existingUser) return res.status(400).json({
                 error: existingUser.username === username ? 'Username already exists' : 'Email already registered'
             })
-        }
 
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
@@ -59,13 +55,9 @@ const loginUser = async (req, res) => {
     try {
         const { username, password } = req.body;
         const user = await User.findOne({ username });
-        if (!user) {
-            return res.status(401).json({ error: 'Authentication failed' });
-        }
+        if (!user) return res.status(401).json({ error: 'Authentication failed' });
         const passwordMatch = await bcrypt.compare(password, user.passwordHash);
-        if (!passwordMatch) {
-            return res.status(401).json({ error: 'Authentication failed' });
-        }
+        if (!passwordMatch) return res.status(401).json({ error: 'Authentication failed' });
         token = generateToken(user);
         res.status(200).json({ token })
     } catch (err) {
@@ -89,44 +81,24 @@ const getAllUsers = async (req, res) => {
 const getUserById = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
-
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
+        if (!user) return res.status(404).json({ error: 'User not found' });
         res.status(200).json(user);
     } catch (error) {
         console.error(error.message);
-
-
-        if (error.name === 'CastError') {
-            return res.status(400).json({ error: 'Invalid user ID format' });
-        }
-
+        if (error.name === 'CastError') return res.status(400).json({ error: 'Invalid user ID format' });
         res.status(500).json({ error: 'Server error' });
     }
 };
 
 const getUserByUsername = async (req, res) => {
     try {
-        // console.log((req.params));
         const { username } = req.params;
-        // console.log(username);
-
         const user = await User.findOne({ username })
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
+        if (!user) return res.status(404).json({ error: "User not found" });
         res.status(200).json({ user })
-
     } catch (error) {
         console.error(error.message);
-
-
-        if (error.name === 'CastError') {
-            return res.status(400).json({ error: 'Invalid user ID format' });
-        }
-
+        if (error.name === 'CastError') return res.status(400).json({ error: 'Invalid user ID format' });
         res.status(500).json({ error: 'Server error' });
     }
 };
@@ -138,8 +110,7 @@ const getUserByUsername = async (req, res) => {
 const updateUser = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
-        if (!user)
-            return res.status(404).json({ error: 'User not found' });
+        if (!user) return res.status(404).json({ error: 'User not found' });
 
         if (req.body.friendAction) {
             // PATCH http://localhost:3000/api/users/67a33d47a02aabac387293c3

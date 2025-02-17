@@ -60,10 +60,12 @@ describe("User API GET Tests", () => {
 });
 
 describe("User API PATCH Tests", () => {
-    test('Add pending friend, expect the friends array to have a length of 1', async () => {
-        const getFriendId = (await request(app).get('/api/users/username/JoeBiden')).body.user._id
+    test.only('Add pending friend, expect the friends array to have a length of 1', async () => {
+        const getFriendId = (await request(app).get('/api/users/username/JoeBiden'))
+        console.log("aasasdaass" + getFriendId);
+        
         // console.log(getFriendId.body.user._id);
-        const getTestUserId = (await request(app).get('/api/users/username/TrumpBiden')).body.user._id
+        const getTestUserId = (await request(app).get('/api/users/username/TrumpBiden')).body
         // console.log(getTestUserId);
         
         const response = await request(app).patch(`/api/users/${getTestUserId}`).send({
