@@ -53,13 +53,26 @@ const registerUser = async (req, res) => {
 
 const loginUser = async (req, res) => {
     try {
-        const { username, password } = req.body;
-        const user = await User.findOne({ username });
-        if (!user) return res.status(401).json({ error: 'Authentication failed' });
-        const passwordMatch = await bcrypt.compare(password, user.passwordHash);
-        if (!passwordMatch) return res.status(401).json({ error: 'Authentication failed due password' });
-        token = generateToken(user);
-        res.status(200).json({ token })
+        const { username, email, password } = req.body;
+        let user;
+        if(username) {
+            user = await User.findOne({ username });
+            if (!user) return res.status(401).json({ error: 'Username or password does not match | ERRC:0' });
+            login("Username")
+        } else if(email){
+            user = await User.findOne({ email });
+            if (!user) return res.status(401).json({ error: 'Email or password does not match | ERRC:1' });
+            login("Email")
+        } else {
+            return res.status(401).json({error: "Please provide an email or username"})
+        }
+        async function login (method) {
+            if(!password) return res.status(401).json({error: "Please provide the password"})
+            const passwordMatch = await bcrypt.compare(password, user.passwordHash);
+            if (!passwordMatch) return res.status(401).json({ error: `${method} or password does not match | ERRC:2` });
+            token = generateToken(user);
+            res.status(200).json({ token })
+        }
     } catch (err) {
         console.log(`${err.message} login error.`);
         res.status(500).json({ error: 'Login failed' });
@@ -161,20 +174,18 @@ const updateUser = async (req, res) => {
                 case 'update-status':
                     const friend = user.friends.find(friend => friend.userId.equals(friendId));
                     // console.log(req.params.id);
-
                     const addUser = addedFriend.friends.find(friend => friend.userId.equals(req.params.id))
-
-
-                    if (!friend) {
-                        return res.status(404).json({ error: 'Friend not found' });
+                    if (!friend) return res.status(404).json({ error: 'Friend not found' });
+                    if (!friendActions.includes(status)) return res.status(400).json({ error: 'Invalid status' });
+                    if (!status == "rejected") {
+                        friend.status = status;
+                        addUser.status = status;
+                        await user.statusUpdate();
+                        await addedFriend.statusUpdate();
+                    } else {
+                        await user.removeFriend();
+                        await addedFriend.removeFriend();
                     }
-                    if (!friendActions.includes(status)) {
-                        return res.status(400).json({ error: 'Invalid status' });
-                    }
-                    friend.status = status;
-                    addUser.status = status;
-                    await user.statusUpdate();
-                    await addedFriend.statusUpdate();
                     break;
 
                 default:
@@ -184,9 +195,6 @@ const updateUser = async (req, res) => {
             const { gameId, action } = req.body.gameAction;
             if (!mongoose.Types.ObjectId.isValid(gameId))
                 return res.status(400).json({ error: 'Invalid game ID' });
-            const addedGame = await Game.findById(gameId);
-            // console.log(addedGame);
-
             switch (action) {
                 case "add":
                     // Check if user already has the game (using ObjectId)

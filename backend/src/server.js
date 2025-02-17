@@ -2,7 +2,9 @@ const app = require('./app');
 const mongoose = require('mongoose');
 
 const PORT = process.env.PORT || 3000;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/real-db';
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!MONGODB_URI) console.error("No database URL defined")
 
 mongoose.connect(MONGODB_URI)
   .then(() => {

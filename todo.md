@@ -21,6 +21,7 @@
 ### Users
     - User and Friend adding, FRONTEND handling (User can confirm the Friend's add)
     - User deletion should affect sessions and groups
+    - User friend rejection should delete the request
 
 ### userAPI.test
     - gameHandling
