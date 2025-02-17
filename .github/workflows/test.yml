@@ -3,10 +3,10 @@ name: Jest Tests
 on:
   push:
     branches:
-      - main
+      - backend
   pull_request:
     branches:
-      - main
+      - backend
 
 jobs:
   build:
