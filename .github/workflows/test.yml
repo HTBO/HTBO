@@ -39,4 +39,6 @@ jobs:
       run: pnpm install
 
     - name: Run Jest tests
+      env: 
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
       run: pnpm test
