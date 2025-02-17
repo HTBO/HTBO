@@ -7,15 +7,26 @@ let mongoServer;
 let app;
 
 beforeAll(async () => {
-    mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
-    await mongoose.connect(mongoUri);
-    app = require('../src/app');
-});
+    try {
+        mongoServer = await MongoMemoryServer.create();
+        const mongoUri = mongoServer.getUri();
+        await mongoose.connect(mongoUri);
+    } catch (error) {
+        console.error("Error in beforeAll:", error);
+        throw error;
+    }
+}, 30000);
 
 afterAll(async () => {
-    await mongoose.disconnect();
-    await mongoServer.stop();
+    try {
+        await mongoose.disconnect();
+        if (mongoServer) {
+            await mongoServer.stop();
+        }
+    } catch (error) {
+        console.error("Error in afterAll:", error);
+        throw error;
+    }
 });
 
 beforeEach(async () => {
@@ -52,7 +63,7 @@ describe("User API PATCH Tests", () => {
         // console.log(getFriendId.body.user._id);
         const getTestUserId = (await request(app).get('/api/users/username/TrumpBiden')).body.user._id
         // console.log(getTestUserId);
-        
+
         const response = await request(app).patch(`/api/users/${getTestUserId}`).send({
             friendAction: {
                 action: "add",
@@ -149,7 +160,7 @@ describe("User API PATCH Tests", () => {
         // console.log(getFriendId.body.user._id);
         const getTestUserId = (await request(app).get('/api/users/username/JoeBiden')).body.user._id
         // console.log(getTestUserId);
-        
+
         const response = await request(app).patch(`/api/users/${getTestUserId}`).send({
             friendAction: {
                 action: "add",
@@ -166,7 +177,7 @@ describe("User API PATCH Tests", () => {
         // console.log(getFriendId.body.user._id);
         const getTestUserId = (await request(app).get('/api/users/username/TrumpBiden')).body.user._id
         // console.log(getTestUserId);
-        
+
         let response = await request(app).patch(`/api/users/${getTestUserId}`).send({
             friendAction: {
                 action: "add",
@@ -186,14 +197,14 @@ describe("User API PATCH Tests", () => {
 
     })
 });
-    describe("User API DELETE Tests", () => {
-        test('Delete first test user, expected user count is 1', async () => {
-            const getUserIdToDelete = (await request(app).get('/api/users/username/JoeBiden')).body.user._id
-            let response = await request(app).delete(`/api/users/${getUserIdToDelete}`);
-            expect(response.status).toBe(200);
-            response = await request(app).get('/api/users');
-            expect(response.status).toBe(200);
-            expect(response.body.length).toBe(1);
-        });
+describe("User API DELETE Tests", () => {
+    test('Delete first test user, expected user count is 1', async () => {
+        const getUserIdToDelete = (await request(app).get('/api/users/username/JoeBiden')).body.user._id
+        let response = await request(app).delete(`/api/users/${getUserIdToDelete}`);
+        expect(response.status).toBe(200);
+        response = await request(app).get('/api/users');
+        expect(response.status).toBe(200);
+        expect(response.body.length).toBe(1);
+    });
 
 });
