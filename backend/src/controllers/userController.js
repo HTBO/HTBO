@@ -16,18 +16,14 @@ const generateToken = (user) => {
 
 const registerUser = async (req, res) => {
     const errors = validationResult(req)
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
+    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
     try {
         const { username, email, password } = req.body;
 
         const existingUser = await User.findOne({ $or: [{ username }, { email }] })
-        if (existingUser) {
-            return res.status(400).json({
+        if (existingUser) return res.status(400).json({
                 error: existingUser.username === username ? 'Username already exists' : 'Email already registered'
             })
-        }
 
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
@@ -55,6 +51,34 @@ const registerUser = async (req, res) => {
     }
 };
 
+const loginUser = async (req, res) => {
+    try {
+        const { username, email, password } = req.body;
+        let user;
+        if(username) {
+            user = await User.findOne({ username });
+            if (!user) return res.status(401).json({ error: 'Username or password does not match | ERRC:0' });
+            login("Username")
+        } else if(email){
+            user = await User.findOne({ email });
+            if (!user) return res.status(401).json({ error: 'Email or password does not match | ERRC:1' });
+            login("Email")
+        } else {
+            return res.status(401).json({error: "Please provide an email or username"})
+        }
+        async function login (method) {
+            if(!password) return res.status(401).json({error: "Please provide the password"})
+            const passwordMatch = await bcrypt.compare(password, user.passwordHash);
+            if (!passwordMatch) return res.status(401).json({ error: `${method} or password does not match | ERRC:2` });
+            token = generateToken(user);
+            res.status(200).json({ token })
+        }
+    } catch (err) {
+        console.log(`${err.message} login error.`);
+        res.status(500).json({ error: 'Login failed' });
+    }
+}
+
 const getAllUsers = async (req, res) => {
     try {
         const users = await User.find();
@@ -70,44 +94,24 @@ const getAllUsers = async (req, res) => {
 const getUserById = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
-
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
+        if (!user) return res.status(404).json({ error: 'User not found' });
         res.status(200).json(user);
     } catch (error) {
         console.error(error.message);
-
-
-        if (error.name === 'CastError') {
-            return res.status(400).json({ error: 'Invalid user ID format' });
-        }
-
+        if (error.name === 'CastError') return res.status(400).json({ error: 'Invalid user ID format' });
         res.status(500).json({ error: 'Server error' });
     }
 };
 
 const getUserByUsername = async (req, res) => {
     try {
-        // console.log((req.params));
         const { username } = req.params;
-        // console.log(username);
-
         const user = await User.findOne({ username })
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
+        if (!user) return res.status(404).json({ error: "User not found" });
         res.status(200).json({ user })
-
     } catch (error) {
         console.error(error.message);
-
-
-        if (error.name === 'CastError') {
-            return res.status(400).json({ error: 'Invalid user ID format' });
-        }
-
+        if (error.name === 'CastError') return res.status(400).json({ error: 'Invalid user ID format' });
         res.status(500).json({ error: 'Server error' });
     }
 };
@@ -119,8 +123,7 @@ const getUserByUsername = async (req, res) => {
 const updateUser = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
-        if (!user)
-            return res.status(404).json({ error: 'User not found' });
+        if (!user) return res.status(404).json({ error: 'User not found' });
 
         if (req.body.friendAction) {
             // PATCH http://localhost:3000/api/users/67a33d47a02aabac387293c3
@@ -152,10 +155,10 @@ const updateUser = async (req, res) => {
 
             const addedFriend = await User.findById(friendId);
             switch (action) {
-                case 'add':  
+                case 'add':
                     if (user._id.toString() === friendId.toString())
                         return res.status(400).json({ error: 'Users cannot add themselves' });
-                    if (user.friends.some(p => p.userId.toString() == friendId.toString())) 
+                    if (user.friends.some(p => p.userId.toString() == friendId.toString()))
                         return res.status(400).json({ error: 'User already added' });
 
                     await user.addFriend(friendId);
@@ -171,20 +174,18 @@ const updateUser = async (req, res) => {
                 case 'update-status':
                     const friend = user.friends.find(friend => friend.userId.equals(friendId));
                     // console.log(req.params.id);
-
                     const addUser = addedFriend.friends.find(friend => friend.userId.equals(req.params.id))
-
-
-                    if (!friend) {
-                        return res.status(404).json({ error: 'Friend not found' });
+                    if (!friend) return res.status(404).json({ error: 'Friend not found' });
+                    if (!friendActions.includes(status)) return res.status(400).json({ error: 'Invalid status' });
+                    if (!status == "rejected") {
+                        friend.status = status;
+                        addUser.status = status;
+                        await user.statusUpdate();
+                        await addedFriend.statusUpdate();
+                    } else {
+                        await user.removeFriend();
+                        await addedFriend.removeFriend();
                     }
-                    if (!friendActions.includes(status)) {
-                        return res.status(400).json({ error: 'Invalid status' });
-                    }
-                    friend.status = status;
-                    addUser.status = status;
-                    await user.statusUpdate();
-                    await addedFriend.statusUpdate();
                     break;
 
                 default:
@@ -194,9 +195,6 @@ const updateUser = async (req, res) => {
             const { gameId, action } = req.body.gameAction;
             if (!mongoose.Types.ObjectId.isValid(gameId))
                 return res.status(400).json({ error: 'Invalid game ID' });
-            const addedGame = await Game.findById(gameId);
-            // console.log(addedGame);
-
             switch (action) {
                 case "add":
                     // Check if user already has the game (using ObjectId)
@@ -205,20 +203,20 @@ const updateUser = async (req, res) => {
                     }
                     await user.editUserGames(gameObjectId, "add");
                     break;
-        
+
                 case "remove":
                     // Check if user has the game (using ObjectId)
                     if (!user.games.some(g => g.gameId.equals(gameObjectId))) {
                         console.log(user.games);
                         console.log(gameObjectId);
-                        
-                        
+
+
                         return res.status(400).json({ error: 'Game not in collection' });
                     }
                     // await user.removeGame(gameObjectId);
                     await user.editUserGames(gameObjectId, "remove");
                     break;
-        
+
                 default:
                     return res.status(400).json({ error: 'Invalid game action' });
             }
@@ -307,6 +305,7 @@ module.exports = {
     getUserById,
     getUserByUsername,
     registerUser,
+    loginUser,
     updateUser,
     deleteUser
 };
