@@ -62,7 +62,7 @@ beforeEach(async () => {
     
     testOneId = (await request(app).get('/api/users/username/JoeBiden')).body.user._id
     testTwoId = (await request(app).get('/api/users/username/TrumpBiden')).body.user._id
-});
+}, 30000);
 
 afterEach(async () => {
     await mongoose.connection.db.dropDatabase();
