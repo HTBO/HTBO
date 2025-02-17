@@ -57,9 +57,7 @@ beforeEach(async () => {
         "username": "JoeBiden",
         "password": "joe"
     })
-    userToken = login.body.token;
-    console.log(await request(app).get('/api/users/username/JoeBiden').set('Authorization', `Bearer ${userToken}`));
-    
+    userToken = login.body.token;    
     testOneId = (await request(app).get('/api/users/username/JoeBiden')).body.user._id
     testTwoId = (await request(app).get('/api/users/username/TrumpBiden')).body.user._id
 }, 30000);

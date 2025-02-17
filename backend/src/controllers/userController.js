@@ -178,14 +178,14 @@ const updateUser = async (req, res) => {
                     const addUser = addedFriend.friends.find(friend => friend.userId.equals(req.params.id))
                     if (!friend) return res.status(404).json({ error: 'Friend not found' });
                     if (!friendActions.includes(status)) return res.status(400).json({ error: 'Invalid status' });
-                    if (!status == "rejected") {
+                    if (status == "rejected") {
+                        await user.removeFriend();
+                        await addedFriend.removeFriend();
+                    } else {
                         friend.status = status;
                         addUser.status = status;
                         await user.statusUpdate();
                         await addedFriend.statusUpdate();
-                    } else {
-                        await user.removeFriend();
-                        await addedFriend.removeFriend();
                     }
                     break;
 
