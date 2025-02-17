@@ -57,7 +57,7 @@ const loginUser = async (req, res) => {
         const user = await User.findOne({ username });
         if (!user) return res.status(401).json({ error: 'Authentication failed' });
         const passwordMatch = await bcrypt.compare(password, user.passwordHash);
-        if (!passwordMatch) return res.status(401).json({ error: 'Authentication failed' });
+        if (!passwordMatch) return res.status(401).json({ error: 'Authentication failed due password' });
         token = generateToken(user);
         res.status(200).json({ token })
     } catch (err) {
