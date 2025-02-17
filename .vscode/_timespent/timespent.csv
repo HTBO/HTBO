@@ -249,3 +249,9 @@ uid,workspacePath,gitBranch,gitCommit,filePath,eventType,date,start,end,duration
 "nvY-BCakBYFuVcPtnbmny","d:\BZ\HTBO\HTBO","Backend","f22190ac0668658771bb5caef03f2a68d89460a2","package.json","windowFocus:activityTimeout",1739746800000,1739779166598,1739779226098,59500
 "y2XlIvDk_Isu3k8nj2tqn","d:\BZ\HTBO\HTBO","Backend","f22190ac0668658771bb5caef03f2a68d89460a2","package.json","windowFocus:activeTextEditorChange",1739746800000,1739779348329,1739779353787,5458
 "J1lZZTWklfBREHUoYg2_2","d:\BZ\HTBO\HTBO","Backend","f22190ac0668658771bb5caef03f2a68d89460a2","backend\test\userAPI.test.js","activeTextEditorChange:activityTimeout",1739746800000,1739779353787,1739779471061,117274
+"CcFptuR4qBonN7Z_ANoS9","d:\BZ\HTBO\HTBO","Backend","f22190ac0668658771bb5caef03f2a68d89460a2","backend\test\userAPI.test.js","editorSelectionChange:windowBlur",1739746800000,1739779715244,1739779743290,28046
+"f_xQuKfKkN4qy6Qkj1JqX","d:\BZ\HTBO\HTBO","Backend","5874ca79a33e93e1aebe090bdf5f2a2e04f4d75a","backend\test\userAPI.test.js","windowFocus:activeTextEditorChange",1739746800000,1739779787839,1739779848536,60697
+"99wyLNj6V5E7681efWvlD","d:\BZ\HTBO\HTBO","Backend","5874ca79a33e93e1aebe090bdf5f2a2e04f4d75a","backend\src\app.js","activeTextEditorChange:activeTextEditorChange",1739746800000,1739779848536,1739779860178,11642
+"k4NeRWdXbGsVV5uzr---Q","d:\BZ\HTBO\HTBO","Backend","5874ca79a33e93e1aebe090bdf5f2a2e04f4d75a","backend\.env","activeTextEditorChange:activeTextEditorChange",1739746800000,1739779860178,1739779863488,3310
+"fLJugITNfFXld4168oTKD","d:\BZ\HTBO\HTBO","Backend","5874ca79a33e93e1aebe090bdf5f2a2e04f4d75a","backend\src\controllers\gameController.js","activeTextEditorChange:activeTextEditorChange",1739746800000,1739779863488,1739779865025,1537
+"Ew3JbaKyaoCnaCg_PfBaq","d:\BZ\HTBO\HTBO","Backend","5874ca79a33e93e1aebe090bdf5f2a2e04f4d75a","backend\src\app.js","activeTextEditorChange:activeTextEditorChange",1739746800000,1739779865025,1739779871043,6018
