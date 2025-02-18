@@ -1,0 +1,37 @@
+const app = require('../src/app');
+const mongoose = require('mongoose');
+
+describe("Connect to real database", () => {
+    test("Connection succeeded", async () => {
+        const PORT = process.env.PORT || 3000;
+        const MONGODB_URI = process.env.MONGODB_URI;
+
+        if (!MONGODB_URI) console.error("No database URL defined");
+
+        async function connection() {
+
+            await mongoose.connect(MONGODB_URI)
+                .then(() => {
+                    console.log('MongoDB connected');
+                    return new Promise((resolve) => {
+                        app.listen(PORT, () => {
+                            console.log(`Server running on port ${PORT}`);
+                            resolve();
+                        });
+                    });
+                });
+        }
+
+        const logSpy = jest.spyOn(global.console, 'log');
+        await connection();
+
+        // Expect four logs: joebiden, MongoDB connected, Server running..., joebiden2
+        expect(logSpy).toHaveBeenCalledTimes(2);
+        expect(logSpy).toHaveBeenCalledWith('Server running on port 3000');
+        expect(logSpy).toHaveBeenCalledWith('MongoDB connected');
+
+        // Cleanup
+        await mongoose.connection.db.dropDatabase();
+        await mongoose.disconnect();
+    });
+});

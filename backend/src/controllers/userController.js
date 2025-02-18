@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken')
 const { validationResult } = require('express-validator');
 
 const generateToken = (user) => {
-    const secret = process.env.JWT_SECRET ||"643182a59e492cbb1792e42caa29824f0af74889001ee940623ee2454b84a585550993ee561a14cb156279488120631e2d83bae755aeab0cef55ba4820690e6b"
+    const secret = process.env.JWT_SECRET
     return jwt.sign(
         { id: user._id },
         secret,
@@ -65,10 +65,10 @@ const loginUser = async (req, res) => {
             if (!user) return res.status(401).json({ error: 'Email or password does not match | ERRC:1' });
             login("Email")
         } else {
-            return res.status(401).json({error: "Please provide an email or username"})
+            return res.status(401).json({error: "Please provide an email or username | ERRC:01"})
         }
         async function login (method) {
-            if(!password) return res.status(401).json({error: "Please provide the password"})
+            if(!password) return res.status(401).json({error: "Please provide the password | ERRC:2"})
             const passwordMatch = await bcrypt.compare(password, user.passwordHash);
             if (!passwordMatch) return res.status(401).json({ error: `${method} or password does not match | ERRC:2` });
             token = generateToken(user);

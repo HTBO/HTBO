@@ -1,7 +1,6 @@
-const request = require('supertest');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const mongoose = require('mongoose');
-const supertest = require('supertest');
+const request = require('supertest');
 
 let mongoServer;
 let app;
@@ -34,15 +33,6 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-    // await User.create({
-    //     username: "JoeBiden",
-    //     email: "joe@biden.com",
-    //     passwordHash: "joe",
-    // }, {
-    //     username: "TrumpBiden",
-    //     email: "trump@biden.com",
-    //     passwordHash: "trump",
-    // });
     await request(app).post('/api/users/register').send({
         "username": "JoeBiden",
         "email": "joe@biden.com",
@@ -68,12 +58,12 @@ afterEach(async () => {
 
 describe("User API GET Tests", () => {
     test('GET ALL Users, User count is 2', async () => {
-        const response = await supertest(app).get('/api/users');
+        const response = await request(app).get('/api/users');
         expect(response.status).toBe(200);
         expect(response.body.length).toBe(2);
     });
     test('GET User by username', async () => {
-        const response = await supertest(app).get(`/api/users/${testOneId}`).set('Authorization', `Bearer ${userToken}`)
+        const response = await request(app).get(`/api/users/${testOneId}`).set('Authorization', `Bearer ${userToken}`)
         expect(response.status).toBe(200);
     });
 });
