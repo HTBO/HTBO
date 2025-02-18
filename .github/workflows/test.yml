@@ -40,6 +40,8 @@ jobs:
 
     - name: Run Jest tests
       env: 
-        JWT_SECRET: ${{ secrets.JWT_SECRET }}
         MONGODB_URI: ${{ secrets.MONGODB_URI }}
+        PORT: ${{ secrets.PORT }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        JWT_EXPIRES_IN: ${{ secrets.JWT_EXPIRES_IN }}
       run: pnpm test
