@@ -25,13 +25,10 @@ describe("Connect to real database", () => {
         const logSpy = jest.spyOn(global.console, 'log');
         await connection();
 
-        // Expect four logs: joebiden, MongoDB connected, Server running..., joebiden2
         expect(logSpy).toHaveBeenCalledTimes(2);
         expect(logSpy).toHaveBeenCalledWith('Server running on port 3000');
         expect(logSpy).toHaveBeenCalledWith('MongoDB connected');
 
-        // Cleanup
-        await mongoose.connection.db.dropDatabase();
         await mongoose.disconnect();
     });
 });

@@ -11,29 +11,31 @@ const createGroup = async (req, res) => {
         const owner = await User.findById(ownerId);
         if (!owner) return res.status(404).json({ error: "Owner not found" });
         for (const m of members) {
-            if (!mongoose.Types.ObjectId.isValid(p.userId)) {
-                return res.status(400).json({ error: `Invalid participant ID: ${m.userId}` });
+            if (!mongoose.Types.ObjectId.isValid(m.memberId)) {
+                return res.status(400).json({ error: `Invalid member ID: ${m.memberId}` });
             }
-            if (m.userId.toString() === ownerId.toString()) {
+            if (m.memberId.toString() === ownerId.toString()) {
                 return res.status(400).json({ error: "Owner cannot be a member" });
             }
-            const userExists = await User.exists({ _id: m.userId });
+            const userExists = await User.exists({ _id: m.memberId });
             if (!userExists) {
                 return res.status(404).json({ error: `User not found: ${m.user}` });
             }
         }
+        // console.log(ownerId, name, description, members[0]);
+        
         const newGroup = await Group.create({
             ownerId,
             name,
             description,
             members: members.map(member => ({
-                memberId: new mongoose.Types.ObjectId(member.userId),
+                memberId: new mongoose.Types.ObjectId(member.memberId),
                 status: "pending"
             }))
         });
         const bulkOps = members.map(m => ({
             updateOne: {
-                filter: { _id: new mongoose.Types.ObjectId(m.userId) },
+                filter: { _id: new mongoose.Types.ObjectId(m.memberId) },
                 update: {
                     $addToSet: {
                         groups: { groupId: newGroup._id, status: "pending" }

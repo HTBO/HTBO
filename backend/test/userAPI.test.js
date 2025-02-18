@@ -193,6 +193,8 @@ describe("User API PATCH Tests", () => {
     describe("User API DELETE Tests", () => {
         test('Delete first test user, expected user count is 1', async () => {
             let response = await request(app).delete(`/api/users/${testOneId}`).set('Authorization', `Bearer ${userToken}`);
+            console.log(response);
+            
             expect(response.status).toBe(200);
             response = await request(app).get('/api/users');
             expect(response.status).toBe(200);

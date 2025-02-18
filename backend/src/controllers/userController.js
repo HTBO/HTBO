@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const { validationResult } = require('express-validator');
+const Group = require('../models/Group');
 
 const generateToken = (user) => {
     const secret = process.env.JWT_SECRET
@@ -284,20 +285,72 @@ const updateUser = async (req, res) => {
 const deleteUser = async (req, res) => {
     try {
         const user = await User.findByIdAndDelete(req.params.id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
 
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+        let stats = {
+            hostSessionsDeleted: 0,
+            ownerGroupsDeleted: 0,
+            participantGroupsCleaned: 0,
+            participantSessionsCleaned: 0,
+            usersUpdated: 0
+        };
+        const hostSessions = await Session.find({ hostId: user._id });
+        const groupsOwned = await Group.find({ownerId: user._id})
+        if (hostSessions.length > 0) {
+            const sessionIds = hostSessions.map(session => session._id);
+
+            const allParticipants = [...new Set(
+                hostSessions.flatMap(session => 
+                    session.participants.map(p => p.user)
+                )
+            )];
+
+            const userUpdateResult = await User.updateMany(
+                { _id: { $in: allParticipants } },
+                { $pull: { sessions: { sessionId: { $in: sessionIds } } }  }
+            );
+            stats.usersUpdated += userUpdateResult.modifiedCount;
+
+            // Delete host sessions
+            const deleteResult = await Session.deleteMany({ _id: { $in: sessionIds } });
+            stats.hostSessionsDeleted += deleteResult.deletedCount;
         }
 
-        res.status(200).json({ message: 'User deleted successfully' });
+        if (groupsOwned.length > 0) {
+            const groupsIds = groupsOwned.map(group => group._id);
+            const allMembers = [...new Set(
+                groupsOwned.flatMap(group => group.members.map(m => m.memberId))
+            )];
+
+            const userGroupUpdateResult = await User.updateMany(
+                { _id: { $in: allMembers } },
+                { $pull: { groups: { groupId: { $in: groupsIds } } } }
+            );
+            stats.usersUpdated += userGroupUpdateResult.modifiedCount;
+
+            const deleteGroupResult = await Group.deleteMany({ _id: { $in: groupsIds } });
+            stats.ownerGroupsDeleted += deleteGroupResult.deletedCount;
+        }
+
+        // Handle user as participant in other sessions
+        const sessionUpdateResult = await Session.updateMany(
+            { 'participants.user': user._id },
+            { $pull: { participants: { user: user._id } } }
+        );
+        stats.participantSessionsCleaned += sessionUpdateResult.modifiedCount;
+
+        res.status(200).json({
+            message: 'User deleted successfully',
+            data: stats
+        });
+
     } catch (error) {
-        console.error(error.message);
-
-        if (error.name === 'CastError') {
-            return res.status(400).json({ error: 'Invalid user ID format' });
-        }
-
-        res.status(500).json({ error: 'Server error' });
+        console.error('Deletion error:', error);
+        res.status(error.name === 'CastError' ? 400 : 500).json({
+            error: error.name === 'CastError' 
+                ? 'Invalid user ID format' 
+                : 'Server error'
+        });
     }
 };
 
