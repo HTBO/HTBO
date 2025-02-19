@@ -865,3 +865,4 @@ uid,workspacePath,gitBranch,gitCommit,filePath,eventType,date,start,end,duration
 "RhKWols6i1dme7mVW6z3k","d:\BZ\HTBO","","","package.json","extensionInit:activeTextEditorChange",1739919600000,1739963156970,1739963163695,6725
 "q5Uo-RXC2Oy8eJEEQE_vZ","d:\BZ\HTBO","Backend","c0894b3ec9a084e7afe42560b334be7ba564f6f6","backend\src\controllers\userController.js","activeTextEditorChange:activeTextEditorChange",1739919600000,1739963163695,1739963310701,147006
 "Qbtb1limAwuFxxUkjpZ7h","d:\BZ\HTBO","budaizalan/issue4","c0894b3ec9a084e7afe42560b334be7ba564f6f6","backend\test\databaseConnection.test.js","activeTextEditorChange:activeTextEditorChange",1739919600000,1739963310701,1739963320958,10257
+"0bIeS_LFWBEdr2MyeJmlz","d:\BZ\HTBO","budaizalan/issue4","c0894b3ec9a084e7afe42560b334be7ba564f6f6","backend\src\controllers\userController.js","activeTextEditorChange:activeTextEditorChange",1739919600000,1739963320958,1739963404699,83741
