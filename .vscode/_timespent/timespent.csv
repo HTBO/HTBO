@@ -860,3 +860,8 @@ uid,workspacePath,gitBranch,gitCommit,filePath,eventType,date,start,end,duration
 "PricLBnm52TT5iYbsWb6v","d:\_HTBO\HTBO","Backend","9fb72dc29450bb59395c9acd4e2b548945053e88","backend\src\controllers\userController.js","editorSelectionChange:activeTextEditorChange",1739833200000,1739901964927,1739902065322,100395
 "_2OBKQBgeomprdJ4YHsA6","d:\_HTBO\HTBO","Backend","9fb72dc29450bb59395c9acd4e2b548945053e88","todo.md","activeTextEditorChange:activeTextEditorChange",1739833200000,1739902065322,1739902066795,1473
 "bzPczfJNbDJTV56gwOKUb","d:\_HTBO\HTBO","Backend","9fb72dc29450bb59395c9acd4e2b548945053e88","backend\src\controllers\userController.js","activeTextEditorChange:activeTextEditorChange",1739833200000,1739902066795,1739902069480,2685
+"iC0yFq1ISn-Ad5B9PJgvH","d:\BZ\HTBO","Backend","d072739f9f1d6883a106277a25b702b304ba6418","package.json","windowFocus:editorSelectionChange",1739919600000,1739963134469,1739963141527,7058
+"UWANg7AgWm1EvRW5aY-1p","d:\BZ\HTBO","Backend","c0894b3ec9a084e7afe42560b334be7ba564f6f6","package.json","editorSelectionChange:dispose",1739919600000,1739963141527,1739963151120,9593
+"RhKWols6i1dme7mVW6z3k","d:\BZ\HTBO","","","package.json","extensionInit:activeTextEditorChange",1739919600000,1739963156970,1739963163695,6725
+"q5Uo-RXC2Oy8eJEEQE_vZ","d:\BZ\HTBO","Backend","c0894b3ec9a084e7afe42560b334be7ba564f6f6","backend\src\controllers\userController.js","activeTextEditorChange:activeTextEditorChange",1739919600000,1739963163695,1739963310701,147006
+"Qbtb1limAwuFxxUkjpZ7h","d:\BZ\HTBO","budaizalan/issue4","c0894b3ec9a084e7afe42560b334be7ba564f6f6","backend\test\databaseConnection.test.js","activeTextEditorChange:activeTextEditorChange",1739919600000,1739963310701,1739963320958,10257
