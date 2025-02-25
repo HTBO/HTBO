@@ -6,6 +6,7 @@
 ---
 ### Sessions
 
+> prio
 ### sessionController: 
     - Create sessions: invite through groups, optional, invite every member of the group
     - PATCH sessions: invite through groups, invite every member of the group

@@ -1,12 +1,10 @@
 const mongoose = require('mongoose');
 const Session = require('../models/Session')
 const User = require('../models/User');
-const Group = require('../models/Group');
-
 
 const createSession = async (req, res) => {
     try {
-        const { hostId, gameId, scheduledAt, description, participants: reqParticipants, groups} = req.body;
+        const { hostId, gameId, scheduledAt, description, participants: reqParticipants} = req.body;
 
 
         if (!mongoose.Types.ObjectId.isValid(hostId)) {
@@ -87,18 +85,6 @@ const createSession = async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 };
-// POST http://localhost:3000/api/sessions
-// {
-//     "hostId": "67a10f25d8074d134344b672",
-//     "gameId": "67a9de322127c4b4fa1c9a7f",
-//     "scheduledAt": "2025-02-04T12:44:13.298+00:00",
-//     "participants": [
-//     {
-//       "user": "67a0bd1948ecd7e2acb87884",
-//       "status": "pending"
-//     }
-//   ]
-// }
 
 const getAllSessions = async (req, res) => {
     try {
@@ -109,29 +95,18 @@ const getAllSessions = async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 }
-// GET http://localhost:3000/api/sessions
 
 const getSessionById = async (req, res) => {
     try {
         const session = await Session.findById(req.params.id);
-        // console.log(req.params.id);
-
-        if (!session) {
-            return res.status(404).json({ error: 'Session not found' });
-        }
-
+        if (!session) return res.status(404).json({ error: 'Session not found' });
         res.status(200).json(session);
     } catch (error) {
         console.error(error.message);
-
-        if (error.name === 'CastError') {
-            return res.status(400).json({ error: 'Invalid session ID format' });
-        }
-
+        if (error.name === 'CastError') return res.status(400).json({ error: 'Invalid session ID format' });
         res.status(500).json({ error: 'Server error' });
     }
 }
-// GET http://localhost:3000/api/sessions/67a9e1d3e6e31fe30522aa5a
 
 const updateSession = async (req, res) => {
     try {
@@ -139,12 +114,6 @@ const updateSession = async (req, res) => {
         if (!session) return res.status(404).json({ error: 'Session not found' });
 
         if (req.body.addParticipant) {
-            // PATCH http://localhost:3000/api/sessions/67aa2037f277f77702c9e22b
-            // {
-            //     "addParticipant": {
-            //       "user": "67a33d47a02aabac387293c3"
-            //     }
-            // }
             const { user } = req.body.addParticipant;
             if (!mongoose.Types.ObjectId.isValid(user)) 
                 return res.status(400).json({ error: 'Invalid user ID' });
@@ -162,12 +131,6 @@ const updateSession = async (req, res) => {
             return res.json(session);
             
         } else if(req.body.removeParticipant){
-            // PATCH http://localhost:3000/api/sessions/67aa2037f277f77702c9e22b
-            // {
-            //     "removeParticipant": {
-            //       "user": "67a33d47a02aabac387293c3"
-            //     }
-            // }
             const session = await Session.findById(req.params.id)
             const { user } = req.body.removeParticipant;
             if (!mongoose.Types.ObjectId.isValid(user)) 
@@ -225,7 +188,6 @@ const deleteSession = async (req, res) => {
         });
     }
 };
-// DELETE http://localhost:3000/api/sessions/67a9e0874d2e24d71f7ee48f
 
 module.exports = {
     createSession,

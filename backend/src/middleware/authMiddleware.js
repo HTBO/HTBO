@@ -1,9 +1,11 @@
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
+const Session = require('../models/Session');
 
 dotenv.config();
 
 function verifyToken(req, res, next) {
+    if (!req.header('Authorization')) return res.status(401).json({ error: 'Access denied | ERRC: 01' });
     const token = req.header('Authorization').replace('Bearer ', '');
     if (!token) return res.status(401).json({ error: 'Access denied' });
     try {
@@ -22,4 +24,12 @@ function checkUserPermission(req, res, next) {
     next();
 }
 
-module.exports = { verifyToken, checkUserPermission};
+async function checkSessionPermission (req, res, next) {
+    const hostId = await Session.findById(req.params.id).select('hostId');
+    if(req.userId !== String(hostId.hostId)) {
+        return res.status(403).json({ error: 'Unauthorized access' });
+    }
+    next();
+}
+
+module.exports = { verifyToken, checkUserPermission, checkSessionPermission };

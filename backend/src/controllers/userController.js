@@ -91,8 +91,6 @@ const getAllUsers = async (req, res) => {
     }
 };
 
-// GET http://localhost:3000/api/users
-
 const getUserById = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
@@ -118,36 +116,12 @@ const getUserByUsername = async (req, res) => {
     }
 };
 
-
-//GET http://localhost:3000/api/users/67a33d47a02aabac387293c3
-
-
 const updateUser = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ error: 'User not found' });
 
         if (req.body.friendAction) {
-            // PATCH http://localhost:3000/api/users/67a33d47a02aabac387293c3
-            // {
-            //     "friendAction": {
-            //       "action": "add", 
-            //       "friendId": "67a10f25d8074d134344b672"
-            //     }
-            //   }
-            // {
-            //     "friendAction": {
-            //       "action": "update-status", 
-            //       "friendId": "67a10f25d8074d134344b672",
-            //       "status": "accepted"
-            //     }
-            //   }
-            // {
-            //     "friendAction": {
-            //       "action": "remove", 
-            //       "friendId": "67a10f25d8074d134344b672"
-            //     }
-            //   }
             const friendActions = ['pending', 'accepted', 'rejected']
             const { action, friendId, status } = req.body.friendAction;
 
@@ -227,8 +201,6 @@ const updateUser = async (req, res) => {
             const { sessionId, action } = req.body.sessionAction;
             if (!mongoose.Types.ObjectId.isValid(sessionId))
                 return res.status(400).json({ error: 'Invalid session ID' });
-            const addedSession = await Session.findById(sessionId);
-            // console.log(addedSession);
             switch (action) {
                 case "add":
                     console.log("adding: " + sessionId);
