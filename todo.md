@@ -8,8 +8,9 @@
 
 > prio
 ### sessionController: 
-    - Create sessions: invite through groups, optional, invite every member of the group
-    - PATCH sessions: invite through groups, invite every member of the group
+    - PATCH sessions: if one (or more) mistake made during addition or deletion, the modifications may fail
+    ##handled## - PATCH sessions: invite through groups, invite every member of the group
+    ##handled## - Create sessions: invite through groups, optional, invite every member of the group
     ##handled## - PATCH sessions: change gameId, description, time
 ---
 ### Users

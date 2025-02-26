@@ -54,11 +54,16 @@ userid2 and groupid2 is optional
 ``
 
 - addParticipant
+userid2 and groupid2 are optional
 ```
 {
-    "addParticipant": {
-        "user": "<userid>"
-    }
+    "addParticipant": [
+        { "group": "groupid1" },
+        { "user": "userid1" },
+        { "user": "userid2" },
+        { "group": "groupid2" }
+        
+    ]
 }
 ```
 - removeParticpant

@@ -113,37 +113,130 @@ const getSessionById = async (req, res) => {
 
 const updateSession = async (req, res) => {
     try {
-        const session = await Session.findById(req.params.id)       
+        const session = await Session.findById(req.params.id);
         if (!session) return res.status(404).json({ error: 'Session not found' });
-
+        const userIds = new Set();
+        const bulkOps = [];
         if (req.body.addParticipant) {
-            const { user } = req.body.addParticipant;
-            if (!mongoose.Types.ObjectId.isValid(user)) 
-                return res.status(400).json({ error: 'Invalid user ID' });
-            if (user.toString() === session.hostId.toString()) 
-                return res.status(400).json({ error: 'Host cannot be a participant' });
-            if (session.participants.some(p => p.user.toString() === user.toString())) 
-                return res.status(400).json({ error: 'User already a participant' });
-            session.participants.push({ user, status: 'pending' });
+            const addParticipants = Array.isArray(req.body.addParticipant) ? req.body.addParticipant : [req.body.addParticipant];
+            const newParticipants = [];
+            for (const entry of addParticipants) {
+                if (entry.user && entry.group) return res.status(400).json({ error: "Cannot specify both user and group in one entry" });
+                if (entry.user) {
+                    if (!mongoose.Types.ObjectId.isValid(entry.user)) 
+                        return res.status(400).json({ error: `Invalid user ID: ${entry.user}` });
+                    userIds.add(entry.user.toString());
+                } else if (entry.group) {
+                    if (!mongoose.Types.ObjectId.isValid(entry.group))
+                        return res.status(400).json({ error: `Invalid group ID: ${entry.group}` });
+                    const group = await Group.findById(entry.group);
+                    if (!group)
+                        return res.status(404).json({ error: `Group not found: ${entry.group}` });
+                    group.members.forEach(member => {
+                        userIds.add(member.memberId.toString());
+                    });
+                } else {
+                    return res.status(400).json({ error: "Each entry must specify either user or group" });
+                }
+            }
+
+            const existingParticipants = new Set(session.participants.map(p => p.user.toString()));
+            const filteredUserIds = Array.from(userIds).filter(userId =>
+                userId !== session.hostId.toString() &&
+                !existingParticipants.has(userId)
+            );
+
+            for (const userId of filteredUserIds) {
+                if (!mongoose.Types.ObjectId.isValid(userId))
+                    return res.status(400).json({ error: `Invalid participant ID: ${userId}` });
+
+                const userExists = await User.exists({ _id: userId });
+                if (!userExists)
+                    return res.status(404).json({ error: `User not found: ${userId}` });
+
+                newParticipants.push({ user: userId, status: 'pending' });
+                bulkOps.push({
+                    updateOne: {
+                        filter: { _id: userId },
+                        update: {
+                            $addToSet: {
+                                sessions: { sessionId: session._id, status: 'pending' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            if (newParticipants.length === 0)
+                return res.status(400).json({ error: 'No valid users to add' });
+
+            session.participants.push(...newParticipants);
             await session.save();
 
-            await User.updateOne(
-                { _id: user },
-                { $addToSet: { sessions: { sessionId: session._id, status: 'pending' } } }
-            );
+            if (bulkOps.length > 0) 
+                await User.bulkWrite(bulkOps);
+
             return res.json(session);
-            
-        } else if(req.body.removeParticipant){
-            const session = await Session.findById(req.params.id)
-            const { user } = req.body.removeParticipant;
-            if (!mongoose.Types.ObjectId.isValid(user)) 
-                return res.status(400).json({ error: 'Invalid user ID' });
-            if (!session.participants.some(p => p.user.toString() === user.toString())) 
-                return res.status(400).json({ error: 'User not a participant' });
-            session.participants.splice({user: user}, 1);
-            await session.save();
-            await User.updateOne({_id: user}, {$pull: {sessions: {sessionId: session._id}}})
-            return res.json(session);
+        }
+         else if (req.body.removeParticipant) {
+        const removeParticipants = Array.isArray(req.body.removeParticipant) 
+            ? req.body.removeParticipant 
+            : [req.body.removeParticipant];
+
+        for (const entry of removeParticipants) {
+            if (entry.user && entry.group) 
+                return res.status(400).json({ error: "Cannot specify both user and group in one entry" });
+
+            if (entry.user) {
+                if (!mongoose.Types.ObjectId.isValid(entry.user)) {
+                    return res.status(400).json({ error: `Invalid user ID: ${entry.user}` });
+                }
+                userIds.add(entry.user.toString());
+            } else if (entry.group) {
+                if (!mongoose.Types.ObjectId.isValid(entry.group)) 
+                    return res.status(400).json({ error: `Invalid group ID: ${entry.group}` });
+                const group = await Group.findById(entry.group);
+                if (!group) 
+                    return res.status(404).json({ error: `Group not found: ${entry.group}` });
+                group.members.forEach(member => {
+                    userIds.add(member.memberId.toString());
+                });
+            } else {
+                return res.status(400).json({ error: "Each entry must specify either user or group" });
+            }
+        }
+
+        userIds.delete(session.hostId.toString());
+
+        const participantsToRemove = Array.from(userIds).filter(userId => 
+            session.participants.some(p => p.user.toString() === userId)
+        );
+
+        if (participantsToRemove.length === 0) 
+            return res.status(400).json({ error: 'No valid participants to remove' });
+
+        session.participants = session.participants.filter(p => 
+            !participantsToRemove.includes(p.user.toString())
+        );
+
+        participantsToRemove.forEach(userId => {
+            bulkOps.push({
+                updateOne: {
+                    filter: { _id: userId },
+                    update: {
+                        $pull: { sessions: { sessionId: session._id } }
+                    }
+                }
+            });
+        });
+
+        await session.save();
+
+        if (bulkOps.length > 0)
+            await User.bulkWrite(bulkOps);
+
+        return res.json(session);
+        
         } else {
             const allowedUpdates = ['gameId', 'scheduledAt', 'description'];
             const updates = Object.keys(req.body).filter(update => allowedUpdates.includes(update));
@@ -153,9 +246,9 @@ const updateSession = async (req, res) => {
         }
     } catch (error) {
         console.error(error.message);
-        if (error.name === 'CastError') 
+        if (error.name === 'CastError')
             return res.status(400).json({ error: 'Invalid user ID format' });
-        if (error.name === 'ValidationError') 
+        if (error.name === 'ValidationError')
             return res.status(400).json({ error: error.message });
         if (error.code === 11000) {
             const field = Object.keys(error.keyPattern)[0];
