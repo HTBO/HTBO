@@ -58,10 +58,10 @@ userid2 and groupid2 are optional
 ```
 {
     "addParticipant": [
-        { "group": "groupid1" },
-        { "user": "userid1" },
-        { "user": "userid2" },
-        { "group": "groupid2" }
+        { "group": "<groupid1>" },
+        { "user": "<userid1>" },
+        { "user": "<userid2>" },
+        { "group": "<groupid2>" }
         
     ]
 }
@@ -70,9 +70,14 @@ userid2 and groupid2 are optional
 
 ```
 {
-    "removeParticipant": {
+    "removeParticipant": [
+    {
         "user": "<userid>"
+    },
+    {
+        "group": "<groupid2>" 
     }
+    ]
 }
 ```
 ---
@@ -80,3 +85,10 @@ userid2 and groupid2 are optional
 > deleteSession
 `DELETE http://localhost:3000/api/sessions/<sessionid>`
 ---
+
+# Error codes:
+`| ERRC: 01` - No Authorization provided OR Authorization provided, but Bearer is empty
+
+`| ERRC: 02` - Failed to get the token
+
+`| ERRC: 10` - User is not the host of the session he tries to access

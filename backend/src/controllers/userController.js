@@ -59,19 +59,19 @@ const loginUser = async (req, res) => {
         let user;
         if(username) {
             user = await User.findOne({ username });
-            if (!user) return res.status(401).json({ error: 'Username or password does not match | ERRC:0' });
+            if (!user) return res.status(401).json({ error: 'Username or password does not match | ERRC: 20' });
             login("Username")
         } else if(email){
             user = await User.findOne({ email });
-            if (!user) return res.status(401).json({ error: 'Email or password does not match | ERRC:1' });
+            if (!user) return res.status(401).json({ error: 'Email or password does not match | ERRC: 21' });
             login("Email")
         } else {
-            return res.status(401).json({error: "Please provide an email or username | ERRC:01"})
+            return res.status(401).json({error: "Please provide an email or username | ERRC: 22"})
         }
         async function login (method) {
-            if(!password) return res.status(401).json({error: "Please provide the password | ERRC:2"})
+            if(!password) return res.status(401).json({error: "Please provide the password | ERRC: 23"})
             const passwordMatch = await bcrypt.compare(password, user.passwordHash);
-            if (!passwordMatch) return res.status(401).json({ error: `${method} or password does not match | ERRC:2` });
+            if (!passwordMatch) return res.status(401).json({ error: `${method} or password does not match | ERRC: 24` });
             token = generateToken(user);
             res.status(200).json({ token })
         }
