@@ -23,34 +23,18 @@
           ]
         },
         {
-          "name": "docker:k8s",
+          "name": "RunTest",
           "commands": [
-            ""
-          ]
-        }
-      ],
-      [
-        {
-          "name": "docker:nats",
-          "commands": [
-            ""
+            "pnpm run test"
           ]
         },
         {
-          "name": "docker:fleet",
+          "name": "Jest Coverage",
           "commands": [
-            ""
+            "pnpx jest --coverage"
           ]
         }
       ]
-    ],
-    "saved-session": [
-      {
-        "name": "connect",
-        "commands": [
-          ""
-        ]
-      }
     ]
   }
 }

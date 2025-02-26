@@ -1,47 +1,51 @@
 const mongoose = require('mongoose');
 const Session = require('../models/Session')
 const User = require('../models/User');
+const Group = require('../models/Group');
 
 const createSession = async (req, res) => {
     try {
-        const { hostId, gameId, scheduledAt, description, participants: reqParticipants} = req.body;
+        const { hostId, gameId, scheduledAt, description, participants: reqParticipants } = req.body;
 
-
-        if (!mongoose.Types.ObjectId.isValid(hostId)) {
-            return res.status(400).json({ error: "Invalid host ID" });
-        }
-
+        if (!mongoose.Types.ObjectId.isValid(hostId)) return res.status(400).json({ error: "Invalid host ID" });
         const host = await User.findById(hostId);
-        if (!host) {
-            return res.status(404).json({ error: "Host not found" });
-        }
+        if (!host) return res.status(404).json({ error: "Host not found" });
 
-        // const invitedGroups = await Group.findOne({groupId})
- 
         const existingSession = await Session.findOne({ hostId });
-        if (existingSession) {
-            return res.status(400).json({ error: "Host already has a session" });
+        if (existingSession) return res.status(400).json({ error: "Host already has a session" });
+
+        const userIds = new Set();
+        for (const p of reqParticipants) {
+            if (p.user) {
+                if (!mongoose.Types.ObjectId.isValid(p.user)) return res.status(400).json({ error: `Invalid participant user ID: ${p.user}` });
+                userIds.add(p.user);
+            } else if (p.group) {
+                if (!mongoose.Types.ObjectId.isValid(p.group)) return res.status(400).json({ error: `Invalid participant group ID: ${p.group}` });
+                const group = await Group.findById(p.group);
+                if (!group) return res.status(404).json({ error: `Group not found: ${p.group}` });
+                userIds.add(group.ownerId.toString());
+                for (const member of group.members) {
+                    userIds.add(member.memberId.toString());
+                }
+            } else {
+                return res.status(400).json({ error: "Each participant must specify either a user or a group" });
+            }
         }
 
-        const participants = reqParticipants.map(p => ({
-            user: p.user,
+        userIds.delete(hostId.toString());
+
+        const userIdArray = Array.from(userIds);
+
+        for (const userId of userIdArray) {
+            if (!mongoose.Types.ObjectId.isValid(userId)) return res.status(400).json({ error: `Invalid participant ID: ${userId}` });
+            const userExists = await User.exists({ _id: userId });
+            if (!userExists) return res.status(404).json({ error: `User not found: ${userId}` });
+        }
+
+        const participants = userIdArray.map(userId => ({
+            user: userId,
             status: 'pending'
         }));
-
-        for (const p of participants) {
-            if (!mongoose.Types.ObjectId.isValid(p.user)) {
-                return res.status(400).json({ error: `Invalid participant ID: ${p.user}` });
-            }
-            if (p.user.toString() === hostId.toString()) {
-                return res.status(400).json({ error: "Host cannot be a participant" });
-            }
-            const userExists = await User.exists({ _id: p.user });
-            if (!userExists) {
-                return res.status(404).json({ error: `User not found: ${p.user}` });
-            }
-        }
-
-        // console.log("fine");
         const newSession = await Session.create({
             hostId,
             gameId,
@@ -49,7 +53,6 @@ const createSession = async (req, res) => {
             description,
             participants
         });
-
         const bulkOps = participants.map(p => ({
             updateOne: {
                 filter: { _id: p.user },
@@ -70,6 +73,7 @@ const createSession = async (req, res) => {
                 }
             }
         });
+
         await User.bulkWrite(bulkOps);
 
         res.status(201).json(newSession);
@@ -85,7 +89,6 @@ const createSession = async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 };
-
 const getAllSessions = async (req, res) => {
     try {
         const session = await Session.find();
@@ -165,7 +168,7 @@ const updateSession = async (req, res) => {
 
 const deleteSession = async (req, res) => {
     try {
-        const session = await Session.findByIdAndDelete(req.params.id);
+        const session = await Session.findById(req.params.id);
 
         if (!session) return res.status(404).json({ message: 'Session not found' });
 
@@ -179,6 +182,8 @@ const deleteSession = async (req, res) => {
             { _id: { $in: userIds } },
             { $pull: { sessions: { sessionId: session._id } } }
         );
+
+        await Session.findByIdAndDelete(req.params.id);
 
         res.status(200).json({ message: 'Session deleted successfully' });
     } catch (error) {

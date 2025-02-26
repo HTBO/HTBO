@@ -4,20 +4,19 @@
 `POST http://localhost:3000/api/sessions`
 
 Single or multiple participant additions at the same time,
-memberid2 is optional
+userid2 and groupid2 is optional
 ```
 {
-    "hostId": "<hostid>",
-    "gameId": "<gameid>",
-    "scheduledAt": "<date>",
+    "hostId": "<host_id>",
+    "gameId": "<game_id>",
+    "scheduledAt": "<newDate>",
+    "description": "<description>",
     "participants": [
-    {
-      "user": "<memberid>"
-    },
-    {
-      "user": "<memberid2>"
-    }
-  ]
+        { "user": "<userid1>" },
+        { "user": "<userid2>" },
+        { "group": "<groupid1>" },
+        { "group": "<groupid2>" }
+    ]
 }
 ```
 ---
@@ -50,7 +49,7 @@ memberid2 is optional
 
 ``
 {
-"gameId": "<newGameId>"
+"description": "<description>"
 }
 ``
 

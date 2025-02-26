@@ -160,17 +160,21 @@ const updateGroup = async (req, res) => {
 
 const deleteGroup = async (req, res) => {
     try {
-        const group = await Group.findByIdAndDelete(req.params.id);
+        const group = await Group.findById(req.params.id);
+
         if (!group) return res.status(404).json({ message: 'Group not found' });
+
         const userIds = [
             group.ownerId,
-            ...group.members.map(p => p.user)
+            ...group.members.map(p => p.memberId)
         ].filter((value, index, self) =>
             self.findIndex(e => e.equals(value)) === index);
+
         await User.updateMany(
             { _id: { $in: userIds } },
             { $pull: { groups: { groupId: group._id } } }
         );
+        await Group.findByIdAndDelete(req.params.id);
         res.status(200).json({ message: 'Group deleted successfully' });
     } catch (error) {
         res.status(500).json({
