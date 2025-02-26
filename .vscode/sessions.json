@@ -1,0 +1,40 @@
+{
+  "$schema": "https://cdn.statically.io/gh/nguyenngoclongdev/cdn/main/schema/v10/terminal-keeper.json",
+  "theme": "tribe",
+  "active": "default",
+  "activateOnStartup": true,
+  "keepExistingTerminals": false,
+  "sessions": {
+    "default": [
+      {
+        "name": "hello",
+        "autoExecuteCommands": true,
+        "icon": "person",
+        "color": "terminal.ansiGreen",
+        "commands": [
+          "echo hello"
+        ]
+      },
+      [
+        {
+          "name": "RunDev",
+          "commands": [
+            "pnpm run dev"
+          ]
+        },
+        {
+          "name": "RunTest",
+          "commands": [
+            "pnpm run test"
+          ]
+        },
+        {
+          "name": "Jest Coverage",
+          "commands": [
+            "pnpx jest --coverage"
+          ]
+        }
+      ]
+    ]
+  }
+}
