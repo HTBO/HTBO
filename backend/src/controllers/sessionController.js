@@ -17,7 +17,7 @@ const createSession = async (req, res) => {
         }
 
         // const invitedGroups = await Group.findOne({groupId})
-
+ 
         const existingSession = await Session.findOne({ hostId });
         if (existingSession) {
             return res.status(400).json({ error: "Host already has a session" });
