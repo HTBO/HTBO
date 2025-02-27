@@ -1,14 +1,8 @@
 <script setup lang="ts">
 
-const router = useRouter();
-
-onMounted(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        router.push('/login');
-        return;
-    }
-});
+definePageMeta({
+    middleware: 'auth'
+})
 </script>
 
 <template>
