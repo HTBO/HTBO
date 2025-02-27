@@ -2,7 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 
-dotenv.config();
+dotenv.config({ path: '../.env' });
 
 const app = express();
 

@@ -1,0 +1,5 @@
+{
+    "pageTitle": "HTML Report for HTBO",
+    "outputPath": "backend/tests/test-report.html",
+    "includeFailureMsg": true
+}
