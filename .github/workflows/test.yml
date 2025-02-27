@@ -3,10 +3,10 @@ name: Jest Tests
 on:
   push:
     branches:
-      - Backend
+      - '**'
   pull_request:
     branches:
-      - Backend
+      - '**'
 
 jobs:
   test:
@@ -30,7 +30,10 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
-
+        
+      - name: Approve builds
+        run: pnpm approve-builds
+        
       - name: Run Jest tests
         env:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
