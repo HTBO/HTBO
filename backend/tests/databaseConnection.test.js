@@ -26,7 +26,7 @@ describe("Connect to real database", () => {
         await connection();
 
         expect(logSpy).toHaveBeenCalledTimes(2);
-        expect(logSpy).toHaveBeenCalledWith('Server running on port 3000');
+        expect(logSpy).toHaveBeenCalledWith(`Server running on port ${PORT}`);
         expect(logSpy).toHaveBeenCalledWith('MongoDB connected');
 
         await mongoose.disconnect();
