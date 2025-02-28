@@ -4,9 +4,20 @@
   "description": "",
   "main": "backend/src/server.js",
   "scripts": {
+<<<<<<< Updated upstream
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "test": "jest --reporters=default --reporters=jest-html-reporter --detectOpenHandles --forceExit"
+=======
+    "install-deps": "pnpm install",
+    "build": "pnpm -r build",
+    "dev": "pnpm --parallel dev",
+    "dev:frontend": "pnpm --filter htbo-frontend dev",
+    "dev:frontend:test": "pnpm --filter htbo-frontend test:e2e",
+    "dev:backend": "pnpm --filter htbo-backend dev",
+    "dev:backend:test": "pnpm --filter htbo-backend test",
+    "dev:backend:coverage": "pnpm --filter htbo-backend coverage"
+>>>>>>> Stashed changes
   },
   "keywords": [],
   "author": "",
