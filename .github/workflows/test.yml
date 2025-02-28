@@ -45,11 +45,6 @@ jobs:
           JWT_EXPIRES_IN: ${{ secrets.JWT_EXPIRES_IN }}
         run: pnpm dev:backend:test || true
 
-      - name: Verify file structure
-        run: |
-          echo "Current directory: $(pwd)"
-          ls -R tests
-
       - name: Upload Test Reports
         if: always()
         uses: actions/upload-artifact@v4
