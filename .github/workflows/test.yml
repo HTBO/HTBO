@@ -30,11 +30,14 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
-
+        
+      - name: Approve builds
+        run: pnpm approve-builds
+        
       - name: Run Jest tests
         env:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
           PORT: ${{ secrets.PORT }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           JWT_EXPIRES_IN: ${{ secrets.JWT_EXPIRES_IN }}
-        run: pnpm test
+        run: pnpm dev:backend:test

@@ -1,1 +1,3 @@
-heo init commit 
+![HTBO LOGO](HTBO_Logo.png)
+## Hop The Bros On
+is designed to make it easier for groups of friends to play with each other. The platform enables users to send and manage game invitations, respond to requests, and track event details in real time. By combining real-time notifications with user-friendly functionality, the app ensures an efficient experience for organizing and participating in gaming activities with friends.

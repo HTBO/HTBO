@@ -1,0 +1,9 @@
+packages:
+  - backend
+  - frontend
+onlyBuiltDependencies:
+  - mongodb-memory-server
+ignoredBuiltDependencies:
+  - '@parcel/watcher'
+  - cypress
+  - esbuild
