@@ -7,7 +7,7 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "test": "jest --reporters=default --reporters=./custom-html-reporter.js --detectOpenHandles --forceExit",
-    "coverage": "COVERAGE=true jest --collectCoverage=true --coverage --coverageDirectory=tests/coverage --coverageReporters=text --coverageReporters=html --forceExit --watchAll=false --detectOpenHandles"
+    "coverage": "jest --collectCoverage=true --coverage --coverageDirectory=tests/coverage --coverageReporters=text --coverageReporters=html --forceExit --watchAll=false --detectOpenHandles"
   },
   "keywords": [],
   "author": "",
