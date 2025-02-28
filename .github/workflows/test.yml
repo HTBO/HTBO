@@ -1,12 +1,12 @@
-name: Jest Tests
+name: Backend branch | Jest tests
 
 on:
   push:
     branches:
-      - '**'
+      - Backend
   pull_request:
     branches:
-      - '**'
+      - Backend
 
 jobs:
   test:
