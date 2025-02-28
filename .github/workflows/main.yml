@@ -1,4 +1,4 @@
-name: Jest Tests
+name: Main branch | Backend test
 
 on:
   push:
