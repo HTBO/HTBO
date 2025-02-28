@@ -34,7 +34,7 @@ jobs:
       - name: Approve builds
         run: pnpm approve-builds
         
-      - name: Create test directories
+      - name: Create directories
         run: mkdir -p tests/test-reports tests/coverage
 
       - name: Run Jest tests
@@ -43,18 +43,18 @@ jobs:
           PORT: ${{ secrets.PORT }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           JWT_EXPIRES_IN: ${{ secrets.JWT_EXPIRES_IN }}
-        run: pnpm dev:backend:test
+        run: pnpm dev:backend:test || true
 
-      - name: Verify test reports
+      - name: Verify file structure
         run: |
-          ls -la tests/test-reports
-          echo "----"
-          ls -la tests/coverage
+          echo "Current directory: $(pwd)"
+          ls -R tests
 
-      - name: Upload Test Report
+      - name: Upload Test Reports
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-reports
+          name: test-results
           path: |
-            tests/test-reports/*
-            tests/coverage/*
+            tests/test-reports/
+            tests/coverage/

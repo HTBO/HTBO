@@ -3,7 +3,7 @@ module.exports = {
     collectCoverage: false, // Disable coverage by default
     collectCoverageFrom: ["src/**/*.js"],
     coverageReporters: ["text", "html"],
-    coverageDirectory: "coverage",
+    coverageDirectory: "tests/coverage",
     testMatch: ["**/*.test.js"],
     reporters: [
         "default",
