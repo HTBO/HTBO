@@ -34,6 +34,9 @@ jobs:
       - name: Approve builds
         run: pnpm approve-builds
         
+      - name: Create test directories
+        run: mkdir -p tests/test-reports tests/coverage
+
       - name: Run Jest tests
         env:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
@@ -42,8 +45,16 @@ jobs:
           JWT_EXPIRES_IN: ${{ secrets.JWT_EXPIRES_IN }}
         run: pnpm dev:backend:test
 
+      - name: Verify test reports
+        run: |
+          ls -la tests/test-reports
+          echo "----"
+          ls -la tests/coverage
+
       - name: Upload Test Report
         uses: actions/upload-artifact@v4
         with:
           name: test-reports
-          path: tests/test-reports/
+          path: |
+            tests/test-reports/*
+            tests/coverage/*

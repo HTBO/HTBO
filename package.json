@@ -14,6 +14,7 @@
   },
   "devDependencies": {
     "dotenv": "^10.0.0",
-    "nodemon": "^2.0.15"
+    "nodemon": "^2.0.15",
+    "jest-html-reporter": "^4.0.1"
   }
 }
