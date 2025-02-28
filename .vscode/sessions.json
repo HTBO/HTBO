@@ -7,45 +7,31 @@
   "sessions": {
     "default": [
       {
-        "name": "Run APP",
+        "name": "hello",
         "autoExecuteCommands": true,
         "icon": "person",
         "color": "terminal.ansiGreen",
         "commands": [
-          "pnpm run dev"
+          "echo hello"
         ]
       },
       [
         {
-          "name": "Run Backend Dev",
+          "name": "RunDev",
           "commands": [
-            "pnpm run dev:backend"
+            "pnpm run dev"
           ]
         },
         {
-          "name": "Run Tests",
+          "name": "RunTest",
           "commands": [
-            "pnpm run dev:backend:test"
+            "pnpm run test"
           ]
         },
         {
           "name": "Jest Coverage",
           "commands": [
-            "pnpm run dev:backend:coverage"
-          ]
-        }
-      ],
-      [
-        {
-          "name": "Run Frontend",
-          "commands": [
-            "pnpm run dev:frontend"
-          ]
-        },
-        {
-          "name": "Run E2E Tests",
-          "commands": [
-            "pnpm run dev:frontend:test"
+            "pnpx jest --coverage"
           ]
         }
       ]
