@@ -6,6 +6,16 @@ dotenv.config({ path: '../.env' });
 
 const app = express();
 
+app.set('trust proxy', true);
+app.use((req, res, next) => {
+    let ip = req.ip;
+    if (ip === '::1') ip = '127.0.0.1';
+    else if (ip.startsWith('::ffff:')) ip = ip.split(':').pop();
+    req.clientIP = ip;
+    console.log(ip);
+    
+    next();
+  });
 app.use(express.json());
 app.use(cors());
 
