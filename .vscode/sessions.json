@@ -17,21 +17,51 @@
       },
       [
         {
-          "name": "RunDev",
+          "name": "Install Dependencies",
           "commands": [
-            "pnpm run dev"
+            "pnpm install"
+          ]
+        }
+      ],
+      [
+        {
+          "name": "Dev Backend",
+          "commands": [
+            "pnpm run dev:backend"
           ]
         },
         {
-          "name": "RunTest",
+          "name": "Test Backend",
           "commands": [
-            "pnpm run test"
+            "pnpm run dev:backend:test"
           ]
         },
         {
-          "name": "Jest Coverage",
+          "name": "Backend Coverage",
           "commands": [
             "pnpx jest --coverage"
+          ]
+        }
+      ],
+      [
+        {
+          "name": "Dev Frontend",
+          "commands": [
+            "pnpm run dev:frontend"
+          ]
+        },
+        {
+          "name": "Test Frontend",
+          "commands": [
+            "pnpm run dev:frontend:test"
+          ]
+        }
+      ],
+      [
+        {
+          "name": "Parallel Dev",
+          "commands": [
+            "pnpm run dev"
           ]
         }
       ]
