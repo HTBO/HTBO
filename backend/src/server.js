@@ -5,10 +5,9 @@ dotenv.config();
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI;
 
+
 if (!MONGODB_URI) {
   console.error("\x1b[33m\x1b[45m\x1b[1mERROR: No database URL defined. Please set the MONGODB_URI environment variable\x1b[0m");
-  // Gracefully stop the application
-  return;
 }
 
 mongoose.connect(MONGODB_URI)
@@ -19,5 +18,4 @@ mongoose.connect(MONGODB_URI)
   })
   .catch((err) => {
     console.error('\x1b[33m\x1b[45m\x1b[1mDatabase connection failed\x1b[0m', err);
-    // Gracefully stop the application
   });
