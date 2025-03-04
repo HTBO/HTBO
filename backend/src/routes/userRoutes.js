@@ -5,7 +5,10 @@ const userController = require('../controllers/userController')
 
 router.get('/', userController.getAllUsers);
 router.post('/register', userController.registerUser);
-router.post('/login', userController.loginUser);
+router.post('/login', (req, res) => {
+    console.log('Login attempt from: ', req.ip);
+    userController.loginUser(req, res);
+});
 
 // Protected routes
 router.get('/username/:username',  userController.getUserByUsername);

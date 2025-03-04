@@ -1307,3 +1307,14 @@ uid,workspacePath,gitBranch,gitCommit,filePath,eventType,date,start,end,duration
 "5TrPY6CbEFLtFM90VXtlC","d:\BZ\HTBO","main","d79958da7fb0d5cc352d33ed3da3ff7bf1a96f12","backend\src\server.js","activeTextEditorChange:activityTimeout",1741042800000,1741076943162,1741077008346,65184
 "btUARwJ4RAa7V9foGDnTK","d:\BZ\HTBO","main","d79958da7fb0d5cc352d33ed3da3ff7bf1a96f12","backend\src\server.js","windowFocus:activeTextEditorChange",1741042800000,1741077153599,1741077156219,2620
 "BIbiDmfYmS4M4o1JxSiFC","d:\BZ\HTBO","main","d79958da7fb0d5cc352d33ed3da3ff7bf1a96f12","backend\src\app.js","activeTextEditorChange:activeTextEditorChange",1741042800000,1741077156219,1741077181709,25490
+"9gWf8AgP3pOiFlWw77Idd","d:\BZ\HTBO","","","","extensionInit:activityTimeout",1741042800000,1741081312048,1741081312056,8
+"KCYlF9sFPP55zYL94wogq","d:\BZ\HTBO","Server-adjusment","a3ddae226c0887b96ae3d9cab4f376c3edd38b5e","backend\src\server.js","activeTextEditorChange:activeTextEditorChange",1741042800000,1741081397709,1741081398277,568
+"6g9Ju-3ph8L2PRcKzH4H2","d:\BZ\HTBO","Server-adjusment","a3ddae226c0887b96ae3d9cab4f376c3edd38b5e","backend\src\app.js","activeTextEditorChange:activeTextEditorChange",1741042800000,1741081398277,1741081399251,974
+"xsE7xFaVx7ssro9yRAt1z","d:\BZ\HTBO","Server-adjusment","a3ddae226c0887b96ae3d9cab4f376c3edd38b5e","backend\src\server.js","activeTextEditorChange:activeTextEditorChange",1741042800000,1741081399251,1741081416153,16902
+"kcGQ_MFWSY632KekXqvFz","d:\BZ\HTBO","Server-adjusment","a3ddae226c0887b96ae3d9cab4f376c3edd38b5e","backend\src\app.js","activeTextEditorChange:activeTextEditorChange",1741042800000,1741081416153,1741081475917,59764
+"N4ewTuXsLBL89DMgj-1fN","d:\BZ\HTBO","Server-adjusment","a3ddae226c0887b96ae3d9cab4f376c3edd38b5e","backend\src\routes\userRoutes.js","activeTextEditorChange:activeTextEditorChange",1741042800000,1741081475917,1741081680026,204109
+"DcBgjJyHqBLY8zwXO7bQx","d:\BZ\HTBO","Server-adjusment","a3ddae226c0887b96ae3d9cab4f376c3edd38b5e",".env.example","activeTextEditorChange:activeTextEditorChange",1741042800000,1741081680026,1741081683218,3192
+"0n6H_OnG0QuJBPtAla8yv","d:\BZ\HTBO","Server-adjusment","a3ddae226c0887b96ae3d9cab4f376c3edd38b5e",".env","activeTextEditorChange:activeTextEditorChange",1741042800000,1741081683218,1741081684296,1078
+"tUpY-C-bKh1eTdVODI7gz","d:\BZ\HTBO","Server-adjusment","a3ddae226c0887b96ae3d9cab4f376c3edd38b5e",".env.example","activeTextEditorChange:activeTextEditorChange",1741042800000,1741081684296,1741081687463,3167
+"bmZGex4XS1Qp7XqMc4yB3","d:\BZ\HTBO","Server-adjusment","a3ddae226c0887b96ae3d9cab4f376c3edd38b5e","backend\src\app.js","activeTextEditorChange:activityTimeout",1741042800000,1741081687463,1741081740551,53088
+"brxp-X8qIEwuWkCkyObOj","d:\BZ\HTBO","Server-adjusment","a3ddae226c0887b96ae3d9cab4f376c3edd38b5e","backend\src\app.js","editorSelectionChange:activityTimeout",1741042800000,1741082025957,1741082503845,477888
