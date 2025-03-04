@@ -1,6 +1,7 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const Log = require('./models/Log');
 
 dotenv.config({ path: '../.env' });
 
@@ -12,7 +13,13 @@ app.use((req, res, next) => {
     if (ip === '::1') ip = '127.0.0.1';
     else if (ip.startsWith('::ffff:')) ip = ip.split(':').pop();
     req.clientIP = ip;
-    // console.log(ip);
+    const logEntry = new Log({
+      ip: ip,
+      endpoint: req.originalUrl,
+      method: req.method
+    });
+    logEntry.save()
+      .catch(err => console.error('Failed to save log:', err));
     next();
   });
 app.use(express.json());
