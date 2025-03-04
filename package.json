@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "start": "pnpm --filter htbo-backend start",
     "build": "pnpm -r build",
     "dev": "pnpm --parallel dev",
     "dev:frontend": "pnpm --filter htbo-frontend dev",
