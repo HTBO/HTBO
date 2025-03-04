@@ -33,7 +33,7 @@ const createGame = async (req, res) => {
     }
 };
 
-// POST http://localhost:3000/api/games
+// POST http://localhost:5000/api/games
 // {
 //     "name": "CS2",
 //     "description": "Klasszikus lövöldözős játék",
