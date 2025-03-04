@@ -1,7 +1,7 @@
 ### sessionController.js
 ## POST
 > createSession
-`POST http://localhost:3000/api/sessions`
+`POST http://localhost:5000/api/sessions`
 
 Single or multiple participant additions at the same time,
 userid2 and groupid2 is optional
@@ -22,14 +22,14 @@ userid2 and groupid2 is optional
 ---
 ## GET
 > getAllSessions
-`GET http://localhost:3000/api/sessions`
+`GET http://localhost:5000/api/sessions`
 
 > getSessionById
-`GET http://localhost:3000/api/sessions/<sessionid>`
+`GET http://localhost:5000/api/sessions/<sessionid>`
 ---
 ## UPDATE (PATCH)
 > updateSession
-`PATCH http://localhost:3000/api/sessions/<sessionid>`
+`PATCH http://localhost:5000/api/sessions/<sessionid>`
 - Session updates:
     - gameId
     - scheduledAt
@@ -83,7 +83,7 @@ userid2 and groupid2 are optional
 ---
 ## DELETE
 > deleteSession
-`DELETE http://localhost:3000/api/sessions/<sessionid>`
+`DELETE http://localhost:5000/api/sessions/<sessionid>`
 ---
 
 # Error codes:

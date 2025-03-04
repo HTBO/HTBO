@@ -1,12 +1,12 @@
-name: Backend branch | Jest tests
+name: Jest Tests
 
 on:
   push:
     branches:
-      - Backend
+      - '**'
   pull_request:
     branches:
-      - Backend
+      - '**'
 
 jobs:
   test:
@@ -34,22 +34,10 @@ jobs:
       - name: Approve builds
         run: pnpm approve-builds
         
-      - name: Create directories
-        run: mkdir -p backend/tests/test-reports backend/tests/coverage
-
       - name: Run Jest tests
         env:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
           PORT: ${{ secrets.PORT }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           JWT_EXPIRES_IN: ${{ secrets.JWT_EXPIRES_IN }}
-        run: pnpm dev:backend:test || true
-
-      - name: Upload Test Reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: |
-            backend/tests/test-reports/
-            backend/tests/coverage/
+        run: pnpm dev:backend:test

@@ -6,8 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "jest --reporters=default --reporters=./custom-html-reporter.js --detectOpenHandles --forceExit",
-    "coverage": "jest --collectCoverage=true --coverage --coverageDirectory=tests/coverage --coverageReporters=text --coverageReporters=html --forceExit --watchAll=false --detectOpenHandles"
+    "test": "jest --reporters=default --reporters=jest-html-reporter --detectOpenHandles --forceExit --outputPath=./backend/tests/test-report.html",
+    "coverage": "npx jest --coverage --coverageDirectory=backend/tests/coverage --forceExit --watchAll=false --detectOpenHandles"
   },
   "keywords": [],
   "author": "",
