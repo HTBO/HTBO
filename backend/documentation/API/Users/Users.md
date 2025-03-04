@@ -1,7 +1,7 @@
 ### userController.js
 ## POST
 > registerUser
-`POST http://localhost:3000/api/users`
+`POST http://localhost:5000/api/users`
 ```
 {
 "username": "test",
@@ -10,7 +10,7 @@
 }
 ```
 > loginUser
-`POST http://localhost:3000/api/users`
+`POST http://localhost:5000/api/users`
 ```
 {
 "username": "test",
@@ -25,18 +25,18 @@ OR
 ---
 ## GET
 > getAllUsers
-`GET http://localhost:3000/api/users`
+`GET http://localhost:5000/api/users`
 
 > getUserById
-`GET http://localhost:3000/api/users/<userid>`
+`GET http://localhost:5000/api/users/<userid>`
 
 > getUserByUsername
-`GET http://localhost:3000/api/users/<username>`
+`GET http://localhost:5000/api/users/<username>`
 ---
 
 ## UPDATE (PATCH)
 > updateUser
-`PATCH http://localhost:3000/api/users/<userid>`
+`PATCH http://localhost:5000/api/users/<userid>`
 - User updates:
     - username
     - email
@@ -105,7 +105,7 @@ OR
 ---
 ## DELETE
 > deleteUser
-`DELETE http://localhost:3000/api/users/<userid>`
+`DELETE http://localhost:5000/api/users/<userid>`
 ---
 
 # Error codes:
