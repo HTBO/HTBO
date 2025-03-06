@@ -1,9 +1,7 @@
 const mongoose = require('mongoose');
 const Game = require('../models/Game');
-const FirestoreService = require('../services/firestore.service');
 const { db } = require('../config/firebase');
 const admin = require('firebase-admin');
-const gameFirestore = new FirestoreService('games');
 
 
 const createGame = async (req, res) => {
