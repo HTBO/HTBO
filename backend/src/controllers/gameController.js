@@ -1,39 +1,66 @@
 const mongoose = require('mongoose');
 const Game = require('../models/Game');
+const FirestoreService = require('../services/firestore.service');
+const { db } = require('../config/firebase');
+const admin = require('firebase-admin');
+const gameFirestore = new FirestoreService('games');
+
 
 const createGame = async (req, res) => {
     try {
-        const { name, description, publisher, releaseYear, stores } = req.body;
+        const { name, stores } = req.body;
 
-        const existingGame = await Game.findOne({ name });
-        if (existingGame) return res.status(400).json({ error: "The game's name is already taken" });
+        // Convert MongoDB store IDs to Firestore IDs
+        const firestoreStoreIds = await Promise.all(
+            stores.map(async (store) => {
+                // Find Firestore document with matching mongoId
+                const snapshot = await db.collection('stores')
+                    .where('mongoId', '==', store.storeId)
+                    .limit(1)
+                    .get();
 
-        const newGame = await Game.create({
+                if (snapshot.empty) {
+                    throw new Error(`Store ${store.storeId} not found in Firestore`);
+                }
+
+                return snapshot.docs[0].id;
+            })
+        );
+
+        // Proceed with game creation using firestoreStoreIds
+        const gameRef = await gameFirestore.createDocument({
             name,
-            description,
-            publisher,
-            releaseYear,
-            stores: stores.map(store => ({
-                storeId: new mongoose.Types.ObjectId(store.storeId),
-                link: store.link
+            stores: firestoreStoreIds.map((firestoreId, index) => ({
+                storeId: firestoreId,
+                link: stores[index].link
             }))
         });
 
-        res.status(201).json(newGame);
+        // MongoDB creation remains unchanged
+        const newGame = await Game.create({
+            firebaseId: gameRef.id,
+            ...req.body
+        });
+
+        res.status(201).json({
+            mongoId: newGame._id,
+            firebaseId: gameRef.id,
+            name
+        });
 
     } catch (error) {
-        console.error('Error during creation:', error.message);
-
-        if (error.name === 'ValidationError') {
-            const messages = Object.values(error.errors).map(err => err.message);
-            return res.status(400).json({ errors: messages });
+        console.error('Error:', error.message);
+        
+        if (error.message.includes('not found in Firestore')) {
+            return res.status(404).json({
+                error: 'Linked store missing in Firestore',
+                solution: 'POST /api/stores/sync-stores to synchronize databases'
+            });
         }
 
         res.status(500).json({ error: 'Server error' });
     }
-};
-
-// POST http://localhost:5000/api/games
+};// POST http://localhost:5000/api/games
 // {
 //     "name": "CS2",
 //     "description": "Klasszikus lövöldözős játék",
