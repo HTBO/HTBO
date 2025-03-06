@@ -1,5 +1,4 @@
 const User = require('../models/User')
-const Game = require('../models/Game')
 const Session = require('../models/Session')
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs')

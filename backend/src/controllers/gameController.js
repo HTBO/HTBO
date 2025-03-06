@@ -8,49 +8,86 @@ const gameFirestore = new FirestoreService('games');
 
 const createGame = async (req, res) => {
     try {
-        const { name, stores } = req.body;
+        const { name, description, publisher, releaseYear, stores } = req.body;
 
-        // Convert MongoDB store IDs to Firestore IDs
+        // Generate MongoDB ID upfront as string
+        const mongoIdString = new mongoose.Types.ObjectId().toString();
+
+        // Check for duplicates in both databases
+        const [existingMongoGame, firestoreQuery] = await Promise.all([
+            Game.findOne({ name }),
+            db.collection('games').where('name', '==', name).limit(1).get()
+        ]);
+
+        if (existingMongoGame || !firestoreQuery.empty) {
+            return res.status(400).json({ 
+                error: "The game's name is already taken",
+                existsIn: {
+                    mongoDB: !!existingMongoGame,
+                    firestore: !firestoreQuery.empty
+                }
+            });
+        }
+
+        // Convert store IDs and validate
         const firestoreStoreIds = await Promise.all(
             stores.map(async (store) => {
-                // Find Firestore document with matching mongoId
                 const snapshot = await db.collection('stores')
-                    .where('mongoId', '==', store.storeId)
+                    .where('mongoId', '==', store.storeId.toString()) // Ensure string comparison
                     .limit(1)
                     .get();
 
                 if (snapshot.empty) {
                     throw new Error(`Store ${store.storeId} not found in Firestore`);
                 }
-
                 return snapshot.docs[0].id;
             })
         );
 
-        // Proceed with game creation using firestoreStoreIds
-        const gameRef = await gameFirestore.createDocument({
+        // Create Firestore document with string IDs
+        gameRef = db.collection('games').doc();
+        await gameRef.set({
             name,
+            description,
+            publisher,
+            releaseYear: admin.firestore.Timestamp.fromDate(new Date(releaseYear, 0)),
             stores: firestoreStoreIds.map((firestoreId, index) => ({
                 storeId: firestoreId,
                 link: stores[index].link
-            }))
+            })),
+            mongoId: mongoIdString, // Store as string
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
 
-        // MongoDB creation remains unchanged
+        // Create MongoDB document using the same ID
         const newGame = await Game.create({
+            _id: mongoIdString, // Use the pre-generated string ID
+            name,
+            description,
+            publisher,
+            releaseYear,
             firebaseId: gameRef.id,
-            ...req.body
+            stores: stores.map(store => ({
+                storeId: new mongoose.Types.ObjectId(store.storeId),
+                link: store.link
+            }))
         });
 
         res.status(201).json({
             mongoId: newGame._id,
             firebaseId: gameRef.id,
-            name
+            document: newGame
         });
 
     } catch (error) {
         console.error('Error:', error.message);
-        
+
+        // Cleanup Firestore document if MongoDB creation failed
+        if (error.name === 'ValidationError' || error.message.includes('not found in Firestore')) {
+            await gameRef?.delete().catch(console.error);
+        }
+
+        // Error responses
         if (error.message.includes('not found in Firestore')) {
             return res.status(404).json({
                 error: 'Linked store missing in Firestore',
@@ -58,9 +95,16 @@ const createGame = async (req, res) => {
             });
         }
 
+        if (error.name === 'ValidationError') {
+            const messages = Object.values(error.errors).map(err => err.message);
+            return res.status(400).json({ errors: messages });
+        }
+
         res.status(500).json({ error: 'Server error' });
     }
-};// POST http://localhost:5000/api/games
+};
+
+// POST http://localhost:5000/api/games
 // {
 //     "name": "CS2",
 //     "description": "Klasszikus lövöldözős játék",
