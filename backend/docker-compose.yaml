@@ -1,13 +1,15 @@
-version: '3.8'
 services:
   app:
     build:
       context: .
       args:
-        - PORT=${PORT}  # Pass PORT from .env to Dockerfile
+        - PORT=${PORT}
     ports:
-      - "${PORT}:${PORT}"  # Map host:container ports
+      - "${PORT}:${PORT}"
     environment:
-      - DB_URI=mongodb+srv://${MONGO_USER}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${MONGO_DB}
-      - PORT=${PORT}  # Pass PORT to the app at runtime
+      - MONGODB_URI=${MONGODB_URI}
+      - LOGS_MONGODB_URI=${LOGS_MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - PORT=${PORT}
     restart: unless-stopped

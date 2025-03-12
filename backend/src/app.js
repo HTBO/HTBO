@@ -20,6 +20,8 @@ app.use((req, res, next) => {
     });
     logEntry.save()
       .catch(err => console.error('Failed to save log:', err));
+    console.log(`\x1b[36m${ip}\x1b[0m - ${req.method} ${req.originalUrl}`);
+    
     next();
   });
 app.use(express.json());
