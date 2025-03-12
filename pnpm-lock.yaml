@@ -8,12 +8,18 @@ importers:
 
   .:
     devDependencies:
+      concurrently:
+        specifier: ^8.2.2
+        version: 8.2.2
       dotenv:
         specifier: ^10.0.0
         version: 10.0.0
       nodemon:
         specifier: ^2.0.15
         version: 2.0.22
+      wait-on:
+        specifier: ^7.0.1
+        version: 7.2.0
 
   backend:
     dependencies:
@@ -292,6 +298,10 @@ packages:
     engines: {node: '>=6.9.0'}
     peerDependencies:
       '@babel/core': ^7.0.0-0
+
+  '@babel/runtime@7.26.10':
+    resolution: {integrity: sha512-2WJMeRQPHKSPemqk/awGrAiuFfzBmOIPXKizAsVhWH9YJqLZ0H+HS4c8loHGgW6utJ3E/ejXQUsiGaQy2NZ9Fw==}
+    engines: {node: '>=6.9.0'}
 
   '@babel/standalone@7.26.9':
     resolution: {integrity: sha512-UTeQKy0kzJwWRe55kT1uK4G9H6D0lS6G4207hCU/bDaOhA5t2aC0qHN6GmID0Axv3OFLNXm27NdqcWp+BXcGtA==}
@@ -690,6 +700,12 @@ packages:
     resolution: {integrity: sha512-AiXO/bfe9bmxBjxxtYxFAXGZvMaN5s8kO+jBHAJCON8rJoB5YS/D6X7ZNc6XQkuHNmyl4CYaMI1fJ/Gn27RGGw==}
     engines: {node: '>=6'}
     hasBin: true
+
+  '@hapi/hoek@9.3.0':
+    resolution: {integrity: sha512-/c6rf4UJlmHlC9b5BaNvzAcFv7HZ2QHaV0D4/HNlBdvFnvQq8RI4kYdhyPCl7Xj+oWvTWQ8ujhqS53LIgAe6KQ==}
+
+  '@hapi/topo@5.1.0':
+    resolution: {integrity: sha512-foQZKJig7Ob0BMAYBfcJk8d77QtOe7Wo4ox7ff1lQYoNNAb6jwcY1ncdoy2e9wQZzvNy7ODZCYJkK8kzmcAnAg==}
 
   '@iconify/collections@1.0.522':
     resolution: {integrity: sha512-IPTFZ2rGZ5kIwsR913mukn68KIf6EZnls1HFZNWhyvWmaqBxYo5W0ejLxMaW6Ob5dIaTDa9+Ik5kYzQf9uO0Kg==}
@@ -1208,6 +1224,15 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@sideway/address@4.1.5':
+    resolution: {integrity: sha512-IqO/DUQHUkPeixNQ8n0JA6102hT9CmaljNTPmQ1u8MEhBo/R4Q8eKLN/vGZxuebwOroDB4cbpjheD4+/sKFK4Q==}
+
+  '@sideway/formula@3.0.1':
+    resolution: {integrity: sha512-/poHZJJVjx3L+zVD6g9KgHfYnb443oi7wLu/XKojDviHy6HOEOA6z1Trk5aR1dGcmPenJEgb2sK2I80LeS3MIg==}
+
+  '@sideway/pinpoint@2.0.0':
+    resolution: {integrity: sha512-RNiOoTPkptFtSVzQevY/yWtZwf/RxyVnPy/OcA9HBM3MlGDnBEYL5B41H0MTn0Uec8Hi+2qUtTfG2WWZBmMejQ==}
+
   '@sinclair/typebox@0.27.8':
     resolution: {integrity: sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==}
 
@@ -1672,6 +1697,9 @@ packages:
   aws4@1.13.2:
     resolution: {integrity: sha512-lHe62zvbTB5eEABUVi/AwVh0ZKY9rMMDhmm+eeyuuUQbQ3+J+fONVQOZyj+DdrvD4BY33uYniyRJ4UJIaSKAfw==}
 
+  axios@1.8.3:
+    resolution: {integrity: sha512-iP4DebzoNlP/YN2dpwCgb8zoCmhtkajzS48JvwmkSkXvPI3DHc7m+XYL5tGnSlJtR6nImXZmdCuN5aP8dh1d8A==}
+
   b4a@1.6.7:
     resolution: {integrity: sha512-OnAYlL5b7LEkALw87fUVafQw5rVR9RjwGd4KUwNQ6DrrNmaVaUCgLipfVlzrPQ4tWOR9P0IXGNOx50jYCCdSJg==}
 
@@ -1978,6 +2006,11 @@ packages:
   concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
 
+  concurrently@8.2.2:
+    resolution: {integrity: sha512-1dP4gpXFhei8IOtlXRE/T/4H88ElHgTiUzh71YUmtjTEHMSRS2Z/fgOxHSxxusGHogsRfxNq1vyAwxSC+EVyDg==}
+    engines: {node: ^14.13.0 || >=16.0.0}
+    hasBin: true
+
   confbox@0.1.8:
     resolution: {integrity: sha512-RMtmw0iFkeR4YV+fUOSucriAQNb9g8zFR52MWCtl+cCZOFRNL6zeB395vPzFhEjjn4fMxXudmELnl/KF/WrK6w==}
 
@@ -2111,6 +2144,10 @@ packages:
   dashdash@1.14.1:
     resolution: {integrity: sha512-jRFi8UDGo6j+odZiEpjazZaWqEal3w/basFjQHQEwVtZJGDpxbH1MeYluwCS8Xq5wmLJooDlMgvVarmWfGM44g==}
     engines: {node: '>=0.10'}
+
+  date-fns@2.30.0:
+    resolution: {integrity: sha512-fnULvOpxnC5/Vg3NCiWelDsLiUc9bRwAPs/+LfTLNvetFCtCTN+yQz15C/fs4AwX1R9K5GLtLfn8QW+dWisaAw==}
+    engines: {node: '>=0.11'}
 
   dateformat@3.0.2:
     resolution: {integrity: sha512-EelsCzH0gMC2YmXuMeaZ3c6md1sUJQxyb1XXc4xaisi/K6qKukqZhKPrEQyRkdNIncgYyLoDTReq0nNyuKerTg==}
@@ -3158,6 +3195,9 @@ packages:
     resolution: {integrity: sha512-rg9zJN+G4n2nfJl5MW3BMygZX56zKPNVEYYqq7adpmMh4Jn2QNEwhvQlFy6jPVdcod7txZtKHWnyZiA3a0zP7A==}
     hasBin: true
 
+  joi@17.13.3:
+    resolution: {integrity: sha512-otDA4ldcIx+ZXsKHWmp0YizCweVRZG96J10b0FevjfuncLO1oX59THoAmHkNubYJ+9gWsYsp5k8v4ib6oDv1fA==}
+
   jose@4.15.9:
     resolution: {integrity: sha512-1vUQX+IdDMVPj4k8kOxgUqlcK518yluMuGZwqlr44FS1ppZB/5GWh4rZG89erpOBOJjU/OBsnCVFfapsRz6nEA==}
 
@@ -4164,6 +4204,9 @@ packages:
   proxy-from-env@1.0.0:
     resolution: {integrity: sha512-F2JHgJQ1iqwnHDcQjVBsq3n/uoaFL+iPW/eAeL7kVxy/2RrWaN4WroKjjvbsoRtv0ftelNyC01bjRhn/bhcf4A==}
 
+  proxy-from-env@1.1.0:
+    resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
+
   pstree.remy@1.1.8:
     resolution: {integrity: sha512-77DZwxQmxKnu3aR542U+X8FypNzbfJ+C5XQDk3uWjWxn6151aIMGthWYRXTqT1E5oJvg+ljaa2OJi+VfvCOQ8w==}
 
@@ -4241,6 +4284,9 @@ packages:
   redis-parser@3.0.0:
     resolution: {integrity: sha512-DJnGAeenTdpMEH6uAJRK/uiyEIH9WVsUmoLwzudwGJUwZPp80PDBWPHXSAGNPwNvIXAbe7MSUB1zQFugFml66A==}
     engines: {node: '>=4'}
+
+  regenerator-runtime@0.14.1:
+    resolution: {integrity: sha512-dYnhHh0nJoMfnkZs6GmmhFknAGRrLznOu5nc9ML+EJxGvrx6H7teuevqVqCuPcPK//3eDrrjQhehXVx9cnkGdw==}
 
   request-progress@3.0.0:
     resolution: {integrity: sha512-MnWzEHHaxHO2iWiQuHrUPBi/1WeBf5PkxQqNyNvLl9VAYSdXkP8tQ3pBSeCPD+yw0v0Aq1zosWLz0BdeXpWwZg==}
@@ -4462,6 +4508,9 @@ packages:
 
   sparse-bitfield@3.0.3:
     resolution: {integrity: sha512-kvzhi7vqKTfkh0PZU+2D2PIllw2ymqJKujUcyPMd9Y75Nv4nPbGJZXNhxsgdQab2BmlDct1YnfQCguEvHr7VsQ==}
+
+  spawn-command@0.0.2:
+    resolution: {integrity: sha512-zC8zGoGkmc8J9ndvml8Xksr1Amk9qBujgbF0JAIWO7kXr43w0h/0GJNM/Vustixu+YE8N/MTrQ7N31FvHUACxQ==}
 
   speakingurl@14.0.1:
     resolution: {integrity: sha512-1POYv7uv2gXoyGFpBCmpDVSNV74IfsWlDW216UPjbWufNf+bSU6GdbDsxdcxtfwb4xlI3yxzOTKClUosxARYrQ==}
@@ -5064,6 +5113,11 @@ packages:
       typescript:
         optional: true
 
+  wait-on@7.2.0:
+    resolution: {integrity: sha512-wCQcHkRazgjG5XoAq9jbTMLpNIjoSlZslrJ2+N9MxDsGEv1HnFoVjOCexL0ESva7Y9cu350j+DWADdk54s4AFQ==}
+    engines: {node: '>=12.0.0'}
+    hasBin: true
+
   walker@1.0.8:
     resolution: {integrity: sha512-ts/8E8l5b7kY0vlWLewOkDXMmPdLcVV4GmOQLyxuSswIJsweeFZtAsMF7k1Nszz+TYBQrlYRmzOnr398y1JemQ==}
 
@@ -5222,7 +5276,7 @@ snapshots:
       '@babel/traverse': 7.26.9
       '@babel/types': 7.26.9
       convert-source-map: 2.0.0
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@9.4.0)
       gensync: 1.0.0-beta.2
       json5: 2.2.3
       semver: 6.3.1
@@ -5432,6 +5486,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@babel/runtime@7.26.10':
+    dependencies:
+      regenerator-runtime: 0.14.1
+
   '@babel/standalone@7.26.9': {}
 
   '@babel/template@7.26.9':
@@ -5447,7 +5505,7 @@ snapshots:
       '@babel/parser': 7.26.9
       '@babel/template': 7.26.9
       '@babel/types': 7.26.9
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@9.4.0)
       globals: 11.12.0
     transitivePeerDependencies:
       - supports-color
@@ -5749,6 +5807,12 @@ snapshots:
       yargs: 17.7.2
     optional: true
 
+  '@hapi/hoek@9.3.0': {}
+
+  '@hapi/topo@5.1.0':
+    dependencies:
+      '@hapi/hoek': 9.3.0
+
   '@iconify/collections@1.0.522':
     dependencies:
       '@iconify/types': 2.0.0
@@ -5760,7 +5824,7 @@ snapshots:
       '@antfu/install-pkg': 1.0.0
       '@antfu/utils': 8.1.1
       '@iconify/types': 2.0.0
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@9.4.0)
       globals: 15.15.0
       kolorist: 1.8.0
       local-pkg: 1.0.0
@@ -5987,7 +6051,7 @@ snapshots:
 
   '@kwsites/file-exists@1.1.1':
     dependencies:
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@9.4.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -5997,7 +6061,7 @@ snapshots:
     dependencies:
       consola: 3.4.0
       detect-libc: 2.0.3
-      https-proxy-agent: 7.0.6
+      https-proxy-agent: 7.0.6(supports-color@9.4.0)
       node-fetch: 2.7.0
       nopt: 8.1.0
       semver: 7.7.1
@@ -6523,6 +6587,14 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.34.8':
     optional: true
 
+  '@sideway/address@4.1.5':
+    dependencies:
+      '@hapi/hoek': 9.3.0
+
+  '@sideway/formula@3.0.1': {}
+
+  '@sideway/pinpoint@2.0.0': {}
+
   '@sinclair/typebox@0.27.8': {}
 
   '@sindresorhus/merge-streams@2.3.0': {}
@@ -6957,7 +7029,7 @@ snapshots:
 
   agent-base@6.0.2:
     dependencies:
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@9.4.0)
     transitivePeerDependencies:
       - supports-color
     optional: true
@@ -7075,6 +7147,14 @@ snapshots:
   aws-sign2@0.7.0: {}
 
   aws4@1.13.2: {}
+
+  axios@1.8.3:
+    dependencies:
+      follow-redirects: 1.15.9(debug@4.4.0)
+      form-data: 4.0.2
+      proxy-from-env: 1.1.0
+    transitivePeerDependencies:
+      - debug
 
   b4a@1.6.7: {}
 
@@ -7412,6 +7492,18 @@ snapshots:
 
   concat-map@0.0.1: {}
 
+  concurrently@8.2.2:
+    dependencies:
+      chalk: 4.1.2
+      date-fns: 2.30.0
+      lodash: 4.17.21
+      rxjs: 7.8.2
+      shell-quote: 1.8.2
+      spawn-command: 0.0.2
+      supports-color: 8.1.1
+      tree-kill: 1.2.2
+      yargs: 17.7.2
+
   confbox@0.1.8: {}
 
   consola@3.4.0: {}
@@ -7607,6 +7699,10 @@ snapshots:
     dependencies:
       assert-plus: 1.0.0
 
+  date-fns@2.30.0:
+    dependencies:
+      '@babel/runtime': 7.26.10
+
   dateformat@3.0.2: {}
 
   dayjs@1.11.13: {}
@@ -7628,10 +7724,6 @@ snapshots:
       ms: 2.1.3
     optionalDependencies:
       supports-color: 8.1.1
-
-  debug@4.4.0:
-    dependencies:
-      ms: 2.1.3
 
   debug@4.4.0(supports-color@5.5.0):
     dependencies:
@@ -8110,7 +8202,7 @@ snapshots:
 
   follow-redirects@1.15.9(debug@4.4.0):
     optionalDependencies:
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@9.4.0)
 
   foreground-child@3.3.1:
     dependencies:
@@ -8179,7 +8271,7 @@ snapshots:
   gaxios@6.7.1:
     dependencies:
       extend: 3.0.2
-      https-proxy-agent: 7.0.6
+      https-proxy-agent: 7.0.6(supports-color@9.4.0)
       is-stream: 2.0.1
       node-fetch: 2.7.0
       uuid: 9.0.1
@@ -8402,7 +8494,7 @@ snapshots:
     dependencies:
       '@tootallnate/once': 2.0.0
       agent-base: 6.0.2
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@9.4.0)
     transitivePeerDependencies:
       - supports-color
     optional: true
@@ -8418,17 +8510,10 @@ snapshots:
   https-proxy-agent@5.0.1:
     dependencies:
       agent-base: 6.0.2
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@9.4.0)
     transitivePeerDependencies:
       - supports-color
     optional: true
-
-  https-proxy-agent@7.0.6:
-    dependencies:
-      agent-base: 7.1.3
-      debug: 4.4.0
-    transitivePeerDependencies:
-      - supports-color
 
   https-proxy-agent@7.0.6(supports-color@9.4.0):
     dependencies:
@@ -8497,7 +8582,7 @@ snapshots:
     dependencies:
       '@ioredis/commands': 1.2.0
       cluster-key-slot: 1.1.2
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@9.4.0)
       denque: 2.1.0
       lodash.defaults: 4.2.0
       lodash.isarguments: 3.1.0
@@ -8623,7 +8708,7 @@ snapshots:
 
   istanbul-lib-source-maps@4.0.1:
     dependencies:
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@9.4.0)
       istanbul-lib-coverage: 3.2.2
       source-map: 0.6.1
     transitivePeerDependencies:
@@ -8965,6 +9050,14 @@ snapshots:
 
   jiti@2.4.2: {}
 
+  joi@17.13.3:
+    dependencies:
+      '@hapi/hoek': 9.3.0
+      '@hapi/topo': 5.1.0
+      '@sideway/address': 4.1.5
+      '@sideway/formula': 3.0.1
+      '@sideway/pinpoint': 2.0.0
+
   jose@4.15.9: {}
 
   js-levenshtein@1.1.6: {}
@@ -9042,7 +9135,7 @@ snapshots:
     dependencies:
       '@types/express': 4.17.21
       '@types/jsonwebtoken': 9.0.9
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@9.4.0)
       jose: 4.15.9
       limiter: 1.1.5
       lru-memoizer: 2.3.0
@@ -9361,10 +9454,10 @@ snapshots:
     dependencies:
       async-mutex: 0.5.0
       camelcase: 6.3.0
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@9.4.0)
       find-cache-dir: 3.3.2
       follow-redirects: 1.15.9(debug@4.4.0)
-      https-proxy-agent: 7.0.6
+      https-proxy-agent: 7.0.6(supports-color@9.4.0)
       mongodb: 6.13.1
       new-find-package-json: 2.0.0
       semver: 7.7.1
@@ -9424,7 +9517,7 @@ snapshots:
 
   mquery@5.0.0:
     dependencies:
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@9.4.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -9446,7 +9539,7 @@ snapshots:
 
   new-find-package-json@2.0.0:
     dependencies:
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@9.4.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -10137,6 +10230,8 @@ snapshots:
 
   proxy-from-env@1.0.0: {}
 
+  proxy-from-env@1.1.0: {}
+
   pstree.remy@1.1.8: {}
 
   pump@3.0.2:
@@ -10224,6 +10319,8 @@ snapshots:
   redis-parser@3.0.0:
     dependencies:
       redis-errors: 1.2.0
+
+  regenerator-runtime@0.14.1: {}
 
   request-progress@3.0.0:
     dependencies:
@@ -10416,7 +10513,7 @@ snapshots:
     dependencies:
       '@kwsites/file-exists': 1.1.1
       '@kwsites/promise-deferred': 1.1.1
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@9.4.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -10473,6 +10570,8 @@ snapshots:
   sparse-bitfield@3.0.3:
     dependencies:
       memory-pager: 1.5.0
+
+  spawn-command@0.0.2: {}
 
   speakingurl@14.0.1: {}
 
@@ -10580,7 +10679,7 @@ snapshots:
     dependencies:
       component-emitter: 1.3.1
       cookiejar: 2.1.4
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@9.4.0)
       fast-safe-stringify: 2.1.1
       form-data: 4.0.2
       formidable: 3.5.2
@@ -10964,7 +11063,7 @@ snapshots:
   vite-node@3.0.7(@types/node@22.13.5)(jiti@2.4.2)(lightningcss@1.29.1)(terser@5.39.0)(yaml@2.7.0):
     dependencies:
       cac: 6.7.14
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@9.4.0)
       es-module-lexer: 1.6.0
       pathe: 2.0.3
       vite: 6.2.0(@types/node@22.13.5)(jiti@2.4.2)(lightningcss@1.29.1)(terser@5.39.0)(yaml@2.7.0)
@@ -11006,7 +11105,7 @@ snapshots:
     dependencies:
       '@antfu/utils': 0.7.10
       '@rollup/pluginutils': 5.1.4(rollup@4.34.8)
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@9.4.0)
       error-stack-parser-es: 0.1.5
       fs-extra: 11.3.0
       open: 10.1.0
@@ -11091,6 +11190,16 @@ snapshots:
       '@vue/shared': 3.5.13
     optionalDependencies:
       typescript: 5.7.3
+
+  wait-on@7.2.0:
+    dependencies:
+      axios: 1.8.3
+      joi: 17.13.3
+      lodash: 4.17.21
+      minimist: 1.2.8
+      rxjs: 7.8.2
+    transitivePeerDependencies:
+      - debug
 
   walker@1.0.8:
     dependencies:
