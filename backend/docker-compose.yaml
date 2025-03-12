@@ -1,0 +1,15 @@
+services:
+  app:
+    build:
+      context: .
+      args:
+        - PORT=${PORT}
+    ports:
+      - "${PORT}:${PORT}"
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - LOGS_MONGODB_URI=${LOGS_MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - PORT=${PORT}
+    restart: unless-stopped
