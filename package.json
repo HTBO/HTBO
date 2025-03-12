@@ -10,10 +10,13 @@
     "dev:frontend:test": "pnpm --filter htbo-frontend test:e2e",
     "dev:backend": "pnpm --filter htbo-backend dev",
     "dev:backend:test": "pnpm --filter htbo-backend test",
-    "dev:backend:coverage": "pnpm --filter htbo-backend coverage"
+    "dev:backend:coverage": "pnpm --filter htbo-backend coverage",
+    "dev:frontend:all": "concurrently -k \"pnpm dev\" \"wait-on http://localhost:3000 && pnpm dev:frontend:test\""
   },
   "devDependencies": {
     "dotenv": "^10.0.0",
-    "nodemon": "^2.0.15"
+    "nodemon": "^2.0.15",
+    "concurrently": "^8.2.2",
+    "wait-on": "^7.0.1"
   }
 }
