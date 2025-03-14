@@ -1,3 +1,4 @@
+import { Stack } from 'expo-router';
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,7 +10,12 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-
+      <Stack.Screen 
+              options={{
+                headerShown: false, // Hide the header
+                presentation: 'modal', // Optional: makes it feel like a modal
+              }} 
+            />
       <View style={styles.loginBox}>
       <View style={styles.welcomeContainer}>
         <Text style={styles.welcomeText}>Welcome back</Text>

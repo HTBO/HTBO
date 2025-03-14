@@ -10,6 +10,8 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+  // You would add logic to determine if user is authenticated
+  const isAuthenticated = true; // Replace with actual auth check
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -28,12 +30,30 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    // <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    //   <Stack>
+    //     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+    //     <Stack.Screen name="+not-found" />
+    //   </Stack>
+    //   <StatusBar style="auto" />
+    // </ThemeProvider>
+
+<Stack>
+{/* Initial route name controls the starting page */}
+<Stack.Screen 
+  name="index" 
+  redirect={!isAuthenticated} 
+  options={{ headerShown: false }} 
+/>
+<Stack.Screen 
+  name="login" 
+  options={{ headerShown: false }} 
+/>
+<Stack.Screen 
+  name="(tabs)" 
+  options={{ headerShown: false }} 
+  redirect={!isAuthenticated}
+/>
+</Stack>
   );
 }

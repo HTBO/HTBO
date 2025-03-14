@@ -1,5 +1,5 @@
 import { Image, StyleSheet, Platform } from 'react-native';
-import LoginScreen from './login';
+import LoginScreen from '../login';
 
 import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
