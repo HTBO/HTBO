@@ -1,26 +1,55 @@
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function LoginScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSignIn = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Simulate API call with a delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Here you would normally:
+      // 1. Call your authentication API
+      // 2. Store tokens/user data in secure storage
+      // 3. Update authentication context
+      
+      if (rememberMe) {
+        // Save credentials logic would go here
+        console.log("Remembering credentials for:", username || "empty username");
+      }
+      
+      // Navigate to the main app - FIX THE PATH HERE
+      router.replace("/(tabs)");
+      
+    } catch (error) {
+      Alert.alert('Login Failed', 'Invalid credentials. Please try again.');
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen 
-              options={{
-                headerShown: false, // Hide the header
-                presentation: 'modal', // Optional: makes it feel like a modal
-              }} 
-            />
+        options={{
+          headerShown: false,
+          presentation: 'modal',
+        }} 
+      />
       <View style={styles.loginBox}>
-      <View style={styles.welcomeContainer}>
-        <Text style={styles.welcomeText}>Welcome back</Text>
-        <Text style={styles.subtitleText}>Please enter your details to sign in</Text>
-      </View>
+        <View style={styles.welcomeContainer}>
+          <Text style={styles.welcomeText}>Welcome back</Text>
+          <Text style={styles.subtitleText}>Please enter your details to sign in</Text>
+        </View>
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Email</Text>
           <TextInput
@@ -58,8 +87,14 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.loginButton}>
-          <Text style={styles.loginButtonText}>Sign In</Text>
+        <TouchableOpacity 
+          style={[styles.loginButton, isLoading && styles.loginButtonDisabled]} 
+          onPress={handleSignIn}
+          disabled={isLoading}
+        >
+          <Text style={styles.loginButtonText}>
+            {isLoading ? 'Signing In...' : 'Sign In'}
+          </Text>
         </TouchableOpacity>
         
         <View style={styles.dividerContainer}>
@@ -69,12 +104,11 @@ export default function LoginScreen() {
         </View>
         
         <TouchableOpacity style={styles.signupContainer}>
-            <Text style={styles.signupText}>
-                Don't have an account? <Text style={styles.signupLink}>Sign up</Text>
-            </Text>
-            </TouchableOpacity>
+          <Text style={styles.signupText}>
+            Don't have an account? <Text style={styles.signupLink}>Sign up</Text>
+          </Text>
+        </TouchableOpacity>
       </View>
-
     </SafeAreaView>
   );
 }
@@ -174,6 +208,10 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
+  },
+  loginButtonDisabled: {
+    backgroundColor: '#5d2da8', // Darker purple when disabled
+    opacity: 0.7,
   },
   loginButtonText: {
     color: 'white',  // Already white

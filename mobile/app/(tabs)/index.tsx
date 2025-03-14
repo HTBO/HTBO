@@ -1,30 +1,51 @@
-import { Image, StyleSheet, Platform } from 'react-native';
-import LoginScreen from '../login';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { Text } from 'react-native';
+import { router } from 'expo-router';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+export default function ProfileScreen() {
+  const handleLogout = () => {
+    // Clear stored data if needed
+    router.replace('/login');
+  };
 
-export default function HomeScreen() {
-  return <LoginScreen />;
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Profile</Text>
+      
+      {/* Other profile content */}
+      
+      <TouchableOpacity 
+        style={styles.logoutButton} 
+        onPress={handleLogout}
+      >
+        <Text style={styles.logoutText}>Logout</Text>
+      </TouchableOpacity>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#111827',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 20,
+  },
+  logoutButton: {
+    backgroundColor: '#7C3AED',
+    padding: 15,
+    borderRadius: 8,
     alignItems: 'center',
-    gap: 8,
+    marginTop: 20,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  logoutText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
