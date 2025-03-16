@@ -13,21 +13,11 @@ export default function LoginScreen() {
     try {
       setIsLoading(true);
       
-      // Simulate API call with a delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Simulate API call with a delay - keep this brief
+      await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Here you would normally:
-      // 1. Call your authentication API
-      // 2. Store tokens/user data in secure storage
-      // 3. Update authentication context
-      
-      if (rememberMe) {
-        // Save credentials logic would go here
-        console.log("Remembering credentials for:", username || "empty username");
-      }
-      
-      // Navigate to the main app - FIX THE PATH HERE
-      router.replace("/(tabs)");
+      // Instead of router.replace, use router.navigate
+      router.replace("/(tabs)/home");
       
     } catch (error) {
       Alert.alert('Login Failed', 'Invalid credentials. Please try again.');

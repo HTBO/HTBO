@@ -30,19 +30,12 @@ export default function RootLayout() {
   }
 
   return (
-    // <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-    //   <Stack>
-    //     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-    //     <Stack.Screen name="+not-found" />
-    //   </Stack>
-    //   <StatusBar style="auto" />
-    // </ThemeProvider>
 
-<Stack>
+
+<Stack initialRouteName="login">
 {/* Initial route name controls the starting page */}
 <Stack.Screen 
-  name="index" 
-  redirect={!isAuthenticated} 
+  name="home" 
   options={{ headerShown: false }} 
 />
 <Stack.Screen 
