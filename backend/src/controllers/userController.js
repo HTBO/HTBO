@@ -81,6 +81,20 @@ const loginUser = async (req, res) => {
     }
 }
 
+const getMe = async (req, res) => {
+    try {
+        const token = req.header('Authorization').replace('Bearer ', '');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id)
+        .select('-passwordHash')
+        .populate('friends.userId', 'username avatarUrl');
+        res.status(200).json(user);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Server error' });
+    }
+}
+
 const getAllUsers = async (req, res) => {
     try {
         const users = await User.find();
@@ -331,6 +345,7 @@ module.exports = {
     getAllUsers,
     getUserById,
     getUserByUsername,
+    getMe,
     registerUser,
     loginUser,
     updateUser,
