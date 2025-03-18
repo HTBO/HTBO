@@ -1,7 +1,7 @@
 ### userController.js
 ## POST
 > registerUser
-`POST http://localhost:5000/api/users`
+`POST http://localhost:5000/api/users/register`
 ```
 {
 "username": "test",
@@ -10,7 +10,7 @@
 }
 ```
 > loginUser
-`POST http://localhost:5000/api/users`
+`POST http://localhost:5000/api/users/login`
 ```
 {
 "username": "test",

@@ -18,6 +18,7 @@ router.post('/firebase', async (req, res) => {
 
 // Public routes
 router.get('/', userController.getAllUsers);
+router.get('/me', verifyToken, userController.getMe);
 router.post('/register', userController.registerUser);
 router.post('/login', (req, res) => {
     // console.log('Login attempt from: ', req.ip);
