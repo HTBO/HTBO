@@ -1,14 +1,57 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, Image, View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authService } from '@/services/authService';
 
 export default function ProfileScreen() {
-  // Mock user data - replace with actual data from your API
+
   
+  useEffect(() => {
+    getUserInfo();
+  }, []);
+  
+  async function getUserInfo() {
+    console.log('a');
+    const currentToken = authService.getToken()
+      if (!currentToken) {
+        console.error('No auth data found');
+        return;
+      }
+    const response = await fetch('https://htbo-production.up.railway.app/api/users/me', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentToken}`
+      }
+    });
+    // console.log(currentToken)
+    // console.log(response);
+
+    const rawData = await response.json();
+    // console.log('Nyers válasz adatok:', rawData);
+
+    // Ideiglenes fix a _j mező kinyeréséhez
+    const processedData = {
+      token: rawData._j,  // A token kinyerése
+      user: {
+        id: rawData._h,
+        // Egyéb mezők a backend válaszból
+      }
+    };
+    console.log(processedData.token);
+
+    // if (!response.ok) {
+    //   throw new Error(`API error: ${response.status}`);
+    // }
+    // const data = await response.json();
+    // console.log(data);
+    return processedData.token;
+}
   
   const user = {
     username: "GamerTyler",
