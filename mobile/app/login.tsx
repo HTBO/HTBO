@@ -1,3 +1,4 @@
+import { authService } from '@/services/authService';
 import { Stack, router } from 'expo-router';
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
@@ -10,31 +11,20 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSignIn = async () => {
+    if (!username || !password) {
+      Alert.alert('Missing Information', 'Please enter both username and password');
+      return;
+    }
+    
     try {
       setIsLoading(true);
+      authService.loginUser({ username, password }, rememberMe);
       
-      // Simulate API call with a delay - keep this brief
-      await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Option 1: Use direct navigation to tab
+
       router.replace({
         pathname: "/(tabs)/home",
       });
-      
-      // If that doesn't work, try this alternative approach:
-      /*
-      import { CommonActions } from '@react-navigation/native';
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: '/(tabs)/home' }],
-        })
-      );
-      */
-      
-    } catch (error) {
-      Alert.alert('Login Failed', 'Invalid credentials. Please try again.');
-      console.error(error);
     } finally {
       setIsLoading(false);
     }
@@ -55,12 +45,12 @@ export default function LoginScreen() {
           <Text style={styles.subtitleText}>Please enter your details to sign in</Text>
         </View>
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Email</Text>
+          <Text style={styles.label}>Username</Text>
           <TextInput
             style={styles.input}
             value={username}
             onChangeText={setUsername}
-            placeholder="Enter your email"
+            placeholder="Enter your username"
           />
         </View>
 

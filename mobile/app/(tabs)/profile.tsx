@@ -8,6 +8,8 @@ import { ThemedText } from '@/components/ThemedText';
 
 export default function ProfileScreen() {
   // Mock user data - replace with actual data from your API
+  
+  
   const user = {
     username: "GamerTyler",
     joinDate: "Member since March 2023",
@@ -16,6 +18,8 @@ export default function ProfileScreen() {
     friendsCount: 128,
     bio: "Gaming enthusiast, streamer and competitive player. Always looking for new teammates!"
   };
+
+
   
   return (
     <SafeAreaView style={styles.container}>
