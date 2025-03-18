@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,37 +7,39 @@ import { Ionicons } from '@expo/vector-icons';
 export default function SessionsScreen() {
   
   const handleCardPress = (sessionId: string) => {
-    // Navigate to a non-tab screen with the session ID
     router.push({
       pathname: "/session/[id]",
       params: { id: sessionId }
     });
   };
-
   
   return (
-        
-      <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Sessions</Text>
       
       <ScrollView style={styles.scrollView}>
-        {/* Sample Session Cards */}
         <SessionCard 
-          title="Morning Workout" 
-          date="Today, 8:00 AM" 
+          gameImage={require('@/assets/images/games/fifa.png')}
+          gameTitle="FIFA 24"
+          title="Friday Night Tournament" 
+          date="Today, 8:00 PM" 
           participants={3}
           onPress={() => handleCardPress('session-001')}
         />
         
         <SessionCard 
-          title="Team Training" 
+          gameImage={require('@/assets/images/games/fortnite.png')}
+          gameTitle="Fortnite"
+          title="Squad Battle Royale" 
           date="Tomorrow, 4:30 PM" 
           participants={8}
           onPress={() => handleCardPress('session-002')}
         />
         
         <SessionCard 
-          title="Recovery Session" 
+          gameImage={require('@/assets/images/games/rocket-league.png')}
+          gameTitle="Rocket League"
+          title="Custom Match" 
           date="March 21, 10:00 AM" 
           participants={2}
           onPress={() => handleCardPress('session-003')}
@@ -48,35 +50,51 @@ export default function SessionsScreen() {
 }
 
 interface SessionCardProps {
-    title: string;
-    date: string;
-    participants: number;
-    onPress: () => void;
-  }
+  gameImage: any; // Image source
+  gameTitle: string;
+  title: string;
+  date: string;
+  participants: number;
+  onPress: () => void;
+}
 
-// Session Card Component
-const SessionCard = ({ title, date, participants, onPress }: SessionCardProps) => {
-    return (
-      <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
-        <View style={styles.cardHeader}>
+// Modified Session Card Component with image
+const SessionCard = ({ gameImage, gameTitle, title, date, participants, onPress }: SessionCardProps) => {
+  return (
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+      <View style={styles.cardContent}>
+        {/* Game Image */}
+        <Image source={gameImage} style={styles.gameImage} />
+        
+        
+        {/* Content */}
+        <View style={styles.textContent}>
+          {/* Game Title */}
+          <Text style={styles.gameTitle}>{gameTitle}</Text>
+          
+          {/* Session Title */}
           <Text style={styles.cardTitle}>{title}</Text>
-          <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+          
+          {/* Session Details */}
+          <View style={styles.cardInfo}>
+            <View style={styles.infoItem}>
+              <Ionicons name="calendar-outline" size={16} color="#9CA3AF" />
+              <Text style={styles.infoText}>{date}</Text>
+            </View>
+            
+            <View style={styles.infoItem}>
+              <Ionicons name="people-outline" size={16} color="#9CA3AF" />
+              <Text style={styles.infoText}>{participants} participants</Text>
+            </View>
+          </View>
         </View>
         
-        <View style={styles.cardInfo}>
-          <View style={styles.infoItem}>
-            <Ionicons name="calendar-outline" size={16} color="#9CA3AF" />
-            <Text style={styles.infoText}>{date}</Text>
-          </View>
-          
-          <View style={styles.infoItem}>
-            <Ionicons name="people-outline" size={16} color="#9CA3AF" />
-            <Text style={styles.infoText}>{participants} participants</Text>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
+        {/* Arrow Icon */}
+        <Ionicons name="chevron-forward" size={20} color="#9CA3AF" style={styles.arrowIcon} />
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -104,19 +122,33 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  cardHeader: {
+  cardContent: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+  },
+  gameImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    marginRight: 12,
+  },
+  textContent: {
+    flex: 1,
+  },
+  gameTitle: {
+    fontSize: 14,
+    color: '#7C3AED',
+    fontWeight: '600',
+    marginBottom: 4,
   },
   cardTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: 'white',
+    marginBottom: 6,
   },
   cardInfo: {
-    gap: 8,
+    gap: 6,
   },
   infoItem: {
     flexDirection: 'row',
@@ -126,5 +158,8 @@ const styles = StyleSheet.create({
   infoText: {
     fontSize: 14,
     color: '#9CA3AF',
+  },
+  arrowIcon: {
+    marginLeft: 8,
   },
 });

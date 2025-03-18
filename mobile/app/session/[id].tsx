@@ -39,10 +39,7 @@ export default function SessionDetailScreen() {
     headerTitleStyle: {
       fontWeight: 'bold',
     },
-    // This is the correct property to use in newer versions
     headerBackTitle: "Back",
-    // Or alternatively, use an empty string
-    // headerBackTitle: "",
   }} 
 />
           

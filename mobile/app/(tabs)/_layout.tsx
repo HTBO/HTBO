@@ -1,4 +1,4 @@
-import { Tabs } from 'expo-router';
+import { router, Tabs } from 'expo-router';
 import React from 'react';
 import { Platform, TouchableOpacity, View, StyleSheet, GestureResponderEvent } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -73,18 +73,18 @@ export default function TabsLayout() {
     }}
   />
       <Tabs.Screen
-        name="create"
-        options={{
-          title: '',
-          tabBarIcon: () => null,
-        }}
-        listeners={{
-          tabPress: (e) => {
-            e.preventDefault();
-            console.log('Create button pressed!');
-          },
-        }}
-      />
+  name="create"
+  options={{
+    title: '',
+    tabBarIcon: () => null,
+  }}
+  listeners={{
+    tabPress: (e) => {
+      e.preventDefault();
+      router.push('/create-session'); // Navigate to create session page
+    },
+  }}
+/>
       <Tabs.Screen
     name="groups"
     options={{
