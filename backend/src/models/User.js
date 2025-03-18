@@ -1,6 +1,4 @@
 const mongoose = require('mongoose');
-const Session = require('../models/Session')
-
 
 const friendSchema = new mongoose.Schema({
     userId: {

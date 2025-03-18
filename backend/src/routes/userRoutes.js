@@ -4,6 +4,7 @@ const { verifyToken, checkUserPermission } = require('../middleware/authMiddlewa
 const userController = require('../controllers/userController')
 
 router.get('/', userController.getAllUsers);
+router.get('/me', verifyToken, userController.getMe);
 router.post('/register', userController.registerUser);
 router.post('/login', (req, res) => {
     // console.log('Login attempt from: ', req.ip);
