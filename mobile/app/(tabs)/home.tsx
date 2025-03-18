@@ -43,23 +43,7 @@ export default function HomeScreen() {
             <Text style={styles.cardDescription}>Access important files and records</Text>
           </TouchableOpacity>
 
-          {/* Feature Card 3 */}
-          <TouchableOpacity style={styles.card}>
-            <View style={[styles.cardIcon, { backgroundColor: '#F59E0B' }]}>
-              <Ionicons name="chatbubble-ellipses-outline" size={28} color="white" />
-            </View>
-            <Text style={styles.cardTitle}>Messages</Text>
-            <Text style={styles.cardDescription}>Check your inbox and notifications</Text>
-          </TouchableOpacity>
-
-          {/* Feature Card 4 */}
-          <TouchableOpacity style={styles.card}>
-            <View style={[styles.cardIcon, { backgroundColor: '#EC4899' }]}>
-              <Ionicons name="settings-outline" size={28} color="white" />
-            </View>
-            <Text style={styles.cardTitle}>Settings</Text>
-            <Text style={styles.cardDescription}>Configure your app preferences</Text>
-          </TouchableOpacity>
+          
         </View>
       </ScrollView>
     </SafeAreaView>

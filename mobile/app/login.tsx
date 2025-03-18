@@ -16,8 +16,21 @@ export default function LoginScreen() {
       // Simulate API call with a delay - keep this brief
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Instead of router.replace, use router.navigate
-      router.replace("/(tabs)/home");
+      // Option 1: Use direct navigation to tab
+      router.replace({
+        pathname: "/(tabs)/home",
+      });
+      
+      // If that doesn't work, try this alternative approach:
+      /*
+      import { CommonActions } from '@react-navigation/native';
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: '/(tabs)/home' }],
+        })
+      );
+      */
       
     } catch (error) {
       Alert.alert('Login Failed', 'Invalid credentials. Please try again.');
@@ -26,6 +39,7 @@ export default function LoginScreen() {
       setIsLoading(false);
     }
   };
+
 
   return (
     <SafeAreaView style={styles.container}>

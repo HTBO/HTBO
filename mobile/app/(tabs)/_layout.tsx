@@ -64,6 +64,14 @@ export default function TabsLayout() {
           tabBarIcon: ({ color }) => <Ionicons name="home" size={24} color={color} />,
         }}
       />
+
+<Tabs.Screen
+    name="sessions"
+    options={{
+      title: 'Sessions',
+      tabBarIcon: ({ color }) => <Ionicons name="calendar-outline" size={24} color={color} />,
+    }}
+  />
       <Tabs.Screen
         name="create"
         options={{
@@ -78,10 +86,17 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+    name="groups"
+    options={{
+      title: 'Groups',
+      tabBarIcon: ({ color }) => <Ionicons name="people-outline" size={24} color={color} />,
+    }}
+  />
+      <Tabs.Screen
+        name="profile"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Profile',
+          tabBarIcon: ({ color }) => <Ionicons size={28} name="person-circle-outline" color={color} />,
         }}
       />
     </Tabs>
@@ -92,16 +107,16 @@ const styles = StyleSheet.create({
   tabBar: {
     height: 65, // Slightly smaller height
     position: 'absolute',
-    bottom: 30, // Increased from 20 to 30 to float higher
-    left: 50, // Increased from 50 to 70 for narrower width
-    right: 70, // Increased from 50 to 70 for narrower width
-    borderRadius: 30, // More rounded corners
+    bottom: 45, // Increased from 20 to 30 to float higher
+    left: 90, // Increased from 70 to 90 for narrower width
+    right: 90, // Increased from 70 to 90 for narrower width
+    borderRadius: 20, // More rounded corners
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 }, // Stronger shadow
     shadowOpacity: 0.25, // More visible shadow
     shadowRadius: 12,
     elevation: 10, // Increased elevation for Android
-    paddingHorizontal: 10,
+    paddingHorizontal: 5, // Reduced from 10 to accommodate narrower width
     backgroundColor: '#1F2937',
     borderTopWidth: 0,
     alignItems: 'center',
@@ -113,7 +128,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    borderRadius: 30, // Match the tabBar borderRadius
+    borderRadius: 20, // Match the tabBar borderRadius
     backgroundColor: '#1F2937',
   },
   tabButton: {
