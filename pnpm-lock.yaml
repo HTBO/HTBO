@@ -14,6 +14,9 @@ importers:
       esbuild:
         specifier: 0.25.0
         version: 0.25.0
+      semver:
+        specifier: 7.5.2
+        version: 7.5.2
     devDependencies:
       concurrently:
         specifier: ^8.2.2
@@ -4421,6 +4424,11 @@ packages:
 
   semver@7.0.0:
     resolution: {integrity: sha512-+GB6zVA9LWh6zovYQLALHwv5rb2PHGlJi3lfiqIHxR0uuwCgefcOJc59v9fv1w8GbStwxuuqqAjI9NMAOOgq1A==}
+    hasBin: true
+
+  semver@7.5.2:
+    resolution: {integrity: sha512-SoftuTROv/cRjCze/scjGyiDtcUyxw1rgYQSZY7XTmtR5hX+dm76iDbTH8TkLPHCQmlbQVSSbNZCPM2hb0knnQ==}
+    engines: {node: '>=10'}
     hasBin: true
 
   semver@7.7.1:
@@ -10522,6 +10530,10 @@ snapshots:
   semver@6.3.1: {}
 
   semver@7.0.0: {}
+
+  semver@7.5.2:
+    dependencies:
+      lru-cache: 6.0.0
 
   semver@7.7.1: {}
 
