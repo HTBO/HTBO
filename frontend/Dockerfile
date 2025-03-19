@@ -1,5 +1,5 @@
 # --- Build Stage ---
-FROM node:22.11.0-alpine AS builder
+FROM node:18-alpine AS builder
 
 # Enable pnpm
 ENV PNPM_HOME="/pnpm"
@@ -8,20 +8,23 @@ RUN corepack enable
 
 WORKDIR /app
 
-COPY ./package.json .
-COPY ../pnpm-lock.yaml .
+# COPY package.json .
+# COPY pnpm-lock.yaml .
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile --prod
 
 # Copy the rest of the application
-COPY . .
+COPY frontend/. .
+# RUN pnpm install --frozen-lockfile
 
 # Build the application
+
+WORKDIR /app
+RUN pnpm install
 RUN pnpm run build
 
 # --- Production Stage ---
-FROM node:22.11.0-alpine
+FROM node:18-alpine
 WORKDIR /app
 
 # Copy necessary files from the builder stage
