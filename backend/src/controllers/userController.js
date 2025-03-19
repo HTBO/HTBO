@@ -1,10 +1,11 @@
-const User = require('../models/User')
-const Session = require('../models/Session')
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs')
-const jwt = require('jsonwebtoken')
-const { validationResult } = require('express-validator');
+const User = require('../models/User');
+const Session = require('../models/Session');
 const Group = require('../models/Group');
+const BlacklistToken = require('../models/BlacklistToken');
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { validationResult } = require('express-validator');
 
 const generateToken = (user) => {
     const secret = process.env.JWT_SECRET
@@ -14,6 +15,38 @@ const generateToken = (user) => {
         { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
     )
 }
+
+const invalidateToken = async (token) => {
+    const decoded = jwt.decode(token);
+    const expiresAt = new Date(decoded.exp * 1000);
+    await BlacklistToken.create({ token, expiresAt });
+  };
+
+const refreshToken = async (req, res) => {
+    try {
+        const token = req.header('Authorization')?.replace('Bearer ', '');
+        if (!token) return res.status(401).json({ error: 'Authorization required | ERRC: 01' });
+
+        // Verify and decode the old token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id);
+        if (!user) return res.status(404).json({ error: 'User not found | ERRC: 31' });
+
+        // Invalidate the old token
+        await invalidateToken(token);
+
+        // Generate new token
+        const newToken = generateToken(user);
+        
+        res.status(200).json({ token: newToken });
+    } catch (err) {
+        console.error(err.message);
+        const errorMessage = err.name === 'TokenExpiredError' 
+            ? 'Login again | ERRC: 32' 
+            : 'Invalid token | ERRC: 33';
+        res.status(401).json({ error: errorMessage });
+    }
+};
 
 const registerUser = async (req, res) => {
     const errors = validationResult(req)
@@ -80,7 +113,19 @@ const loginUser = async (req, res) => {
     }
 }
 
-const getMe = async (req, res) => {
+const logoutUser = async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        if (!token) return res.status(401).json({ error: 'Not authorized | ERRC: 34' });
+    
+        await invalidateToken(token);
+        res.status(200).json({ message: 'Logged out successfully' });
+    } catch (err) {
+        res.status(500).json({ error: 'Logout failed | ERRC: 35' });
+    }
+}
+
+const getMyInfo = async (req, res) => {
     try {
         const token = req.header('Authorization').replace('Bearer ', '');
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -88,6 +133,64 @@ const getMe = async (req, res) => {
         .select('-passwordHash')
         .populate('friends.userId', 'username avatarUrl');
         res.status(200).json(user);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Server error' });
+    }
+}
+
+const getMySessions = async (req, res) => {
+    console.log('s');
+    try {
+        
+        const token = req.header('Authorization').replace('Bearer ', '');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        console.log(decoded.id);
+        
+        const user = await User.findById(decoded.id);
+        let sessions = await Session.find({ hostId: user._id });
+        sessions.push(...await Session.find({ 'participants.user': user._id }));
+        res.status(200).json(sessions);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Server error' });
+    }
+}
+
+const getMyGroups = async (req, res) => {
+    try {
+        const token = req.header('Authorization').replace('Bearer ', '');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id);
+        let groups = await Group.find({ ownerId: user._id });
+        groups.push(...await Group.find({ 'members.memberId': user._id }));
+        res.status(200).json(groups);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Server error' });
+    }
+}
+
+const getMyFriends = async (req, res) => {
+    try {
+        const token = req.header('Authorization').replace('Bearer ', '');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id)
+            .populate('friends.userId', 'username avatarUrl');
+        res.status(200).json(user.friends);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ error: 'Server error' });
+    }
+}
+
+const getMyGames = async (req, res) => {
+    try {
+        const token = req.header('Authorization').replace('Bearer ', '');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id)
+            .populate('games.gameId', 'name description publisher releaseYear');
+        res.status(200).json(user.games);
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ error: 'Server error' });
@@ -344,9 +447,15 @@ module.exports = {
     getAllUsers,
     getUserById,
     getUserByUsername,
-    getMe,
+    getMyInfo,
+    getMySessions,
+    getMyGroups,
+    getMyFriends,
+    getMyGames,
     registerUser,
+    refreshToken,
     loginUser,
+    logoutUser,
     updateUser,
     deleteUser
 };
