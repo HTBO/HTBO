@@ -1,39 +1,34 @@
 # --- Build Stage ---
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS build
 
 # Enable pnpm
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 
+# Set the working directory inside the container
 WORKDIR /app
 
-# COPY package.json .
-# COPY pnpm-lock.yaml .
+COPY /frontend/package.json .
+COPY pnpm-lock.yaml .
 
 # Install dependencies
+RUN pnpm install
 
-# Copy the rest of the application
+# Copy the necessary files
 COPY frontend/. .
-# RUN pnpm install --frozen-lockfile
 
 # Build the application
-
-WORKDIR /app
-RUN pnpm install
 RUN pnpm run build
 
 # --- Production Stage ---
-FROM node:18-alpine
+FROM node:22-slim
+
 WORKDIR /app
 
 # Copy necessary files from the builder stage
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/.output ./
-COPY --from=builder /app/package.json ./package.json
+COPY --from=build /app/.output ./
 
 # Expose the application port
 EXPOSE 3000
 
 # Start the application
-CMD ["node", ".output/server/index.mjs"]
+CMD ["node", "/app/server/index.mjs"]
