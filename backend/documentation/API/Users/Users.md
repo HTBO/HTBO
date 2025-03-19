@@ -113,6 +113,8 @@ OR
 
 `| ERRC: 02` - Failed to get the token
 
+`| ERRC: 03` - Trying to access with a previously logged out token
+
 `| ERRC: 10` - User is not the owner of the account he tries to access
 
 `| ERRC: 20` - User search failed by username
@@ -124,4 +126,12 @@ OR
 `| ERRC: 23` - Password not provided
 
 `| ERRC: 24` - User's password doesn't match
+
+# Token error codes:
+
+`| ERRC: 31` - Cannot find user by token
+
+`| ERRC: 32` - Token expired - Login again
+
+`| ERRC: 32` - Invalid token - Wrong token
 
