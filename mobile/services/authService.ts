@@ -53,7 +53,9 @@ export const authService = {
 
     const data = await response.json();
     currentToken = data.token;
-    await AsyncStorage.setItem('loggedInEmail', email!.toString());
+    await AsyncStorage.setItem('authData', JSON.stringify({
+      token: data.token,
+    }));
 
     if (remember) {
       await AsyncStorage.setItem('authData', JSON.stringify({
@@ -75,6 +77,7 @@ export const authService = {
   async getToken(): Promise<string | null> {
     if (!currentToken) {
       const authData = await AsyncStorage.getItem('authData');
+      console.log(authData);
       if (authData) {
         const parsedData = JSON.parse(authData);
         currentToken = parsedData.token;
