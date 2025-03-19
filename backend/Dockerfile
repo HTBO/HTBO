@@ -5,7 +5,7 @@ WORKDIR /app
 
 # Correct paths relative to root context
 COPY package.json .
-COPY pnpm-lock.yaml .
+COPY ../pnpm-lock.yaml .
 
 RUN pnpm install --frozen-lockfile
 COPY . .
