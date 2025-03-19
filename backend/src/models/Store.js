@@ -2,6 +2,7 @@
 const mongoose = require('mongoose');
 
 const storeSchema = new mongoose.Schema({
+  firebaseId: { type: String },
   name: {
     type: String,
     required: [true, 'A bolt neve kötelező'],
@@ -22,7 +23,7 @@ const storeSchema = new mongoose.Schema({
   timestamps: true,
   toJSON: {
     virtuals: true,
-    transform: function(doc, ret) {
+    transform: function (doc, ret) {
       ret.id = ret._id;
       delete ret._id;
       delete ret.__v;

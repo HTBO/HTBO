@@ -11,9 +11,13 @@ const storeInfoSchema = new mongoose.Schema({
     required: true,
     match: /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/
   }
-}, {_id: false});
+}, { _id: false });
 
 const gameSchema = new mongoose.Schema({
+  firebaseId: {
+    type: String,
+    unique: true
+  },
   name: {
     type: String,
     required: true,
@@ -43,7 +47,7 @@ const gameSchema = new mongoose.Schema({
   timestamps: true,
   toJSON: {
     virtuals: true,
-    transform: function(doc, ret) {
+    transform: function (doc, ret) {
       ret.id = ret._id;
       delete ret._id;
       delete ret.__v;
@@ -52,7 +56,7 @@ const gameSchema = new mongoose.Schema({
   }
 });
 
-gameSchema.virtual('shortDescription').get(function() {
+gameSchema.virtual('shortDescription').get(function () {
   return this.description.substring(0, 50) + '...';
 });
 
