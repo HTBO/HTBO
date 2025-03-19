@@ -102,18 +102,6 @@ const createGame = async (req, res) => {
     }
 };
 
-// POST http://localhost:5000/api/games
-// {
-//     "name": "CS2",
-//     "description": "Klasszikus lövöldözős játék",
-//     "publisher": "Valve",
-//     "releaseYear": 2022,
-//     "stores": [{
-//       "storeId": "67a0e6f79df8e495ea176e47",
-//       "link": "https://store.steampowered.com/app/730/CounterStrike_2/"
-//         }]
-//     }
-
 const getGameById = async (req, res) => {
     try {
         const game = await Game.findById(req.params.id)

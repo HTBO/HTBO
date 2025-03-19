@@ -10,16 +10,16 @@ beforeAll(async () => {
     mongoServer = await MongoMemoryServer.create();
     const mongoUri = mongoServer.getUri();
     await mongoose.connect(mongoUri);
-});
+}, 30000);
 
 afterAll(async () => {
     await mongoose.disconnect();
     await mongoServer.stop();
-});
+}, 30000);
 
 beforeEach(async () => {
     await Game.deleteMany({});
-});
+}, 30000);
 
 describe('Game Controller', () => {
     test('should create a new game', async () => {
