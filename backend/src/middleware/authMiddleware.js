@@ -2,14 +2,17 @@ const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const Session = require('../models/Session');
 const Group = require('../models/Group');
+const BlacklistToken = require('../models/BlacklistToken');
 
 dotenv.config();
 
-function verifyToken(req, res, next) {
+async function verifyToken(req, res, next) {
     if (!req.header('Authorization')) return res.status(401).json({ error: 'Access denied | ERRC: 01' });
     const token = req.header('Authorization').replace('Bearer ', '');
     if (!token) return res.status(401).json({ error: 'Access denied | ERRC: 02' });
-    try {
+    try {        
+        const blacklisted = await BlacklistToken.findOne({ token });
+        if (blacklisted) return res.status(401).json({ error: 'Token revoked | ERRC: 03' });
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.userId = decoded.id;
         next();
