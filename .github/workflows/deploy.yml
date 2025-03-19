@@ -1,0 +1,56 @@
+name: Build and Deploy to Azure
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:  # Define the environment variable at the job level
+      AZURE_CONTAINER_REGISTRY: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
+      AZURE_WEBAPP_BACKEND_NAME: ${{ secrets.AZURE_WEBAPP_BACKEND_NAME }}
+      AZURE_WEBAPP_FRONTEND_NAME: ${{ secrets.AZURE_WEBAPP_FRONTEND_NAME }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'pnpm'
+
+      - name: Log in to Azure Container Registry
+        run: |
+          az acr login --name $AZURE_CONTAINER_REGISTRY
+
+      - name: Build and push backend image
+        run: |
+          docker build -t $AZURE_CONTAINER_REGISTRY.azurecr.io/backend:${{ github.sha }} -f backend/Dockerfile .
+          docker push $AZURE_CONTAINER_REGISTRY.azurecr.io/backend:${{ github.sha }}
+
+      - name: Build and push frontend image
+        run: |
+          docker build -t $AZURE_CONTAINER_REGISTRY.azurecr.io/frontend:${{ github.sha }} -f frontend/Dockerfile .
+          docker push $AZURE_CONTAINER_REGISTRY.azurecr.io/frontend:${{ github.sha }}
+
+      - name: Deploy backend to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: $AZURE_WEBAPP_BACKEND_NAME
+          images: $AZURE_CONTAINER_REGISTRY.azurecr.io/backend:${{ github.sha }}
+
+      - name: Deploy frontend to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: $AZURE_WEBAPP_FRONTEND_NAME
+          images: $AZURE_CONTAINER_REGISTRY.azurecr.io/frontend:${{ github.sha }}
