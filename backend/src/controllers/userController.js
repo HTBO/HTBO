@@ -25,12 +25,12 @@ const invalidateToken = async (token) => {
 const refreshToken = async (req, res) => {
     try {
         const token = req.header('Authorization')?.replace('Bearer ', '');
-        if (!token) return res.status(401).json({ error: 'Authorization required | ERRC: 01' });
+        if (!token) return res.status(401).json({ error: 'Authorization required | ERRC: 010' });
 
         // Verify and decode the old token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(decoded.id);
-        if (!user) return res.status(404).json({ error: 'User not found | ERRC: 31' });
+        if (!user) return res.status(404).json({ error: 'User not found | ERRC: 031' });
 
         // Invalidate the old token
         await invalidateToken(token);
@@ -42,8 +42,8 @@ const refreshToken = async (req, res) => {
     } catch (err) {
         console.error(err.message);
         const errorMessage = err.name === 'TokenExpiredError' 
-            ? 'Login again | ERRC: 32' 
-            : 'Invalid token | ERRC: 33';
+            ? 'Login again | ERRC: 032' 
+            : 'Invalid token | ERRC: 033';
         res.status(401).json({ error: errorMessage });
     }
 };
@@ -91,19 +91,19 @@ const loginUser = async (req, res) => {
         let user;
         if(username) {
             user = await User.findOne({ username });
-            if (!user) return res.status(401).json({ error: 'Username or password does not match | ERRC: 20' });
+            if (!user) return res.status(401).json({ error: 'Username or password does not match | ERRC: 200' });
             login("Username")
         } else if(email){
             user = await User.findOne({ email });
-            if (!user) return res.status(401).json({ error: 'Email or password does not match | ERRC: 21' });
+            if (!user) return res.status(401).json({ error: 'Email or password does not match | ERRC: 210' });
             login("Email")
         } else {
-            return res.status(401).json({error: "Please provide an email or username | ERRC: 22"})
+            return res.status(401).json({error: "Please provide an email or username | ERRC: 220"})
         }
         async function login (method) {
-            if(!password) return res.status(401).json({error: "Please provide the password | ERRC: 23"})
+            if(!password) return res.status(401).json({error: "Please provide the password | ERRC: 230"})
             const passwordMatch = await bcrypt.compare(password, user.passwordHash);
-            if (!passwordMatch) return res.status(401).json({ error: `${method} or password does not match | ERRC: 24` });
+            if (!passwordMatch) return res.status(401).json({ error: `${method} or password does not match | ERRC: 240` });
             token = generateToken(user);
             res.status(200).json({ token })
         }
@@ -116,12 +116,12 @@ const loginUser = async (req, res) => {
 const logoutUser = async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
-        if (!token) return res.status(401).json({ error: 'Not authorized | ERRC: 34' });
+        if (!token) return res.status(401).json({ error: 'Not authorized | ERRC: 010' });
     
         await invalidateToken(token);
         res.status(200).json({ message: 'Logged out successfully' });
     } catch (err) {
-        res.status(500).json({ error: 'Logout failed | ERRC: 35' });
+        res.status(500).json({ error: 'Logout failed' });
     }
 }
 

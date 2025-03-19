@@ -85,10 +85,3 @@ userid2 and groupid2 are optional
 > deleteSession
 `DELETE http://localhost:5000/api/sessions/<sessionid>`
 ---
-
-# Error codes:
-`| ERRC: 01` - No Authorization provided OR Authorization provided, but Bearer is empty
-
-`| ERRC: 02` - Failed to get the token
-
-`| ERRC: 10` - User is not the host of the session he tries to access
