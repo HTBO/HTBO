@@ -4,11 +4,11 @@ RUN corepack enable
 WORKDIR /app
 
 # Correct paths relative to root context
-COPY backend/package.json .
-COPY pnpm-lock.yaml* .
+COPY package.json .
+COPY ../pnpm-lock.yaml .
 
 RUN pnpm install --frozen-lockfile
-COPY backend/ .
+COPY . .
 
 EXPOSE $PORT
 CMD ["pnpm", "start"]
