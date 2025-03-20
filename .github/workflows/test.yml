@@ -1,11 +1,14 @@
-name: Backend branch | Backend tests
+name: Backend tests
 
 on:
+  workflow_dispatch:
   push:
     branches:
+      - main
       - Backend
   pull_request:
     branches:
+      - main
       - Backend
 
 jobs:
