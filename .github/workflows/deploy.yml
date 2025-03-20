@@ -15,8 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     env:  # Define the environment variable at the job level
       AZURE_CONTAINER_REGISTRY: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
-      AZURE_WEBAPP_BACKEND_NAME: htbo-backend
+      AZURE_WEBAPP_BACKEND_NAME: ${{ secrets.AZURE_WEBAPP_BACKEND_NAME }}
       AZURE_WEBAPP_FRONTEND_NAME: ${{ secrets.AZURE_WEBAPP_FRONTEND_NAME }}
+      AZURE_RESOURCE_GROUP_NAME: ${{ secrets.AZURE_RESOURCE_GROUP_NAME }}
     steps:
       - name: Checkout code
         uses: actions/checkout@main
@@ -43,9 +44,6 @@ jobs:
       - name: Log in to Azure Container Registry
         run: |
           az acr login --name $AZURE_CONTAINER_REGISTRY
-          
-      - name: Debug Web App Name
-        run: echo "Web App Name $AZURE_WEBAPP_BACKEND_NAME"
 
       - name: Build and push backend image
         run: |
@@ -56,19 +54,20 @@ jobs:
         run: |
           docker build -t $AZURE_CONTAINER_REGISTRY.azurecr.io/frontend:${{ github.sha }} -f frontend/Dockerfile .
           docker push $AZURE_CONTAINER_REGISTRY.azurecr.io/frontend:${{ github.sha }}
-          
         
       - name: Deploy backend to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ secrets.AZURE_WEBAPP_BACKEND_NAME }}
+          app-name: $AZURE_WEBAPP_BACKEND_NAME
           images: $AZURE_CONTAINER_REGISTRY.azurecr.io/backend:${{ github.sha }}
+          resource-group: $AZURE_RESOURCE_GROUP_NAME
 
       - name: Deploy frontend to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: $AZURE_WEBAPP_FRONTEND_NAME
           images: $AZURE_CONTAINER_REGISTRY.azurecr.io/frontend:${{ github.sha }}
+          resource-group: $AZURE_RESOURCE_GROUP_NAME
            
       - name: logout
         run: az logout
