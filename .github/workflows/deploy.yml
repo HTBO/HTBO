@@ -53,7 +53,10 @@ jobs:
         run: |
           docker build -t $AZURE_CONTAINER_REGISTRY.azurecr.io/frontend:${{ github.sha }} -f frontend/Dockerfile .
           docker push $AZURE_CONTAINER_REGISTRY.azurecr.io/frontend:${{ github.sha }}
-
+          
+      - name: Debug Web App Name
+        run: echo "Web App Name $AZURE_WEBAPP_BACKEND_NAME"
+        
       - name: Deploy backend to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
