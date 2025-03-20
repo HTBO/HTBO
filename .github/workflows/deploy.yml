@@ -57,9 +57,9 @@ jobs:
       - name: Deploy backend to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: $AZURE_WEBAPP_BACKEND_NAME
+          app-name: htbo-backend
           images: $AZURE_CONTAINER_REGISTRY.azurecr.io/backend:${{ github.sha }}
-          resource-group-name: $AZURE_RESOURCE_GROUP_NAME
+          resource-group-name: HTBO
 
       - name: Deploy frontend to Azure Web App
         uses: azure/webapps-deploy@v3
