@@ -55,14 +55,14 @@ jobs:
           docker push $AZURE_CONTAINER_REGISTRY.azurecr.io/frontend:${{ github.sha }}
         
       - name: Deploy backend to Azure Web App
-        uses: azure/webapps-deploy@v3.0.1
+        uses: azure/webapps-deploy@v3
         with:
-          app-name: htbo-backend
+          app-name: $AZURE_WEBAPP_BACKEND_NAME
           images: $AZURE_CONTAINER_REGISTRY.azurecr.io/backend:${{ github.sha }}
-          resource-group-name: HTBO
+          resource-group-name: $AZURE_RESOURCE_GROUP_NAME
 
       - name: Deploy frontend to Azure Web App
-        uses: azure/webapps-deploy@v3.0.1
+        uses: azure/webapps-deploy@v3
         with:
           app-name: $AZURE_WEBAPP_FRONTEND_NAME
           images: $AZURE_CONTAINER_REGISTRY.azurecr.io/frontend:${{ github.sha }}
