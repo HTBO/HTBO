@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     env:  # Define the environment variable at the job level
       AZURE_CONTAINER_REGISTRY: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
-      AZURE_WEBAPP_BACKEND_NAME: ${{ secrets.AZURE_WEBAPP_BACKEND_NAME }}
+      AZURE_WEBAPP_BACKEND_NAME: htbo-backend
       AZURE_WEBAPP_FRONTEND_NAME: ${{ secrets.AZURE_WEBAPP_FRONTEND_NAME }}
     steps:
       - name: Checkout code
@@ -45,7 +45,7 @@ jobs:
           az acr login --name $AZURE_CONTAINER_REGISTRY
           
       - name: Debug Web App Name
-        run: echo "Web App Name $(echo $AZURE_WEBAPP_BACKEND_NAME | base64)"
+        run: echo "Web App Name $AZURE_WEBAPP_BACKEND_NAME"
 
       - name: Build and push backend image
         run: |
