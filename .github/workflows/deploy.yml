@@ -33,7 +33,6 @@ jobs:
         with:
           node-version: 18
           cache: 'pnpm'
-
       - name: Log in to Azure
         uses: azure/login@v1
         with:
@@ -56,14 +55,14 @@ jobs:
           docker push $AZURE_CONTAINER_REGISTRY.azurecr.io/frontend:${{ github.sha }}
         
       - name: Deploy backend to Azure Web App
-        uses: azure/webapps-deploy@v3
+        uses: azure/webapps-deploy@v3.0.1
         with:
-          app-name: $AZURE_WEBAPP_BACKEND_NAME
+          app-name: htbo-backend
           images: $AZURE_CONTAINER_REGISTRY.azurecr.io/backend:${{ github.sha }}
-          resource-group-name: $AZURE_RESOURCE_GROUP_NAME
+          resource-group-name: HTBO
 
       - name: Deploy frontend to Azure Web App
-        uses: azure/webapps-deploy@v3
+        uses: azure/webapps-deploy@v3.0.1
         with:
           app-name: $AZURE_WEBAPP_FRONTEND_NAME
           images: $AZURE_CONTAINER_REGISTRY.azurecr.io/frontend:${{ github.sha }}
