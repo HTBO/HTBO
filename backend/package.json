@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "jest --reporters=default --reporters=./custom-html-reporter.js --detectOpenHandles --forceExit",
+    "test": "jest --reporters=default --detectOpenHandles --forceExit",
     "coverage": "jest --collectCoverage=true --coverage --coverageDirectory=tests/coverage --coverageReporters=text --coverageReporters=html --forceExit --watchAll=false --detectOpenHandles"
   },
   "keywords": [],
@@ -26,7 +26,5 @@
     "nodemon": "^3.1.9",
     "supertest": "^7.0.0"
   },
-  "devDependencies": {
-    "firebase-admin": "^13.2.0"
-  }
+  "devDependencies": {}
 }

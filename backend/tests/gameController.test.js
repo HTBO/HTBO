@@ -34,7 +34,7 @@ describe('Game Controller', () => {
                     storeId: new mongoose.Types.ObjectId(),
                     link: 'https://store.steampowered.com/app/730/CounterStrike_2/'
                 }]
-            });
+            });           
         expect(response.status).toBe(201);
         expect(response.body.name).toBe('CS2');
     });

@@ -713,25 +713,7 @@ packages:
     resolution: {integrity: sha512-PzSrhIr++KI6y4P6C/IdgBNMkEx0Ex6554/cYd0Hm+ovyFSJtJXqb/3OSIdnBoa2cpwZT1/GW56EmRc5qEc5fQ==}
     engines: {node: '>=18.0.0'}
 
-  '@google-cloud/firestore@7.11.0':
-    resolution: {integrity: sha512-88uZ+jLsp1aVMj7gh3EKYH1aulTAMFAp8sH/v5a9w8q8iqSG27RiWLoxSAFr/XocZ9hGiWH1kEnBw+zl3xAgNA==}
-    engines: {node: '>=14.0.0'}
-
-  '@google-cloud/paginator@5.0.2':
-    resolution: {integrity: sha512-DJS3s0OVH4zFDB1PzjxAsHqJT6sKVbRwwML0ZBP9PbU7Yebtu/7SWMRzvO2J3nUi9pRNITCfu4LJeooM2w4pjg==}
-    engines: {node: '>=14.0.0'}
-
-  '@google-cloud/projectify@4.0.0':
-    resolution: {integrity: sha512-MmaX6HeSvyPbWGwFq7mXdo0uQZLGBYCwziiLIGq5JVX+/bdI3SAq6bP98trV5eTWfLuvsMcIC1YJOF2vfteLFA==}
-    engines: {node: '>=14.0.0'}
-
-  '@google-cloud/promisify@4.1.0':
-    resolution: {integrity: sha512-G/FQx5cE/+DqBbOpA5jKsegGwdPniU6PuIEMt+qxWgFxvxuFOzVmp6zYchtYuwAWV5/8Dgs0yAmjvNZv3uXLQg==}
-    engines: {node: '>=18'}
-
-  '@google-cloud/storage@7.15.2':
-    resolution: {integrity: sha512-+2k+mcQBb9zkaXMllf2wwR/rI07guAx+eZLWsGTDihW2lJRGfiqB7xu1r7/s4uvSP/T+nAumvzT5TTscwHKJ9A==}
-    engines: {node: '>=14'}
+  # ...existing code...
 
   '@grpc/grpc-js@1.12.6':
     resolution: {integrity: sha512-JXUj6PI0oqqzTGvKtzOkxtpsyPRNsrmhh41TtIz/zEB6J+AUiZZ0dxWzcMwO9Ns5rmSPuMdghlTbUuqIM48d3Q==}

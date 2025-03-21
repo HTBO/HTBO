@@ -71,9 +71,15 @@ describe('Session Controller', () => {
     });
 
     test('should not create a session with invalid hostId', async () => {
+        const hostToCreate = await User.create({
+            username: 'hostuser',
+            email: 'hostuser@example.com',
+            passwordHash: 'password123'
+        });
+        let creationToken = jwt.sign({ id: hostToCreate._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
         const response = await request(app)
             .post('/api/sessions')
-            .set('Authorization', `Bearer ${token}`)
+            .set('Authorization', `Bearer ${creationToken}`)
             .send({
                 hostId: 'invalidId',
                 gameId: gameId.toString(),
@@ -83,6 +89,7 @@ describe('Session Controller', () => {
             });
         expect(response.status).toBe(400);
         expect(response.body.error).toBe('Invalid host ID');
+        await User.deleteMany({});
     });
 
     test('should get all sessions', async () => {

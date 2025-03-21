@@ -1,18 +1,13 @@
 const app = require('./app');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
-require('./config/firebase');
 dotenv.config();
+
 const PORT = process.env.PORT;
 const MONGODB_URI = process.env.MONGODB_URI;
 
-
-// if (!MONGODB_URI) {
-//   console.error("\x1b[33m\x1b[45m\x1b[1mERROR: No database URL defined. Please set the MONGODB_URI environment variable\x1b[0m");
-// }
-
 const validateEnvironment = () => {
-  const requiredVars = ['MONGODB_URI', 'FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY'];
+  const requiredVars = ['MONGODB_URI'];
   requiredVars.forEach(varName => {
     if (!process.env[varName]) {
       console.error(`\x1b[31mMissing required environment variable: ${varName}\x1b[0m`);

@@ -18,19 +18,19 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(rateLimiter);
+// app.use(rateLimiter);
 
-app.use((req, res, next) => {
-  const logEntry = new Log({
-    ip: req.clientIP,
-    endpoint: req.originalUrl,
-    method: req.method
-  });
-  logEntry.save()
-    .catch(err => console.error('Failed to save log:', err));
-  console.log(`\x1b[36m${req.clientIP}\x1b[0m - ${req.method} ${req.originalUrl}`);
-  next();
-});
+// app.use((req, res, next) => {
+//   const logEntry = new Log({
+//     ip: req.clientIP,
+//     endpoint: req.originalUrl,
+//     method: req.method
+//   });
+//   logEntry.save()
+//     .catch(err => console.error('Failed to save log:', err));
+//   console.log(`\x1b[36m${req.clientIP}\x1b[0m - ${req.method} ${req.originalUrl}`);
+//   next();
+// });
 
 app.use(express.json());
 app.use(cors());
