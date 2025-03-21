@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const Session = require('../models/Session')
 const User = require('../models/User');
 const Group = require('../models/Group');
+console.log("blob");
+
 
 const createSession = async (req, res) => {
     try {
