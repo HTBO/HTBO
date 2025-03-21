@@ -2,8 +2,6 @@ const mongoose = require('mongoose');
 const Session = require('../models/Session')
 const User = require('../models/User');
 const Group = require('../models/Group');
-const { db } = require('../config/firebase');
-const admin = require('firebase-admin');
 
 const createSession = async (req, res) => {
     let firestoreSessionRef = null;
