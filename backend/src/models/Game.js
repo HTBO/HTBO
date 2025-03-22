@@ -14,10 +14,6 @@ const storeInfoSchema = new mongoose.Schema({
 }, { _id: false });
 
 const gameSchema = new mongoose.Schema({
-  firebaseId: {
-    type: String,
-    unique: true
-  },
   name: {
     type: String,
     required: true,

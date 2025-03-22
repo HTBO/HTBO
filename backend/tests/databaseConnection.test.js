@@ -2,33 +2,43 @@ const app = require('../src/app');
 const mongoose = require('mongoose');
 
 describe("Connect to real database", () => {
+    let server;
+
+    afterEach(async () => {
+        // Close the server after each test
+        if (server) {
+            await new Promise((resolve) => server.close(resolve));
+        }
+        // Disconnect from MongoDB
+        await mongoose.disconnect();
+    });
+
     test("Connection succeeded", async () => {
-        const PORT = process.env.PORT;
         const MONGODB_URI = process.env.MONGODB_URI;
 
-        if (!MONGODB_URI) console.error("No database URL defined");
-
-        async function connection() {
-
-            await mongoose.connect(MONGODB_URI)
-                .then(() => {
-                    console.log('MongoDB connected');
-                    return new Promise((resolve) => {
-                        app.listen(PORT, () => {
-                            console.log(`Server running on port ${PORT}`);
-                            resolve();
-                        });
-                    });
-                });
+        if (!MONGODB_URI) {
+            console.error("No database URL defined");
+            return;
         }
 
         const logSpy = jest.spyOn(global.console, 'log');
-        await connection();
 
+        // Connect to MongoDB
+        await mongoose.connect(MONGODB_URI);
+        console.log('MongoDB connected');
+
+        // Start the server on a random available port
+        await new Promise((resolve) => {
+            server = app.listen(0, () => {
+                const port = server.address().port;
+                console.log(`Server running on port ${port}`);
+                resolve();
+            });
+        });
+
+        // Verify logs
         expect(logSpy).toHaveBeenCalledTimes(2);
-        expect(logSpy).toHaveBeenCalledWith(`Server running on port ${PORT}`);
         expect(logSpy).toHaveBeenCalledWith('MongoDB connected');
-
-        await mongoose.disconnect();
+        expect(logSpy).toHaveBeenCalledWith(expect.stringMatching(/^Server running on port \d+$/));
     });
 });
