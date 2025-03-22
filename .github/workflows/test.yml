@@ -35,7 +35,7 @@ jobs:
         run: pnpm approve-builds
         
       - name: Create directories
-        run: mkdir -p backend/tests/test-reports backend/tests/coverage
+        run: mkdir -p backend/tests/test-results backend/tests/coverage
 
       - name: Run Jest tests
         env:
@@ -51,5 +51,5 @@ jobs:
         with:
           name: test-results
           path: |
-            backend/tests/test-reports/
+            backend/tests/test-results/
             backend/tests/coverage/

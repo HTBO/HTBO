@@ -2,7 +2,6 @@
 const mongoose = require('mongoose');
 
 const storeSchema = new mongoose.Schema({
-  firebaseId: { type: String },
   name: {
     type: String,
     required: [true, 'A bolt neve kötelező'],
@@ -32,5 +31,4 @@ const storeSchema = new mongoose.Schema({
   }
 });
 
-const Store = mongoose.model('Store', storeSchema);
-module.exports = Store;
+module.exports = mongoose.model('Store', storeSchema);

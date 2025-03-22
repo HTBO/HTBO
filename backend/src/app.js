@@ -1,8 +1,8 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
-const Log = require('./models/Log');
-const rateLimiter = require('./middleware/rateLimiter'); // New import
+const {Log} = require('./models/Log');
+const rateLimiter = require('./middleware/rateLimiter');
 
 dotenv.config({ path: '../.env' });
 
@@ -11,16 +11,15 @@ const app = express();
 app.set('trust proxy', true);
 
 app.use((req, res, next) => {
-  let ip = req.ip;
-  if (ip === '::1') ip = '127.0.0.1';
-  else if (ip.startsWith('::ffff:')) ip = ip.split(':').pop();
-  req.clientIP = ip;
+  req.clientIP = req.ip.replace('::ffff:', '');
   next();
 });
 
 app.use(rateLimiter);
 
 app.use((req, res, next) => {
+  if (req.clientIP == "127.0.0.1") return next();
+  if (req.originalUrl.includes('favicon.ico')) return next();
   const logEntry = new Log({
     ip: req.clientIP,
     endpoint: req.originalUrl,
@@ -28,7 +27,7 @@ app.use((req, res, next) => {
   });
   logEntry.save()
     .catch(err => console.error('Failed to save log:', err));
-  console.log(`\x1b[36m${req.clientIP}\x1b[0m - ${req.method} ${req.originalUrl}`);
+  // console.log(`\x1b[36m${req.clientIP}\x1b[0m - ${req.method} ${req.originalUrl}`);
   next();
 });
 
