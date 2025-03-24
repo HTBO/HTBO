@@ -21,10 +21,18 @@ const validateEnvironment = () => {
 validateEnvironment();
 
 Promise.all([
-  mongoose.connect(MONGODB_URI),
-  logDB.asPromise() // Wait for logs DB connection
+  mongoose.connect(MONGODB_URI).catch(err => err),
+  logDB.asPromise().catch(err => err)
 ])
-  .then(() => {
+.then(([mainDB, logDB]) => {
+  if (mainDB instanceof Error) {
+    terminal.error('Main DB connection failed', mainDB);
+    process.exit(1);
+  }
+  if (logDB instanceof Error) {
+    terminal.error('Logs DB connection failed', logDB);
+    process.exit(1);
+  }
     // console.log('\x1b[36mAll databases connected\x1b[0m');
     terminal.success('All databases connected');
     mongoose.connection.db.collection('rateLimits').createIndex(
@@ -41,7 +49,7 @@ Promise.all([
       }
     );
 
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0',  () => {
       // console.log(`\x1b[32mServer running on port: \x1b[42m${PORT}\x1b[0m`);
       terminal.success(`Server running on port: ${PORT}`);
     });
@@ -51,3 +59,4 @@ Promise.all([
     terminal.error('Database connection failed', err);
     process.exit(1);
   });
+
