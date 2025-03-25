@@ -10,10 +10,7 @@ const createGame = async (req, res) => {
         const existingMongoGame = await Game.findOne({ name });
         if (existingMongoGame)
             return res.status(400).json({ error: "The game's name is already taken" });
-
-        const existingMongoGame = await Game.findOne({ name });
-        if (existingMongoGame) 
-            return res.status(400).json({ error: "The game's name is already taken" });
+        
         const newGame = await Game.create({
             _id: mongoIdString,
             name,
