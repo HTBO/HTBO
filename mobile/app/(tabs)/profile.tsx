@@ -46,7 +46,7 @@ export default function ProfileScreen() {
       }
 
       const response = await fetch(
-        "https://htbo-production.up.railway.app/api/users/me",
+        "https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/me",
         {
           method: "GET",
           headers: {

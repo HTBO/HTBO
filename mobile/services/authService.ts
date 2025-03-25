@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = 'https://htbo-production.up.railway.app/api/users';
+const API_BASE_URL = 'https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users';
 
 type LoginCredentials = {
   username?: string;

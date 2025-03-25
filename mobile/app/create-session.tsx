@@ -69,7 +69,7 @@ export default function CreateSessionScreen() {
 
       // Make authenticated request
       const response = await fetch(
-        "https://htbo-production.up.railway.app/api/users/me",
+        "https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/me",
         {
           method: "GET",
           headers: {
@@ -100,7 +100,7 @@ export default function CreateSessionScreen() {
     try {
       setLoadingGames(true);
       const response = await fetch(
-        "https://htbo-production.up.railway.app/api/games"
+        "https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/games"
       );
 
       if (!response.ok) {
@@ -195,10 +195,10 @@ export default function CreateSessionScreen() {
     }
 
     // Form validation
-    if (!selectedGame || !selectedDate || !userId1) {
-      Alert.alert("Missing Fields", "Please fill out all required fields");
-      return;
-    }
+    // if (!selectedGame || !selectedDate || !userId1) {
+    //   Alert.alert("Missing Fields", "Please fill out all required fields");
+    //   return;
+    // }
 
     try {
       setIsLoading(true);
@@ -211,7 +211,7 @@ export default function CreateSessionScreen() {
       }
 
       // Format date directly from the Date object to ISO format
-      const scheduledAt = selectedDate.toISOString();
+      const scheduledAt = selectedDate ? selectedDate.toISOString() : null;
 
       // Define participant type
       type Participant = { user?: string; group?: string };
@@ -228,14 +228,14 @@ export default function CreateSessionScreen() {
       const sessionData = {
         hostId: currentUser._id,
         gameId: selectedGame.id, // Use the ID from the selected game object
-        scheduledAt,
-        description,
-        participants,
+        scheduledAt: scheduledAt,
+        description: description,
+        participants: participants,
       };
 
       // Send to API
       const response = await fetch(
-        "https://htbo-production.up.railway.app/api/sessions",
+        "https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/sessions",
         {
           method: "POST",
           headers: {
@@ -245,7 +245,8 @@ export default function CreateSessionScreen() {
           body: JSON.stringify(sessionData),
         }
       );
-
+      console.log(JSON.stringify(sessionData));
+      // console.log(response);
       if (!response.ok) {
         throw new Error(`Server responded with status: ${response.status}`);
       }
