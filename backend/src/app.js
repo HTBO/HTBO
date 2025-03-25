@@ -18,6 +18,16 @@ app.use((req, res, next) => {
 app.use(rateLimiter);
 
 app.use((req, res, next) => {
+
+  if (req.path.startsWith('/socket.io/')) return next();
+  req.clientIP = req.ip.replace('::ffff:', '');
+  next();
+});
+
+app.use(rateLimiter);
+
+app.use((req, res, next) => {
+  if (req.path.startsWith('/socket.io/')) return next();
   if (req.clientIP == "127.0.0.1") return next();
   if (req.originalUrl.includes('favicon.ico')) return next();
   const logEntry = new Log({
@@ -27,7 +37,6 @@ app.use((req, res, next) => {
   });
   logEntry.save()
     .catch(err => console.error('Failed to save log:', err));
-  // console.log(`\x1b[36m${req.clientIP}\x1b[0m - ${req.method} ${req.originalUrl}`);
   next();
 });
 

@@ -43,6 +43,7 @@ jobs:
       - name: Run Jest tests
         env:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          LOGS_MONGODB_URI: ${{ secrets.LOGS_MONGODB_URI }}
           PORT: ${{ secrets.PORT }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           JWT_EXPIRES_IN: ${{ secrets.JWT_EXPIRES_IN }}

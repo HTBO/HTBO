@@ -10,32 +10,25 @@ const createSession = async (req, res) => {
     try {
         const { hostId, gameId, scheduledAt, description, participants: reqParticipants } = req.body;
 
-        // 1. Validate host in MongoDB
         const mongoHost = await User.findById(hostId);
-        if (!mongoHost) {
-            return res.status(404).json({ error: "Host not found" });
-        }
+        if (!mongoHost) return res.status(404).json({ error: "Host not found" });
 
-        // 2. Check existing sessions in MongoDB
         const existingMongoSession = await Session.findOne({ hostId });
-        if (existingMongoSession) {
+        if (existingMongoSession)
             return res.status(400).json({ error: "Host already has a session" });
-        }
 
         // 3. Process participants with MongoDB validation
         const userIds = new Set();
         for (const p of reqParticipants) {
             if (p.user) {
                 const mongoUser = await User.findById(p.user);
-                if (!mongoUser) {
+                if (!mongoUser) 
                     return res.status(404).json({ error: `User not found: ${p.user}` });
-                }
                 userIds.add(p.user);
             } else if (p.group) {
                 const mongoGroup = await Group.findById(p.group);
-                if (!mongoGroup) {
+                if (!mongoGroup) 
                     return res.status(404).json({ error: `Group not found: ${p.group}` });
-                }
                 mongoGroup.members.forEach(member => userIds.add(member.memberId.toString()));
                 userIds.add(mongoGroup.ownerId.toString());
             } else {
@@ -44,8 +37,6 @@ const createSession = async (req, res) => {
         }
 
         userIds.delete(hostId);
-
-        // 4. Create MongoDB session document
         mongoSession = await Session.create({
             _id: sessionId,
             hostId,
@@ -58,7 +49,6 @@ const createSession = async (req, res) => {
             }))
         });
 
-        // 5. Update users in MongoDB
         const bulkOps = Array.from(userIds).map(userId => ({
             updateOne: {
                 filter: { _id: userId },
@@ -80,11 +70,7 @@ const createSession = async (req, res) => {
     } catch (error) {
         console.error('Error during session creation:', error);
 
-        // Cleanup MongoDB if error occurs
-        if (mongoSession) {
-            await Session.deleteOne({ _id: mongoSession._id });
-        }
-
+        if (mongoSession) await Session.deleteOne({ _id: mongoSession._id });
         if (error.name === 'ValidationError') {
             const messages = Object.values(error.errors).map(err => err.message);
             return res.status(400).json({ errors: messages });
@@ -193,9 +179,8 @@ const updateSession = async (req, res) => {
                 return res.status(400).json({ error: "Cannot specify both user and group in one entry" });
 
             if (entry.user) {
-                if (!mongoose.Types.ObjectId.isValid(entry.user)) {
+                if (!mongoose.Types.ObjectId.isValid(entry.user))
                     return res.status(400).json({ error: `Invalid user ID: ${entry.user}` });
-                }
                 userIds.add(entry.user.toString());
             } else if (entry.group) {
                 if (!mongoose.Types.ObjectId.isValid(entry.group)) 

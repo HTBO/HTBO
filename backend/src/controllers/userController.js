@@ -80,9 +80,8 @@ const registerUser = async (req, res) => {
             token
         });
     } catch (err) {
-        console.log(`${err.message} reg err`);
+        console.error(`${err.message} reg err`);
         res.status(500).json({ error: 'Server error' });
-
     }
 };
 
@@ -109,7 +108,7 @@ const loginUser = async (req, res) => {
             res.status(200).json({ token })
         }
     } catch (err) {
-        console.log(`${err.message} login error.`);
+        console.error(`${err.message} login error.`);
         res.status(500).json({ error: 'Login failed' });
     }
 }
@@ -141,13 +140,9 @@ const getMyInfo = async (req, res) => {
 }
 
 const getMySessions = async (req, res) => {
-    console.log('s');
     try {
-        
         const token = req.header('Authorization').replace('Bearer ', '');
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        console.log(decoded.id);
-        
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);        
         const user = await User.findById(decoded.id);
         let sessions = await Session.find({ hostId: user._id });
         sessions.push(...await Session.find({ 'participants.user': user._id }));
@@ -258,18 +253,17 @@ const updateUser = async (req, res) => {
                     await addedFriend.addFriend(user);
                     break;
                 case 'remove':
-                    // user.friends = user.friends.filter(friend => !friend.userId.equals(friendId));
-                    // addedFriend.friends = addedFriend.friends.filter(friend => !friend.userId.equals(user));
                     await user.removeFriend();
                     await addedFriend.removeFriend();
-                    // await user.save();
                     break;
                 case 'update-status':
                     const friend = user.friends.find(friend => friend.userId.equals(friendId));
-                    // console.log(req.params.id);
+
                     const addUser = addedFriend.friends.find(friend => friend.userId.equals(req.params.id))
+
                     if (!friend) return res.status(404).json({ error: 'Friend not found' });
                     if (!friendActions.includes(status)) return res.status(400).json({ error: 'Invalid status' });
+
                     if (status == "rejected") {
                         await user.removeFriend();
                         await addedFriend.removeFriend();
@@ -290,23 +284,14 @@ const updateUser = async (req, res) => {
                 return res.status(400).json({ error: 'Invalid game ID' });
             switch (action) {
                 case "add":
-                    // Check if user already has the game (using ObjectId)
-                    if (user.games.some(g => g.gameId.equals(gameObjectId))) {
+                    if (user.games.some(g => g.gameId.equals(gameObjectId))) 
                         return res.status(400).json({ error: 'Game already in collection' });
-                    }
                     await user.editUserGames(gameObjectId, "add");
                     break;
 
                 case "remove":
-                    // Check if user has the game (using ObjectId)
-                    if (!user.games.some(g => g.gameId.equals(gameObjectId))) {
-                        console.log(user.games);
-                        console.log(gameObjectId);
-
-
+                    if (!user.games.some(g => g.gameId.equals(gameObjectId))) 
                         return res.status(400).json({ error: 'Game not in collection' });
-                    }
-                    // await user.removeGame(gameObjectId);
                     await user.editUserGames(gameObjectId, "remove");
                     break;
 
@@ -314,18 +299,14 @@ const updateUser = async (req, res) => {
                     return res.status(400).json({ error: 'Invalid game action' });
             }
         } else if (req.body.sessionAction) {
-
             const { sessionId, action } = req.body.sessionAction;
             if (!mongoose.Types.ObjectId.isValid(sessionId))
                 return res.status(400).json({ error: 'Invalid session ID' });
             switch (action) {
                 case "add":
-                    console.log("adding: " + sessionId);
                     await user.addSession(sessionId);
                     break;
                 case "remove":
-                    console.log("removing: " + sessionId);
-
                     await user.removeSession(sessionId);
                     break;
                 default:
@@ -338,9 +319,7 @@ const updateUser = async (req, res) => {
                 allowedUpdates.includes(update)
             );
 
-            if (!isValidOperation) {
-                return res.status(400).json({ error: 'Invalid updates!' });
-            }
+            if (!isValidOperation) return res.status(400).json({ error: 'Invalid updates!' });
 
             updates.forEach(update => user[update] = req.body[update]);
             await user.save();
@@ -354,13 +333,11 @@ const updateUser = async (req, res) => {
     } catch (error) {
         console.error(error.message);
 
-        if (error.name === 'CastError') {
+        if (error.name === 'CastError')
             return res.status(400).json({ error: 'Invalid user ID format' });
-        }
 
-        if (error.name === 'ValidationError') {
+        if (error.name === 'ValidationError')
             return res.status(400).json({ error: error.message });
-        }
 
         if (error.code === 11000) {
             const field = Object.keys(error.keyPattern)[0];
@@ -427,7 +404,6 @@ const deleteUser = async (req, res) => {
             { $pull: { participants: { user: user._id } } }
         );
         stats.participantSessionsCleaned += sessionUpdateResult.modifiedCount;
-        // User.findByIdAndDelete(req.params.id);
         await User.findByIdAndDelete(req.params.id);
         res.status(200).json({
             message: 'User deleted successfully',

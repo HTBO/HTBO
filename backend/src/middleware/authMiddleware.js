@@ -22,25 +22,22 @@ async function verifyToken(req, res, next) {
 };
 
 function checkUserPermission(req, res, next) {
-    if (req.params.id !== String(req.userId)) {
+    if (req.params.id !== String(req.userId))
         return res.status(403).json({ error: 'Unauthorized access | ERRC: 100' });
-    }
     next();
 }
 
 async function checkSessionPermission (req, res, next) {
     const hostId = await Session.findById(req.params.id).select('hostId');
-    if(req.userId !== String(hostId.hostId)) {
+    if(req.userId !== String(hostId.hostId)) 
         return res.status(403).json({ error: 'Unauthorized access | ERRC: 110' });
-    }
     next();
 }
 
 async function checkGroupPermission (req, res, next) {
     const ownerId = await Group.findById(req.params.id).select('ownerId');
-    if(req.userId !== String(ownerId.ownerId)) {
+    if(req.userId !== String(ownerId.ownerId)) 
         return res.status(403).json({ error: 'Unauthorized access | ERRC: 120' });
-    }
     next();
 }
 
