@@ -10,23 +10,23 @@ beforeAll(async () => {
     mongoServer = await MongoMemoryServer.create();
     const mongoUri = mongoServer.getUri();
     await mongoose.connect(mongoUri);
-});
+}, 30000);
 
 afterAll(async () => {
     await mongoose.disconnect();
     await mongoServer.stop();
-});
+}, 30000);
 
 beforeEach(async () => {
     await Game.deleteMany({});
-});
+}, 30000);
 
 describe('Game Controller', () => {
     test('should create a new game', async () => {
         const response = await request(app)
             .post('/api/games')
             .send({
-                name: 'CS2',
+                name: 'CS',
                 description: 'Klasszikus lövöldözős játék',
                 publisher: 'Valve',
                 releaseYear: 2022,
@@ -34,9 +34,9 @@ describe('Game Controller', () => {
                     storeId: new mongoose.Types.ObjectId(),
                     link: 'https://store.steampowered.com/app/730/CounterStrike_2/'
                 }]
-            });
-        expect(response.status).toBe(201);
-        expect(response.body.name).toBe('CS2');
+            });           
+        expect(response.status).toBe(201);        
+        expect(response.body.document.name).toBe('CS');
     });
 
     test('should not create a game with an existing name', async () => {

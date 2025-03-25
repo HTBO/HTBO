@@ -39,7 +39,7 @@
         {
           "name": "Backend Coverage",
           "commands": [
-            "pnpx jest --coverage"
+            "pnpm run dev:backend:coverage"
           ]
         }
       ],

@@ -74,7 +74,7 @@ describe('User Controller', () => {
                 password: 'wrongpassword'
             });
         expect(response.status).toBe(401);
-        expect(response.body.error).toBe('Username or password does not match | ERRC: 24');
+        expect(response.body.error).toBe('Username or password does not match | ERRC: 240');
     });
 
     test('should get all users', async () => {

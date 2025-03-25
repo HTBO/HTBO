@@ -83,9 +83,3 @@ userid2 are optional
 `DELETE http://localhost:5000/api/groups/<groupid>`
 ---
 
-# Error codes:
-`| ERRC: 01` - No Authorization provided OR Authorization provided, but Bearer is empty
-
-`| ERRC: 02` - Failed to get the token
-
-`| ERRC: 40` - User not the owner of the group
