@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const runtimeConfig = useRuntimeConfig();
+const API_BASE_URL = runtimeConfig.public.apiBaseUrl;
 
 definePageMeta({
     layout: 'blank'
@@ -25,7 +27,7 @@ async function signUp() {
     }
 
     try {
-        const response = await fetch('http://localhost:5000/api/users/register', {
+        const response = await fetch(`${API_BASE_URL}/users/register`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

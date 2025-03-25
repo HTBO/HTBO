@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const runtimeConfig = useRuntimeConfig();
+const API_BASE_URL = runtimeConfig.public.apiBaseUrl;
 
 definePageMeta({
     layout: 'blank'
@@ -20,7 +22,7 @@ async function signIn() {
     }
 
     try {
-        const response = await fetch('http://localhost:5000/api/users/login', {
+        const response = await fetch(`${API_BASE_URL}/users/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
