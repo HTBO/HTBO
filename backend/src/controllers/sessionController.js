@@ -7,53 +7,43 @@ const createSession = async (req, res) => {
     try {
         const { hostId, gameId, scheduledAt, description, participants: reqParticipants } = req.body;
 
-        if (!mongoose.Types.ObjectId.isValid(hostId)) return res.status(400).json({ error: "Invalid host ID" });
-        const host = await User.findById(hostId);
-        if (!host) return res.status(404).json({ error: "Host not found" });
+        const mongoHost = await User.findById(hostId);
+        if (!mongoHost) return res.status(404).json({ error: "Host not found" });
 
-        const existingSession = await Session.findOne({ hostId });
-        if (existingSession) return res.status(400).json({ error: "Host already has a session" });
+        const existingMongoSession = await Session.findOne({ hostId });
+        if (existingMongoSession)
+            return res.status(400).json({ error: "Host already has a session" });
 
         const userIds = new Set();
         for (const p of reqParticipants) {
             if (p.user) {
-                if (!mongoose.Types.ObjectId.isValid(p.user)) return res.status(400).json({ error: `Invalid participant user ID: ${p.user}` });
+                const mongoUser = await User.findById(p.user);
+                if (!mongoUser) 
+                    return res.status(404).json({ error: `User not found: ${p.user}` });
                 userIds.add(p.user);
             } else if (p.group) {
-                if (!mongoose.Types.ObjectId.isValid(p.group)) return res.status(400).json({ error: `Invalid participant group ID: ${p.group}` });
-                const group = await Group.findById(p.group);
-                if (!group) return res.status(404).json({ error: `Group not found: ${p.group}` });
-                userIds.add(group.ownerId.toString());
-                for (const member of group.members) {
-                    userIds.add(member.memberId.toString());
-                }
+                const mongoGroup = await Group.findById(p.group);
+                if (!mongoGroup) 
+                    return res.status(404).json({ error: `Group not found: ${p.group}` });
+                mongoGroup.members.forEach(member => userIds.add(member.memberId.toString()));
+                userIds.add(mongoGroup.ownerId.toString());
             } else {
                 return res.status(400).json({ error: "Each participant must specify either a user or a group" });
             }
         }
 
-        userIds.delete(hostId.toString());
+        userIds.delete(hostId);
 
-        const userIdArray = Array.from(userIds);
-
-        for (const userId of userIdArray) {
-            if (!mongoose.Types.ObjectId.isValid(userId)) return res.status(400).json({ error: `Invalid participant ID: ${userId}` });
-            const userExists = await User.exists({ _id: userId });
-            if (!userExists) return res.status(404).json({ error: `User not found: ${userId}` });
-        }
-
-        const participants = userIdArray.map(userId => ({
-            user: userId,
-            status: 'pending'
-        }));
-        const newSession = await Session.create({
+        mongoSession = await Session.create({
+            _id: sessionId,
             hostId,
             gameId,
             scheduledAt,
             description,
             participants
         });
-        const bulkOps = participants.map(p => ({
+
+        const bulkOps = Array.from(userIds).map(userId => ({
             updateOne: {
                 filter: { _id: p.user },
                 update: {
@@ -79,7 +69,9 @@ const createSession = async (req, res) => {
         res.status(201).json(newSession);
 
     } catch (error) {
-        console.error('Error during session creation:', error.message);
+        console.error('Error during session creation:', error);
+
+        if (mongoSession) await Session.deleteOne({ _id: mongoSession._id });
 
         if (error.name === 'ValidationError') {
             const messages = Object.values(error.errors).map(err => err.message);
@@ -188,9 +180,8 @@ const updateSession = async (req, res) => {
                 return res.status(400).json({ error: "Cannot specify both user and group in one entry" });
 
             if (entry.user) {
-                if (!mongoose.Types.ObjectId.isValid(entry.user)) {
+                if (!mongoose.Types.ObjectId.isValid(entry.user))
                     return res.status(400).json({ error: `Invalid user ID: ${entry.user}` });
-                }
                 userIds.add(entry.user.toString());
             } else if (entry.group) {
                 if (!mongoose.Types.ObjectId.isValid(entry.group)) 

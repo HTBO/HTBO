@@ -9,21 +9,27 @@ const app = express();
 
 app.set('trust proxy', true);
 app.use((req, res, next) => {
-    let ip = req.ip;
-    if (ip === '::1') ip = '127.0.0.1';
-    else if (ip.startsWith('::ffff:')) ip = ip.split(':').pop();
-    req.clientIP = ip;
-    const logEntry = new Log({
-      ip: ip,
-      endpoint: req.originalUrl,
-      method: req.method
-    });
-    logEntry.save()
-      .catch(err => console.error('Failed to save log:', err));
-    console.log(`\x1b[36m${ip}\x1b[0m - ${req.method} ${req.originalUrl}`);
-    
-    next();
+  if (req.path.startsWith('/socket.io/')) return next();
+  req.clientIP = req.ip.replace('::ffff:', '');
+  next();
+});
+
+app.use(rateLimiter);
+
+app.use((req, res, next) => {
+  if (req.path.startsWith('/socket.io/')) return next();
+  if (req.clientIP == "127.0.0.1") return next();
+  if (req.originalUrl.includes('favicon.ico')) return next();
+  const logEntry = new Log({
+    ip: req.clientIP,
+    endpoint: req.originalUrl,
+    method: req.method
   });
+  logEntry.save()
+    .catch(err => console.error('Failed to save log:', err));
+  next();
+});
+
 app.use(express.json());
 app.use(cors());
 

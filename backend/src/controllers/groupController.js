@@ -19,7 +19,6 @@ const createGroup = async (req, res) => {
             if (!userExists)
                 return res.status(404).json({ error: `User not found: ${m.user}` });
         }
-        // console.log(ownerId, name, description, members[0]);
         
         const newGroup = await Group.create({
             ownerId,
@@ -75,7 +74,6 @@ const getAllGroups = async (req, res) => {
 const getGroupById = async(req, res)=> {
     try {
         const group = await Group.findById(req.params.id);
-        // console.log(req.params.id);
         if (!group) return res.status(404).json({ error: 'Group not found' });
         res.status(200).json(group);
     } catch (error) {
