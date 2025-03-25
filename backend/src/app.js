@@ -24,7 +24,6 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(rateLimiter);
 
 app.use((req, res, next) => {
   if (req.path.startsWith('/socket.io/')) return next();
@@ -33,7 +32,8 @@ app.use((req, res, next) => {
   const logEntry = new Log({
     ip: req.clientIP,
     endpoint: req.originalUrl,
-    method: req.method
+    method: req.method,
+    visitTimes: 100 - (res.get('X-RateLimit-Remaining') ?? 101)
   });
   logEntry.save()
     .catch(err => console.error('Failed to save log:', err));

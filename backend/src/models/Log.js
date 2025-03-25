@@ -14,6 +14,7 @@ const logSchema = new mongoose.Schema({
     ip: { type: String, required: true },
     endpoint: { type: String, required: true },
     method: { type: String, required: true },
+    visitTimes: { type: Number },
     timestampString: { 
       type: String,
       default: () => {
