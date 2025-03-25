@@ -1,11 +1,12 @@
-const User = require('../models/User')
-const Game = require('../models/Game')
-const Session = require('../models/Session')
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs')
-const jwt = require('jsonwebtoken')
-const { validationResult } = require('express-validator');
+const User = require('../models/User');
+const Session = require('../models/Session');
 const Group = require('../models/Group');
+const BlacklistToken = require('../models/BlacklistToken');
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { validationResult } = require('express-validator');
+const crypto = require('crypto');
 
 const generateToken = (user) => {
     const secret = process.env.JWT_SECRET
@@ -15,6 +16,38 @@ const generateToken = (user) => {
         { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
     )
 }
+
+const invalidateToken = async (token) => {
+    const decoded = jwt.decode(token);
+    const expiresAt = new Date(decoded.exp * 1000);
+    await BlacklistToken.create({ token, expiresAt });
+  };
+
+const refreshToken = async (req, res) => {
+    try {
+        const token = req.header('Authorization')?.replace('Bearer ', '');
+        if (!token) return res.status(401).json({ error: 'Authorization required | ERRC: 010' });
+
+        // Verify and decode the old token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id);
+        if (!user) return res.status(404).json({ error: 'User not found | ERRC: 031' });
+
+        // Invalidate the old token
+        await invalidateToken(token);
+
+        // Generate new token
+        const newToken = generateToken(user);
+        
+        res.status(200).json({ token: newToken });
+    } catch (err) {
+        console.error(err.message);
+        const errorMessage = err.name === 'TokenExpiredError' 
+            ? 'Login again | ERRC: 032' 
+            : 'Invalid token | ERRC: 033';
+        res.status(401).json({ error: errorMessage });
+    }
+};
 
 const registerUser = async (req, res) => {
     const errors = validationResult(req)
@@ -58,19 +91,19 @@ const loginUser = async (req, res) => {
         let user;
         if(username) {
             user = await User.findOne({ username });
-            if (!user) return res.status(401).json({ error: 'Username or password does not match | ERRC: 20' });
+            if (!user) return res.status(401).json({ error: 'Username or password does not match | ERRC: 200' });
             login("Username")
         } else if(email){
             user = await User.findOne({ email });
-            if (!user) return res.status(401).json({ error: 'Email or password does not match | ERRC: 21' });
+            if (!user) return res.status(401).json({ error: 'Email or password does not match | ERRC: 210' });
             login("Email")
         } else {
-            return res.status(401).json({error: "Please provide an email or username | ERRC: 22"})
+            return res.status(401).json({error: "Please provide an email or username | ERRC: 220"})
         }
         async function login (method) {
-            if(!password) return res.status(401).json({error: "Please provide the password | ERRC: 23"})
+            if(!password) return res.status(401).json({error: "Please provide the password | ERRC: 230"})
             const passwordMatch = await bcrypt.compare(password, user.passwordHash);
-            if (!passwordMatch) return res.status(401).json({ error: `${method} or password does not match | ERRC: 24` });
+            if (!passwordMatch) return res.status(401).json({ error: `${method} or password does not match | ERRC: 240` });
             token = generateToken(user);
             res.status(200).json({ token })
         }
@@ -80,7 +113,19 @@ const loginUser = async (req, res) => {
     }
 }
 
-const getMe = async (req, res) => {
+const logoutUser = async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        if (!token) return res.status(401).json({ error: 'Not authorized | ERRC: 010' });
+    
+        await invalidateToken(token);
+        res.status(200).json({ message: 'Logged out successfully' });
+    } catch (err) {
+        res.status(500).json({ error: 'Logout failed' });
+    }
+}
+
+const getMyInfo = async (req, res) => {
     try {
         const token = req.header('Authorization').replace('Bearer ', '');
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -379,9 +424,15 @@ module.exports = {
     getAllUsers,
     getUserById,
     getUserByUsername,
-    getMe,
+    getMyInfo,
+    getMySessions,
+    getMyGroups,
+    getMyFriends,
+    getMyGames,
     registerUser,
+    refreshToken,
     loginUser,
+    logoutUser,
     updateUser,
     deleteUser
 };

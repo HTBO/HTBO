@@ -22,7 +22,7 @@ const storeSchema = new mongoose.Schema({
   timestamps: true,
   toJSON: {
     virtuals: true,
-    transform: function(doc, ret) {
+    transform: function (doc, ret) {
       ret.id = ret._id;
       delete ret._id;
       delete ret.__v;
@@ -31,5 +31,4 @@ const storeSchema = new mongoose.Schema({
   }
 });
 
-const Store = mongoose.model('Store', storeSchema);
-module.exports = Store;
+module.exports = mongoose.model('Store', storeSchema);

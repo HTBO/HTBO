@@ -58,44 +58,44 @@ describe("Login process", () => {
             "username": "JoeeBiden",
             "password": "joe"
         })
-        expect(login.body.error).toBe("Username or password does not match | ERRC: 20")
+        expect(login.body.error).toBe("Username or password does not match | ERRC: 200")
     }),
     test('Login with invalid email and password fails', async () => {
         login = await request(app).post('/api/users/login').send({
             "email": "jeoe@biden.com",
             "password": "joe"
         })
-        expect(login.body.error).toBe("Email or password does not match | ERRC: 21")
+        expect(login.body.error).toBe("Email or password does not match | ERRC: 210")
     }),
     test('Login with username and invalid password fails', async () => {
         login = await request(app).post('/api/users/login').send({
             "username": "JoeBiden",
             "password": "je"
         })
-        expect(login.body.error).toBe("Username or password does not match | ERRC: 24")
+        expect(login.body.error).toBe("Username or password does not match | ERRC: 240")
     }),
     test('Login with email and invalid password fails', async () => {
         login = await request(app).post('/api/users/login').send({
             "email": "joe@biden.com",
             "password": "je"
         })
-        expect(login.body.error).toBe("Email or password does not match | ERRC: 24")
+        expect(login.body.error).toBe("Email or password does not match | ERRC: 240")
     }),
     test('Login without username or email and password fails', async () => {
         login = await request(app).post('/api/users/login').send({
             "password": "joe"
         })
-        expect(login.body.error).toBe("Please provide an email or username | ERRC: 22")
+        expect(login.body.error).toBe("Please provide an email or username | ERRC: 220")
     }),
     test('Login with username and without password fails', async () => {
         login = await request(app).post('/api/users/login').send({
             "username": "JoeBiden"
         })
-        expect(login.body.error).toBe("Please provide the password | ERRC: 23")
+        expect(login.body.error).toBe("Please provide the password | ERRC: 230")
     }),
     test('Login without username or email or password fails', async () => {
         login = await request(app).post('/api/users/login').send({
         })
-        expect(login.body.error).toBe("Please provide an email or username | ERRC: 22")
+        expect(login.body.error).toBe("Please provide an email or username | ERRC: 220")
     })
 })

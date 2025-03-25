@@ -15,8 +15,8 @@ describe('Login Page Tests', () => {
       body: { error: 'Invalid credentials' },
     }).as('loginRequest')
 
-    cy.get('input[name="email"]').type('invalid@example.com')
-    cy.get('input[name="password"]').type('wrongpass')
+    cy.get('input[name="email"]').type('invalid@example.com', { delay: 100 })
+    cy.get('input[name="password"]').type('wrongpass', { delay: 100 })
     cy.get('button[type="submit"]').click()
 
     cy.wait('@loginRequest', { timeout: 30000 })

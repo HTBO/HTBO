@@ -107,21 +107,3 @@ OR
 > deleteUser
 `DELETE http://localhost:5000/api/users/<userid>`
 ---
-
-# Error codes:
-`| ERRC: 01` - No Authorization provided OR Authorization provided, but Bearer is empty
-
-`| ERRC: 02` - Failed to get the token
-
-`| ERRC: 10` - User is not the owner of the account he tries to access
-
-`| ERRC: 20` - User search failed by username
-
-`| ERRC: 21` - User search failed by email
-
-`| ERRC: 22` - User failed to provide username or email
-
-`| ERRC: 23` - Password not provided
-
-`| ERRC: 24` - User's password doesn't match
-

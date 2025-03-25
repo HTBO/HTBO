@@ -1,14 +1,24 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
-const Log = require('./models/Log');
+const {Log} = require('./models/Log');
+const rateLimiter = require('./middleware/rateLimiter');
 
 dotenv.config({ path: '../.env' });
 
 const app = express();
 
 app.set('trust proxy', true);
+
 app.use((req, res, next) => {
+  req.clientIP = req.ip.replace('::ffff:', '');
+  next();
+});
+
+app.use(rateLimiter);
+
+app.use((req, res, next) => {
+
   if (req.path.startsWith('/socket.io/')) return next();
   req.clientIP = req.ip.replace('::ffff:', '');
   next();
@@ -33,11 +43,10 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(cors());
 
-app.use('/api/users', require('./routes/userRoutes'))
-app.use('/api/games', require('./routes/gameRoutes'))
-app.use('/api/stores', require('./routes/storeRoutes'))
-app.use('/api/sessions', require('./routes/sessionRoutes'))
-app.use('/api/groups', require('./routes/groupRoutes'))
+app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/games', require('./routes/gameRoutes'));
+app.use('/api/stores', require('./routes/storeRoutes'));
+app.use('/api/sessions', require('./routes/sessionRoutes'));
+app.use('/api/groups', require('./routes/groupRoutes'));
 
 module.exports = app;
-

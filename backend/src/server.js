@@ -8,7 +8,8 @@ const { Server } = require('socket.io');
 const { wsAuthMiddleware } = require('./middleware/webSocketAuth');
 
 dotenv.config();
-const PORT = process.env.PORT || 5000;
+
+const PORT = process.env.PORT;
 const MONGODB_URI = process.env.MONGODB_URI;
 
 const server = http.createServer(app);
@@ -65,7 +66,6 @@ Promise.all([
     terminal.success('All databases connected');
 
     setupChangeStreams();
-
     mongoose.connection.db.collection('rateLimits').createIndex(
       { createdAt: 1 },
       { expireAfterSeconds: 900 }, // 15 minutes
@@ -94,3 +94,4 @@ io.on('connection', (socket) => {
     terminal.info(`Client disconnected: ${socket.id}`);
   });
 });
+

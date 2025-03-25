@@ -1,9 +1,12 @@
 const mongoose = require('mongoose');
-const Session = require('../models/Session')
+const Session = require('../models/Session');
 const User = require('../models/User');
 const Group = require('../models/Group');
 
 const createSession = async (req, res) => {
+    let mongoSession = null;
+    const sessionId = new mongoose.Types.ObjectId().toString();
+
     try {
         const { hostId, gameId, scheduledAt, description, participants: reqParticipants } = req.body;
 
@@ -14,6 +17,7 @@ const createSession = async (req, res) => {
         if (existingMongoSession)
             return res.status(400).json({ error: "Host already has a session" });
 
+        // 3. Process participants with MongoDB validation
         const userIds = new Set();
         for (const p of reqParticipants) {
             if (p.user) {
@@ -33,54 +37,49 @@ const createSession = async (req, res) => {
         }
 
         userIds.delete(hostId);
-
         mongoSession = await Session.create({
             _id: sessionId,
             hostId,
             gameId,
             scheduledAt,
             description,
-            participants
+            participants: Array.from(userIds).map(userId => ({
+                user: userId,
+                status: 'pending'
+            }))
         });
 
         const bulkOps = Array.from(userIds).map(userId => ({
             updateOne: {
-                filter: { _id: p.user },
+                filter: { _id: userId },
                 update: {
                     $addToSet: {
-                        sessions: { sessionId: newSession._id, status: p.status }
+                        sessions: {
+                            sessionId: mongoSession._id,
+                            status: 'pending'
+                        }
                     }
                 }
             }
         }));
-        bulkOps.push({
-            updateOne: {
-                filter: { _id: hostId },
-                update: {
-                    $addToSet: {
-                        sessions: { sessionId: newSession._id, status: 'host' }
-                    }
-                }
-            }
-        });
 
         await User.bulkWrite(bulkOps);
 
-        res.status(201).json(newSession);
+        res.status(201).json({ mongoSession });
 
     } catch (error) {
         console.error('Error during session creation:', error);
 
         if (mongoSession) await Session.deleteOne({ _id: mongoSession._id });
-
         if (error.name === 'ValidationError') {
             const messages = Object.values(error.errors).map(err => err.message);
             return res.status(400).json({ errors: messages });
         }
 
-        res.status(500).json({ error: 'Server error' });
+        res.status(500).json({ error: 'Server error', details: error.message });
     }
 };
+
 const getAllSessions = async (req, res) => {
     try {
         const session = await Session.find();
