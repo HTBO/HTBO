@@ -3,7 +3,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const {Log} = require('./models/Log');
 const rateLimiter = require('./middleware/rateLimiter');
-
+const path = require('path');
 dotenv.config({ path: '../.env' });
 
 const app = express();
@@ -42,7 +42,8 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 app.use(cors());
-
+console.log('Static files served from:', path.join(__dirname, '../uploads/avatars'));
+app.use('/avatars', express.static(path.join(__dirname, '../uploads/avatars')));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/games', require('./routes/gameRoutes'));
 app.use('/api/stores', require('./routes/storeRoutes'));

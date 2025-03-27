@@ -78,7 +78,7 @@ Promise.all([
       }
     );
 
-    app.listen(PORT, '0.0.0.0', () => {
+    server.listen(PORT, '0.0.0.0', () => {
       terminal.success(`All servers running on port: ${PORT}`);
     });
   })

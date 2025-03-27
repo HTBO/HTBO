@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { verifyToken, checkUserPermission } = require('../middleware/authMiddleware')
 const userController = require('../controllers/userController')
-
+const upload = require('../middleware/upload');
 // Firebase routes
 // router.post('/firebase', async (req, res) => {
 //     try {
@@ -37,6 +37,7 @@ router.get('/mygames', verifyToken, userController.getMyGames);
 router.get('/username/:username',  userController.getUserByUsername);
 router.get('/:id', verifyToken, userController.getUserById);
 router.patch('/:id', verifyToken, checkUserPermission, userController.updateUser);
+router.patch('/:id/avatar', verifyToken, checkUserPermission, upload.single('avatar'), userController.updateAvatar);
 router.delete('/:id', verifyToken, checkUserPermission, userController.deleteUser);
 
 

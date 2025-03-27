@@ -6,7 +6,8 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
-const crypto = require('crypto');
+const path = require('path');
+const fs = require('fs');
 
 const generateToken = (user) => {
     const secret = process.env.JWT_SECRET
@@ -21,7 +22,7 @@ const invalidateToken = async (token) => {
     const decoded = jwt.decode(token);
     const expiresAt = new Date(decoded.exp * 1000);
     await BlacklistToken.create({ token, expiresAt });
-  };
+};
 
 const refreshToken = async (req, res) => {
     try {
@@ -38,12 +39,12 @@ const refreshToken = async (req, res) => {
 
         // Generate new token
         const newToken = generateToken(user);
-        
+
         res.status(200).json({ token: newToken });
     } catch (err) {
         console.error(err.message);
-        const errorMessage = err.name === 'TokenExpiredError' 
-            ? 'Login again | ERRC: 032' 
+        const errorMessage = err.name === 'TokenExpiredError'
+            ? 'Login again | ERRC: 032'
             : 'Invalid token | ERRC: 033';
         res.status(401).json({ error: errorMessage });
     }
@@ -57,8 +58,8 @@ const registerUser = async (req, res) => {
 
         const existingUser = await User.findOne({ $or: [{ username }, { email }] })
         if (existingUser) return res.status(400).json({
-                error: existingUser.username === username ? 'Username already exists' : 'Email already registered'
-            })
+            error: existingUser.username === username ? 'Username already exists' : 'Email already registered'
+        })
 
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
@@ -89,19 +90,19 @@ const loginUser = async (req, res) => {
     try {
         const { username, email, password } = req.body;
         let user;
-        if(username) {
+        if (username) {
             user = await User.findOne({ username });
             if (!user) return res.status(401).json({ error: 'Username or password does not match | ERRC: 200' });
             login("Username")
-        } else if(email){
+        } else if (email) {
             user = await User.findOne({ email });
             if (!user) return res.status(401).json({ error: 'Email or password does not match | ERRC: 210' });
             login("Email")
         } else {
-            return res.status(401).json({error: "Please provide an email or username | ERRC: 220"})
+            return res.status(401).json({ error: "Please provide an email or username | ERRC: 220" })
         }
-        async function login (method) {
-            if(!password) return res.status(401).json({error: "Please provide the password | ERRC: 230"})
+        async function login(method) {
+            if (!password) return res.status(401).json({ error: "Please provide the password | ERRC: 230" })
             const passwordMatch = await bcrypt.compare(password, user.passwordHash);
             if (!passwordMatch) return res.status(401).json({ error: `${method} or password does not match | ERRC: 240` });
             token = generateToken(user);
@@ -117,7 +118,7 @@ const logoutUser = async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) return res.status(401).json({ error: 'Not authorized | ERRC: 010' });
-    
+
         await invalidateToken(token);
         res.status(200).json({ message: 'Logged out successfully' });
     } catch (err) {
@@ -130,8 +131,8 @@ const getMyInfo = async (req, res) => {
         const token = req.header('Authorization').replace('Bearer ', '');
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(decoded.id)
-        .select('-passwordHash')
-        .populate('friends.userId', 'username avatarUrl');
+            .select('-passwordHash')
+            .populate('friends.userId', 'username avatarUrl');
         res.status(200).json(user);
     } catch (err) {
         console.error(err.message);
@@ -142,7 +143,7 @@ const getMyInfo = async (req, res) => {
 const getMySessions = async (req, res) => {
     try {
         const token = req.header('Authorization').replace('Bearer ', '');
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);        
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(decoded.id);
         let sessions = await Session.find({ hostId: user._id });
         sessions.push(...await Session.find({ 'participants.user': user._id }));
@@ -228,6 +229,33 @@ const getUserByUsername = async (req, res) => {
     }
 };
 
+const updateAvatar = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+        const defaultAvatar = "/avatars/default.png";
+        if (user.avatarUrl && user.avatarUrl !== defaultAvatar) {
+            const filename = user.avatarUrl.split('/').pop();
+            const filePath = path.join(__dirname, '..', 'uploads', 'avatars', filename);
+
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        }
+
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        user.avatarUrl = `${baseUrl}/avatars/${req.file.filename}`;
+        await user.save();
+
+        res.status(200).json(user);
+    } catch (error) {
+        console.error('Avatar update error:', error);
+        res.status(500).json({
+            error: error.message || 'Avatar update failed',
+            details: error.stack
+        });
+    }
+};
+
 const updateUser = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
@@ -284,13 +312,13 @@ const updateUser = async (req, res) => {
                 return res.status(400).json({ error: 'Invalid game ID' });
             switch (action) {
                 case "add":
-                    if (user.games.some(g => g.gameId.equals(gameObjectId))) 
+                    if (user.games.some(g => g.gameId.equals(gameObjectId)))
                         return res.status(400).json({ error: 'Game already in collection' });
                     await user.editUserGames(gameObjectId, "add");
                     break;
 
                 case "remove":
-                    if (!user.games.some(g => g.gameId.equals(gameObjectId))) 
+                    if (!user.games.some(g => g.gameId.equals(gameObjectId)))
                         return res.status(400).json({ error: 'Game not in collection' });
                     await user.editUserGames(gameObjectId, "remove");
                     break;
@@ -350,7 +378,7 @@ const updateUser = async (req, res) => {
 
 const deleteUser = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id);        
+        const user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ error: 'User not found' });
 
         let stats = {
@@ -361,19 +389,19 @@ const deleteUser = async (req, res) => {
             usersUpdated: 0
         };
         const hostSessions = await Session.find({ hostId: user._id });
-        const groupsOwned = await Group.find({ownerId: user._id})
+        const groupsOwned = await Group.find({ ownerId: user._id })
         if (hostSessions.length > 0) {
             const sessionIds = hostSessions.map(session => session._id);
 
             const allParticipants = [...new Set(
-                hostSessions.flatMap(session => 
+                hostSessions.flatMap(session =>
                     session.participants.map(p => p.user)
                 )
             )];
 
             const userUpdateResult = await User.updateMany(
                 { _id: { $in: allParticipants } },
-                { $pull: { sessions: { sessionId: { $in: sessionIds } } }  }
+                { $pull: { sessions: { sessionId: { $in: sessionIds } } } }
             );
             stats.usersUpdated += userUpdateResult.modifiedCount;
 
@@ -413,8 +441,8 @@ const deleteUser = async (req, res) => {
     } catch (error) {
         console.error('Deletion error:', error);
         res.status(error.name === 'CastError' ? 400 : 500).json({
-            error: error.name === 'CastError' 
-                ? 'Invalid user ID format' 
+            error: error.name === 'CastError'
+                ? 'Invalid user ID format'
                 : 'Server error'
         });
     }
@@ -433,6 +461,7 @@ module.exports = {
     refreshToken,
     loginUser,
     logoutUser,
+    updateAvatar,
     updateUser,
     deleteUser
 };

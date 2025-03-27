@@ -72,7 +72,7 @@ const userSchema = new mongoose.Schema({
     },
     avatarUrl: {
         type: String,
-        default: "https://static.vecteezy.com/system/resources/previews/002/318/271/non_2x/user-profile-icon-free-vector.jpg"
+        default: "/avatars/default.png"
     },
     friends: [friendSchema],
     games: [gamesSchema],
