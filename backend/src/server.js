@@ -5,7 +5,7 @@ const {logDB} = require('./models/Log');
 const terminal = require('./utils/terminal');
 dotenv.config();
 
-const PORT = process.env.PORT;
+const PORT = process.env.NODE_PORT;
 const MONGODB_URI = process.env.MONGODB_URI;
 
 const validateEnvironment = () => {
