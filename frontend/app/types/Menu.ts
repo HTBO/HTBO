@@ -1,5 +1,6 @@
 export interface MenuGroup {
     title: string;
+    activeStyle?: boolean;
     items: MenuItem[];
 }
 

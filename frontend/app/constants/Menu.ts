@@ -28,6 +28,7 @@ export const menu: MenuGroup[] = [
     },
     {
         title: "Quick Actions",
+        activeStyle: false,
         items: [
             {
                 title: "Create Session",
