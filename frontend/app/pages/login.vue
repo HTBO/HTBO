@@ -4,16 +4,18 @@ const API_BASE_URL = runtimeConfig.public.apiBaseUrl;
 
 definePageMeta({
     layout: 'blank'
-})
+});
 
-const email = ref('');
-const password = ref('');
-const errorMessage = ref('');
+const authStore = useAuthStore();
 const router = useRouter();
 
+const emailOrUsername = ref('');
+const password = ref('');
+const errorMessage = ref('');
+
 async function signIn() {
-    if (!email.value) {
-        errorMessage.value = 'Email is required';
+    if (!emailOrUsername.value) {
+        errorMessage.value = 'Email or username is required';
         return;
     }
     if (!password.value) {
@@ -21,29 +23,34 @@ async function signIn() {
         return;
     }
 
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailOrUsername.value);
+    const payload = isEmail
+        ? { email: emailOrUsername.value, password: password.value }
+        : { username: emailOrUsername.value, password: password.value };
+
     try {
         const response = await fetch(`${API_BASE_URL}/users/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ email: email.value, password: password.value }),
+            body: JSON.stringify(payload),
         });
 
+        const data = await response.json();
+
         if (!response.ok) {
-            const data = await response.json();
             errorMessage.value = data.error;
             throw new Error('Login failed');
         }
 
-        const data = await response.json();
-        // Handle successful login (e.g., store tokens, redirect)
-        localStorage.setItem('token', data.token);
+        if (data.token) {
+            authStore.setToken(data.token);
+        }
 
         router.push('/dashboard');
     } catch (error) {
         console.error('Error during login:', error);
-        // Handle login error (e.g., show error message)
     }
 };
 </script>
@@ -57,8 +64,8 @@ async function signIn() {
             </div>
             <form @submit.prevent="signIn" class="space-y-6">
                 <div>
-                    <label for="email" class="text-sm text-gray-400">Email or username</label>
-                    <input v-model="email" id="email" name="email" type="email" autocomplete="email" class="w-full mt-1.5 p-3 outline-none bg-surface-950 border-2 border-surface-800 focus-within:border-slate-200 duration-300 rounded-2xl sm:text-sm" placeholder="Enter your email or username">
+                    <label for="emailOrUsername" class="text-sm text-gray-400">Email or username</label>
+                    <input v-model="emailOrUsername" id="emailOrUsername" name="emailOrUsername" type="text" autocomplete="username" class="w-full mt-1.5 p-3 outline-none bg-surface-950 border-2 border-surface-800 focus-within:border-slate-200 duration-300 rounded-2xl sm:text-sm" placeholder="Enter your email or username">
                 </div>
                 <div>
                     <label for="password" class="text-sm text-gray-400">Password</label>
@@ -83,12 +90,6 @@ async function signIn() {
                 <p class="text-sm text-center text-gray-400">Don't have an account? <NuxtLink to="/register"><span class="text-primary-500 hover:text-primary-500/80 duration-300">Sign up</span></NuxtLink>
                 </p>
             </div>
-            <!-- <div class="flex items-center justify-center">
-                <button @click="loginWithGoogle" class="flex items-center justify-center w-full px-4 py-2.5 font-medium border rounded-md">
-                    <Icon name="devicon:google" class="w-6 h-6 mr-2" />
-                    Bejelentkezés Google-fiókkal
-                </button>
-            </div> -->
         </div>
         <div v-if="errorMessage" id="error-message" class="max-w-md w-full p-3 border border-red-500/50 bg-red-500/30 rounded-xl">
             <p class="text-center text-red-200">{{ errorMessage }}</p>

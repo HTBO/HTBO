@@ -9,10 +9,6 @@
                 <div>
                     <NuxtLink to="/" class="text-2xl font-bold">HTBO</NuxtLink>
                 </div>
-                <div class="space-x-4">
-                    <NuxtLink to="/login" class="text-lg p-2 border border-slate-600 hover:bg-slate-500 rounded-xl duration-300">Bejelentkezés</NuxtLink>
-                    <NuxtLink to="/register" class="text-lg p-2 bg-slate-600 hover:bg-slate-500 rounded-xl duration-300">Regisztráció</NuxtLink>
-                </div>
             </div>
         </div>
     </header>

@@ -3,8 +3,8 @@
 </script>
 
 <template>
-    <div>
-        <Header/>
+    <div class="flex h-full">
+        <MenuSidebar/>
         <slot/>
     </div>
 </template>

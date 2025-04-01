@@ -16,6 +16,14 @@ export default defineNuxtConfig({
   },
 
   css: ['~/assets/css/main.css'],
+  icon: {
+    customCollections: [
+      {
+        prefix: 'icons',
+        dir: '~/assets/icons',
+      }
+    ]
+  },
 
   vite: {
     plugins: [
