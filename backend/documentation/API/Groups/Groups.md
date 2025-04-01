@@ -2,7 +2,7 @@
 # Requests: 
 ## POST
 > createGroup
-`POST http://localhost:5000/api/groups`
+`POST` `{{API_URL}}/groups`
 
 Single or multiple member additions at the same time,
 userid3 is optional
@@ -24,14 +24,14 @@ userid3 is optional
 
 ## GET
 > getAllGroups
-`GET http://localhost:5000/api/groups`
+`GET` `{{API_URL}}/groups`
 
 > getSessionByIdíx
-`GET http://localhost:5000/api/groups/<groupid>`
+`GET` `{{API_URL}}/groups/<groupid>`
 ---
 ## UPDATE (PATCH)
 > updateGroup
-`PATCH http://localhost:5000/api/groups/<groupid>`
+`PATCH` `{{API_URL}}/groups/<groupid>`
 - Group updates:
     - name
     - description
@@ -80,6 +80,6 @@ userid2 are optional
 ---
 ## DELETE
 > deleteGroup
-`DELETE http://localhost:5000/api/groups/<groupid>`
+`DELETE` `{{API_URL}}/groups/<groupid>`
 ---
 
