@@ -1,53 +1,12 @@
 const User = require('../models/User');
 const Session = require('../models/Session');
 const Group = require('../models/Group');
-const BlacklistToken = require('../models/BlacklistToken');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
-const crypto = require('crypto');
+const { generateToken, invalidateToken, refreshToken } = require('../auth/tokenService');
 
-const generateToken = (user) => {
-    const secret = process.env.JWT_SECRET
-    return jwt.sign(
-        { id: user._id },
-        secret,
-        { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
-    )
-}
-
-const invalidateToken = async (token) => {
-    const decoded = jwt.decode(token);
-    const expiresAt = new Date(decoded.exp * 1000);
-    await BlacklistToken.create({ token, expiresAt });
-  };
-
-const refreshToken = async (req, res) => {
-    try {
-        const token = req.header('Authorization')?.replace('Bearer ', '');
-        if (!token) return res.status(401).json({ error: 'Authorization required | ERRC: 010' });
-
-        // Verify and decode the old token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findById(decoded.id);
-        if (!user) return res.status(404).json({ error: 'User not found | ERRC: 031' });
-
-        // Invalidate the old token
-        await invalidateToken(token);
-
-        // Generate new token
-        const newToken = generateToken(user);
-        
-        res.status(200).json({ token: newToken });
-    } catch (err) {
-        console.error(err.message);
-        const errorMessage = err.name === 'TokenExpiredError' 
-            ? 'Login again | ERRC: 032' 
-            : 'Invalid token | ERRC: 033';
-        res.status(401).json({ error: errorMessage });
-    }
-};
 
 const registerUser = async (req, res) => {
     const errors = validationResult(req)
@@ -57,8 +16,8 @@ const registerUser = async (req, res) => {
 
         const existingUser = await User.findOne({ $or: [{ username }, { email }] })
         if (existingUser) return res.status(400).json({
-                error: existingUser.username === username ? 'Username already exists' : 'Email already registered'
-            })
+            error: existingUser.username === username ? 'Username already exists' : 'Email already registered'
+        })
 
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
@@ -90,22 +49,23 @@ const loginUser = async (req, res) => {
     try {
         const { username, email, password } = req.body;
         let user;
-        if(username) {
+        if (username) {
             user = await User.findOne({ username });
             if (!user) return res.status(401).json({ error: 'Username or password does not match | ERRC: 200' });
             login("Username")
-        } else if(email){
+        } else if (email) {
             user = await User.findOne({ email });
             if (!user) return res.status(401).json({ error: 'Email or password does not match | ERRC: 210' });
             login("Email")
         } else {
-            return res.status(401).json({error: "Please provide an email or username | ERRC: 220"})
+            return res.status(401).json({ error: "Please provide an email or username | ERRC: 220" })
         }
-        async function login (method) {
-            if(!password) return res.status(401).json({error: "Please provide the password | ERRC: 230"})
+        async function login(method) {
+            if (!password) return res.status(401).json({ error: "Please provide the password | ERRC: 230" });
             const passwordMatch = await bcrypt.compare(password, user.passwordHash);
             if (!passwordMatch) return res.status(401).json({ error: `${method} or password does not match | ERRC: 240` });
-            token = generateToken(user);
+            const expiresIn = req.body.stayLoggedIn ? '30d' : '1h';
+            const token = generateToken(user, expiresIn);
             res.status(200).json({ token })
         }
     } catch (err) {
@@ -118,7 +78,7 @@ const logoutUser = async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) return res.status(401).json({ error: 'Not authorized | ERRC: 010' });
-    
+
         await invalidateToken(token);
         res.status(200).json({ message: 'Logged out successfully' });
     } catch (err) {
@@ -131,8 +91,8 @@ const getMyInfo = async (req, res) => {
         const token = req.header('Authorization').replace('Bearer ', '');
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(decoded.id)
-        .select('-passwordHash')
-        .populate('friends.userId', 'username avatarUrl');
+            .select('-passwordHash')
+            .populate('friends.userId', 'username avatarUrl');
         res.status(200).json(user);
     } catch (err) {
         console.error(err.message);
@@ -143,11 +103,11 @@ const getMyInfo = async (req, res) => {
 const getMySessions = async (req, res) => {
     console.log('s');
     try {
-        
+
         const token = req.header('Authorization').replace('Bearer ', '');
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         console.log(decoded.id);
-        
+
         const user = await User.findById(decoded.id);
         let sessions = await Session.find({ hostId: user._id });
         sessions.push(...await Session.find({ 'participants.user': user._id }));
@@ -373,7 +333,7 @@ const updateUser = async (req, res) => {
 
 const deleteUser = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id);        
+        const user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ error: 'User not found' });
 
         let stats = {
@@ -384,19 +344,19 @@ const deleteUser = async (req, res) => {
             usersUpdated: 0
         };
         const hostSessions = await Session.find({ hostId: user._id });
-        const groupsOwned = await Group.find({ownerId: user._id})
+        const groupsOwned = await Group.find({ ownerId: user._id })
         if (hostSessions.length > 0) {
             const sessionIds = hostSessions.map(session => session._id);
 
             const allParticipants = [...new Set(
-                hostSessions.flatMap(session => 
+                hostSessions.flatMap(session =>
                     session.participants.map(p => p.user)
                 )
             )];
 
             const userUpdateResult = await User.updateMany(
                 { _id: { $in: allParticipants } },
-                { $pull: { sessions: { sessionId: { $in: sessionIds } } }  }
+                { $pull: { sessions: { sessionId: { $in: sessionIds } } } }
             );
             stats.usersUpdated += userUpdateResult.modifiedCount;
 
@@ -437,8 +397,8 @@ const deleteUser = async (req, res) => {
     } catch (error) {
         console.error('Deletion error:', error);
         res.status(error.name === 'CastError' ? 400 : 500).json({
-            error: error.name === 'CastError' 
-                ? 'Invalid user ID format' 
+            error: error.name === 'CastError'
+                ? 'Invalid user ID format'
                 : 'Server error'
         });
     }

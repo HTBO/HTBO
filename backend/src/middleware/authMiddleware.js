@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const Session = require('../models/Session');
 const Group = require('../models/Group');
-const BlacklistToken = require('../models/BlacklistToken');
+const BlacklistToken = require('../auth/blacklistToken');
 
 dotenv.config();
 
@@ -14,10 +14,15 @@ async function verifyToken(req, res, next) {
         const blacklisted = await BlacklistToken.findOne({ token });
         if (blacklisted) return res.status(401).json({ error: 'Token revoked | ERRC: 030' });
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        console.log(decoded);
+        
         req.userId = decoded.id;
         next();
     } catch (error) {
-        res.status(401).json({ error: 'Invalid token' });
+        const errorMessage = error.name === 'TokenExpiredError' 
+            ? 'Token expired | ERRC: 032' 
+            : 'Invalid token | ERRC: 033';
+        res.status(401).json({ error: errorMessage });
     }
 };
 

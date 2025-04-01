@@ -26,7 +26,7 @@ userid3 is optional
 > getAllGroups
 `GET http://localhost:5000/api/groups`
 
-> getSessionById
+> getSessionByIdíx
 `GET http://localhost:5000/api/groups/<groupid>`
 ---
 ## UPDATE (PATCH)

@@ -16,8 +16,6 @@
 
 `| ERRC: 033` - Invalid token - Wrong token
 
-`| ERRC: 034` - Invalid token - Wrong token
-
 ## ERRC: 1xx - Authorization errors
 
 `| ERRC: 100` - User is not the owner of the account he tries to access
