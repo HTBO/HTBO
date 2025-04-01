@@ -41,13 +41,15 @@ export default function SessionsScreen() {
       setIsLoading(true);
 
       const tokenObj = await authService.getToken();
+      // console.log("Token object:", tokenObj);
       if (!tokenObj) {
         console.error("No auth data found");
         setError("Authentication required");
         return;
       }
-
+      
       const token = tokenObj;
+      console.log(tokenObj);
       if (!token) {
         console.error("No token found in auth data");
         setError("Authentication error");
@@ -72,7 +74,7 @@ export default function SessionsScreen() {
       }
 
       const sessionsData = await response.json();
-      console.log("Sessions data:", sessionsData);
+      // console.log("Sessions data:", sessionsData);
 
       // Format the API response using our helper function
       const formattedSessions = sessionsData.map((session: any) =>
