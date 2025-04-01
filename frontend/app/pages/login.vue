@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const runtimeConfig = useRuntimeConfig();
 const API_BASE_URL = runtimeConfig.public.apiBaseUrl;
+const ENV = runtimeConfig.public.env;
 
 definePageMeta({
     layout: 'blank'
@@ -12,6 +13,11 @@ const router = useRouter();
 const emailOrUsername = ref('');
 const password = ref('');
 const errorMessage = ref('');
+
+if(ENV === 'development') {
+    emailOrUsername.value = 'johndoe';
+    password.value = 'johndoe';
+}
 
 async function signIn() {
     if (!emailOrUsername.value) {
