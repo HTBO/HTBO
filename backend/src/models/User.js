@@ -122,22 +122,11 @@ userSchema.methods.statusUpdate = function (userId, status) {
 
 userSchema.methods.editUserGames = function (gameId, status) {
     if (status == "add") {
-        if (!this.games.some(g => g.gameId.equals(gameId))) {
-            console.log(this.games);
+        if (!this.games.some(g => g.gameId.equals(gameId)))
             this.games.push({gameId})
-            console.log(this.games);
-
-            
-        }
-    } else if (status == "remove") {
-        console.log('before: ' + this.games);
+    } else if (status == "remove") 
         this.games.splice(gameId, 1);
-        console.log('after: ' + this.games);
-        
-        // this.games = this.games.filter(g => !g.equals(gameId));
-
-
-    }
+    
     return this.save()
 }
 

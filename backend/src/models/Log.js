@@ -1,6 +1,6 @@
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
-dotenv.config({ path: require('path').resolve(__dirname, '../../../.env') });
+dotenv.config({ path: '../.env' });
 
 const LOGS_URI = process.env.LOGS_MONGODB_URI;
 
@@ -14,6 +14,7 @@ const logSchema = new mongoose.Schema({
     ip: { type: String, required: true },
     endpoint: { type: String, required: true },
     method: { type: String, required: true },
+    visitTimes: { type: Number },
     timestampString: { 
       type: String,
       default: () => {
