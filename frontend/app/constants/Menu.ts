@@ -1,28 +1,28 @@
 import type { MenuGroup } from "~/types/Menu";
 
-export const Menu: MenuGroup[] = [
+export const menu: MenuGroup[] = [
     {
         title: "Menu",
         items: [
             {
                 title: "Home",
                 icon: "home",
-                link: "/"
+                link: "/dashboard"
             },
             {
                 title: "Sessions",
                 icon: "session",
-                link: "/sessions"
+                link: "/dashboard/sessions"
             },
             {
-                title: "groups",
+                title: "Groups",
                 icon: "group",
-                link: "/groups"
+                link: "/dashboard/groups"
             },
             {
                 title: "Friends",
                 icon: "person",
-                link: "/friends"
+                link: "/dashboard/friends"
             }
         ]
     },
@@ -32,12 +32,12 @@ export const Menu: MenuGroup[] = [
             {
                 title: "Create Session",
                 icon: "add",
-                link: "/sessions/create"
+                link: "/dashboard/sessions/create"
             },
             {
                 title: "Add Friend",
-                icon: "addFriend",
-                link: "/friends/add"
+                icon: "add-friend",
+                link: "/dashboard/friends/add"
             }
         ]
     }
