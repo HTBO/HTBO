@@ -5,7 +5,10 @@
 <template>
     <div class="flex h-full">
         <MenuSidebar/>
-        <slot/>
+        <div class="w-full">
+            <Header/>
+            <slot/>
+        </div>
     </div>
 </template>
 

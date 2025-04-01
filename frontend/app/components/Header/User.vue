@@ -1,17 +1,12 @@
 <script setup lang="ts">
 
-definePageMeta({
-    layout: 'dashboard',
-    // middleware: 'auth',
-})
 </script>
 
 <template>
     <div>
-
+        <div class="size-10 border-2 border-primary-600 rounded-full"></div>
     </div>
 </template>
-
 
 <style scoped>
 

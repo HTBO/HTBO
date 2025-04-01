@@ -7,7 +7,6 @@ const props = defineProps<{
 }>();
 
 const route = useRoute();
-console.log(props.activeStyle)
 
 const checkActive = (link: string) => {
     if(!props.activeStyle) return false;
