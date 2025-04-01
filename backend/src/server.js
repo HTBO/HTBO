@@ -62,7 +62,6 @@ Promise.all([
       terminal.error('Logs DB connection failed', logDB);
       process.exit(1);
     }
-
     terminal.success('All databases connected');
 
     setupChangeStreams();
@@ -94,4 +93,3 @@ io.on('connection', (socket) => {
     terminal.info(`Client disconnected: ${socket.id}`);
   });
 });
-
