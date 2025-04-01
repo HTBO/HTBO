@@ -94,6 +94,12 @@ importers:
 
   mobile:
     dependencies:
+      '@expo/metro-runtime':
+        specifier: ~4.0.1
+        version: 4.0.1(react-native@0.76.7(@babel/core@7.26.9)(@babel/preset-env@7.26.9(@babel/core@7.26.9))(@types/react@18.3.20)(react@18.3.1))
+      '@expo/server':
+        specifier: ^0.5.3
+        version: 0.5.3
       '@expo/vector-icons':
         specifier: ^14.0.2
         version: 14.0.4
@@ -1307,10 +1313,6 @@ packages:
   '@expo/bunyan@4.0.0':
     resolution: {integrity: sha512-Ydf4LidRB/EBI+YrB+cVLqIseiRfjUI/AeHBgjGMtq3GroraDu81OV7zqophRgupngoL3iS3JUMDMnxO7g39qA==}
     engines: {'0': node >=0.10.0}
-
-  '@expo/bunyan@4.0.1':
-    resolution: {integrity: sha512-+Lla7nYSiHZirgK+U/uYzsLv/X+HaJienbD5AKX1UQZHYfWaP+9uuQluRB4GrEVWF0GZ7vEVp/jzaOT9k/SQlg==}
-    engines: {node: '>=0.10.0'}
 
   '@expo/cli@0.22.23':
     resolution: {integrity: sha512-LXFKu2jnk9ClVD+kw0sJCQ89zei01wz2t4EJwc9P7EwYb8gabC8FtPyM/X7NIE5jtrnTLTUtjW5ovxQSBL7pJQ==}
@@ -10726,10 +10728,6 @@ snapshots:
       mv: 2.1.1
       safe-json-stringify: 1.2.0
 
-  '@expo/bunyan@4.0.1':
-    dependencies:
-      uuid: 8.3.2
-
   '@expo/cli@0.22.23':
     dependencies:
       '@0no-co/graphql.web': 1.1.2
@@ -11188,7 +11186,7 @@ snapshots:
 
   '@expo/rudder-sdk-node@1.1.1':
     dependencies:
-      '@expo/bunyan': 4.0.1
+      '@expo/bunyan': 4.0.0
       '@segment/loosely-validate-event': 2.0.0
       fetch-retry: 4.1.1
       md5: 2.3.0

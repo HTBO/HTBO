@@ -1,35 +1,56 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Image, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Image, StatusBar, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
-
-// Mock data for search results
-const MOCK_USERS = [
-  { id: 'u1', username: 'gaming_master', name: 'Alex Turner', avatar: '' },
-  { id: 'u2', username: 'proplayer123', name: 'Jamie Rodriguez', avatar: '' },
-  { id: 'u3', username: 'esports_queen', name: 'Sarah Johnson', avatar: '' },
-  { id: 'u4', username: 'streamer_guy', name: 'Mike Williams', avatar: '' },
-  { id: 'u5', username: 'controller_pro', name: 'Taylor Smith', avatar: '' },
-];
+import { UserModel } from '../models/UserModel';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authService } from '../services/authService';
 
 export default function AddFriendScreen() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<typeof MOCK_USERS>([]);
+  const [searchResults, setSearchResults] = useState<UserModel[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isAddingFriend, setIsAddingFriend] = useState<{[key: string]: boolean}>({});
+  const [addedFriends, setAddedFriends] = useState<{[key: string]: boolean}>({}); // Track added friends
 
-  // Simulate search functionality
+  useEffect(() => {
+    const getUserData = async () => {
+      try {
+        const userData = await authService.getUserData();
+        setCurrentUserId(userData._id || userData.id);
+        
+        const pendingFriends = userData.friends?.filter(friend => 
+          typeof friend === 'object' && friend.status === 'pending'
+        ).map(friend => friend.userId || friend._id) || [];
+        
+        console.log('Pending friend requests:', pendingFriends);
+        setAddedFriends(prev => {
+          const newAddedFriends = {...prev};
+          pendingFriends.forEach(friendId => {
+            newAddedFriends[friendId] = true;
+          });
+          return newAddedFriends;
+        });
+        
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        setError('Unable to load user profile. Please log in again.');
+      }
+    };
+    
+    getUserData();
+  }, []);
+
   useEffect(() => {
     if (searchQuery.trim().length > 0) {
       setIsSearching(true);
-      // Simulate API delay
+      setError(null);
+      
       const timeoutId = setTimeout(() => {
-        const results = MOCK_USERS.filter(user => 
-          user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          user.name.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-        setSearchResults(results);
-        setIsSearching(false);
+        fetchUsers(searchQuery);
       }, 500);
       
       return () => clearTimeout(timeoutId);
@@ -38,30 +59,136 @@ export default function AddFriendScreen() {
     }
   }, [searchQuery]);
 
-  const handleAddFriend = (userId: string) => {
-    // In a real app, this would send a friend request
-    console.log(`Sending friend request to user ${userId}`);
-    // Show success message
-    alert('Friend request sent!');
+  const fetchUsers = async (query: string) => {
+    try {
+      const token = await authService.getToken();
+      
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+      
+      const response = await fetch(
+        `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users?search=${encodeURIComponent(query)}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      const filteredResults = data.filter(user => {
+        const userId = user._id || user.id;
+        return userId !== currentUserId;
+      });
+      
+      setSearchResults(filteredResults);
+    } catch (err) {
+      console.error('Error fetching users:', err);
+      setError('Failed to fetch users. Please try again.');
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
-  const renderUserItem = ({ item }: { item: typeof MOCK_USERS[number] }) => (
+  const handleAddFriend = async (friendId: string) => {
+    if (!currentUserId) {
+      setError('You need to be logged in to add friends.');
+      return;
+    }
+    
+    if (addedFriends[friendId]) {
+      return;
+    }
+    
+    setIsAddingFriend(prev => ({ ...prev, [friendId]: true }));
+    
+    try {
+      const token = await authService.getToken();
+      
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+      
+      const payload = {
+        "friendAction": {
+          "action": "add", 
+          "friendId": friendId
+        }
+      };
+      
+      console.log('Request URL:', `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/${currentUserId}`);
+      console.log('Request payload:', JSON.stringify(payload, null, 2));
+      
+      const response = await fetch(
+        `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/${currentUserId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        }
+      );
+      
+      const responseText = await response.text();
+      console.log('Response status:', response.status);
+      console.log('Response body:', responseText);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to add friend. Status: ${response.status}. Response: ${responseText}`);
+      }
+      
+      setAddedFriends(prev => ({ ...prev, [friendId]: true }));
+      // alert('Friend request sent successfully!');
+    } catch (err) {
+      console.error('Error adding friend:', err);
+      alert(`Failed to add friend: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setIsAddingFriend(prev => ({ ...prev, [friendId]: false }));
+    }
+  };
+
+  const renderUserItem = ({ item }: { item: UserModel }) => (
     <View style={styles.userItem}>
       <Image 
         style={styles.avatar} 
-        source={item.avatar ? { uri: item.avatar } : undefined} 
+        source={item.avatarUrl ? { uri: item.avatarUrl } : undefined}
       />
       
       <View style={styles.userInfo}>
         <Text style={styles.username}>@{item.username}</Text>
-        <Text style={styles.name}>{item.name}</Text>
+        <Text style={styles.name}>{item.email}</Text>
       </View>
       
       <TouchableOpacity 
-        style={styles.addButton}
-        onPress={() => handleAddFriend(item.id)}
+        style={[
+          styles.addButton, 
+          isAddingFriend[item._id] && styles.addButtonDisabled,
+          addedFriends[item._id] && styles.addedButton
+        ]}
+        onPress={() => handleAddFriend(item._id)}
+        disabled={isAddingFriend[item._id] || addedFriends[item._id]}
       >
-        <Text style={styles.addButtonText}>Add</Text>
+        {isAddingFriend[item._id] ? (
+          <ActivityIndicator size="small" color="white" />
+        ) : addedFriends[item._id] ? (
+          <View style={styles.addedButtonContent}>
+            <Ionicons name="checkmark-circle" size={16} color="white" style={styles.checkIcon} />
+            <Text style={styles.addButtonText}>Added</Text>
+          </View>
+        ) : (
+          <Text style={styles.addButtonText}>Add</Text>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -89,50 +216,63 @@ export default function AddFriendScreen() {
         }} 
       />
       
-      <View style={styles.content}>
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#9CA3AF" style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search by username..."
-            placeholderTextColor="#9CA3AF"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            autoCapitalize="none"
-            returnKeyType="search"
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
-              <Ionicons name="close-circle" size={20} color="#9CA3AF" />
-            </TouchableOpacity>
+      {!currentUserId && !error ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#7C3AED" />
+          <Text style={styles.loadingText}>Loading your profile...</Text>
+        </View>
+      ) : (
+        <View style={styles.content}>
+          <View style={styles.searchContainer}>
+            <Ionicons name="search" size={20} color="#9CA3AF" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search by username..."
+              placeholderTextColor="#9CA3AF"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCapitalize="none"
+              returnKeyType="search"
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
+                <Ionicons name="close-circle" size={20} color="#9CA3AF" />
+              </TouchableOpacity>
+            )}
+          </View>
+          
+          {isSearching ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#7C3AED" />
+              <Text style={styles.loadingText}>Searching...</Text>
+            </View>
+          ) : error ? (
+            <View style={styles.errorContainer}>
+              <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : searchQuery.length > 0 ? (
+            <FlatList
+              data={searchResults}
+              keyExtractor={item => item._id || item.id || String(Math.random())}
+              renderItem={renderUserItem}
+              contentContainerStyle={styles.resultsList}
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>No users found</Text>
+                </View>
+              }
+            />
+          ) : (
+            <View style={styles.instructionContainer}>
+              <Ionicons name="people" size={48} color="#4B5563" />
+              <Text style={styles.instructionText}>
+                Search for users by their username to send friend requests
+              </Text>
+            </View>
           )}
         </View>
-        
-        {isSearching ? (
-          <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>Searching...</Text>
-          </View>
-        ) : searchQuery.length > 0 ? (
-          <FlatList
-            data={searchResults}
-            keyExtractor={item => item.id}
-            renderItem={renderUserItem}
-            contentContainerStyle={styles.resultsList}
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No users found</Text>
-              </View>
-            }
-          />
-        ) : (
-          <View style={styles.instructionContainer}>
-            <Ionicons name="people" size={48} color="#4B5563" />
-            <Text style={styles.instructionText}>
-              Search for users by their username to send friend requests
-            </Text>
-          </View>
-        )}
-      </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -190,6 +330,7 @@ const styles = StyleSheet.create({
   loadingText: {
     color: '#9CA3AF',
     fontSize: 16,
+    marginTop: 12,
   },
   resultsList: {
     paddingTop: 16,
@@ -226,11 +367,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 6,
+    minWidth: 70,
+    alignItems: 'center',
+  },
+  addButtonDisabled: {
+    backgroundColor: '#6B21A8',
+    opacity: 0.7,
   },
   addButtonText: {
     color: 'white',
     fontWeight: '600',
     fontSize: 14,
+  },
+  addedButton: {
+    backgroundColor: '#10B981',
+    opacity: 1,
+  },
+  addedButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkIcon: {
+    marginRight: 5,
   },
   emptyContainer: {
     paddingVertical: 24,
@@ -248,6 +407,18 @@ const styles = StyleSheet.create({
   },
   instructionText: {
     color: '#9CA3AF',
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  errorText: {
+    color: '#EF4444',
     fontSize: 16,
     textAlign: 'center',
     marginTop: 16,
