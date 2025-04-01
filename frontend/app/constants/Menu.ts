@@ -1,4 +1,4 @@
-import type { MenuGroup } from "~/types/Menu";
+import type { MenuGroup, MenuItem } from "~/types/Menu";
 
 export const menu: MenuGroup[] = [
     {
@@ -40,5 +40,23 @@ export const menu: MenuGroup[] = [
                 link: "/dashboard/friends/add"
             }
         ]
+    }
+];
+
+export const accountMenu: MenuItem[] = [
+    {
+        title: "Profile",
+        icon: "profile",
+        link: "/dashboard/profile"
+    },
+    {
+        title: "Settings",
+        icon: "settings",
+        link: "/dashboard/settings"
+    },
+    {
+        title: "Logout",
+        icon: "logout",
+        link: "/logout"
     }
 ];

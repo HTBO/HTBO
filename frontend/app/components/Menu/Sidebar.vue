@@ -11,7 +11,7 @@ import { menu } from '~/constants/menu'
             <MenuGroup v-for="group in menu" :key="group.title" :group="group"/>
         </div>
         <div>
-
+            <MenuUser/>
         </div>
     </div>
 </template>
