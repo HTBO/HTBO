@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import UserMenuItem from './UserMenuItem.vue';
 
+const route = useRoute();
+
 const props = defineProps<{
     avatarUrl: string;
     username: string;
@@ -40,6 +42,10 @@ watch(isMenuOpen, (newValue) => {
     } else {
         document.removeEventListener('click', handleClickOutside);
     }
+});
+
+watch(() => route.path, () => {
+    isMenuOpen.value = false;
 });
 
 onUnmounted(() => {

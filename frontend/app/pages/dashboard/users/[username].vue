@@ -25,14 +25,15 @@ const user = computed(() => {
 
 <template>
     <div class="flex flex-col">
-        <div class="h-64 mx-5 bg-gray-700 rounded-2xl">
+        <div class="h-80 mx-5 bg-gray-700 rounded-2xl">
+            <NuxtImg src="banner.jpg" alt="Banner" class="h-full w-full object-cover rounded-2xl" />
         </div>
-        <div class="-translate-y-1/2 flex justify-center p-5 bg-gray-800 rounded-xl">
+        <div class="-translate-y-1/2 flex justify-center p-5 bg-gray-800/90 rounded-xl">
             <div>
 
             </div>
             <div class="flex flex-col items-center gap-2 -mt-28 z-1">
-                <div class="size-32 bg-gray-800 border-2 border-primary-600 rounded-full">
+                <div class="size-32 bg-gray-800 border-4 border-primary-600 rounded-full">
                     <NuxtImg :src="user?.avatarUrl" alt="User Avatar" class="group-hover:opacity-70 rounded-full duration-300" />
                 </div>
                 <p class="text-2xl font-semibold">{{ user?.username }}</p>
