@@ -19,8 +19,6 @@ import { router } from "expo-router";
 import { UserModel, defaultUser } from "@/models/UserModel";
 
 export default function ProfileScreen() {
-  
-
   const [user, setUser] = useState(defaultUser);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -109,8 +107,12 @@ export default function ProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Profile Header Card */}
         <View style={styles.profileCard}>
           {/* Profile Picture */}
@@ -159,44 +161,8 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* About Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Current Sessions</Text>
-          {user.sessions.length > 0 ? (
-            user.sessions.map((session, index) => (
-              <View key={index} style={styles.sessionItem}>
-                <View style={styles.sessionInfoContainer}>
-                  <Text style={styles.sessionId}>
-                    Session #{session.sessionId.substring(0, 8)}
-                  </Text>
-                  <View
-                    style={[
-                      styles.statusBadge,
-                      session.status === "pending"
-                        ? styles.pendingStatus
-                        : styles.completedStatus,
-                    ]}
-                  >
-                    <Text style={styles.statusText}>{session.status}</Text>
-                  </View>
-                </View>
-              </View>
-            ))
-          ) : (
-            <Text style={styles.emptyText}>No active game sessions</Text>
-          )}
-        </View>
-
         {/* Quick Actions */}
         <View style={styles.actionsContainer}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => router.push("/create-session")}
-          >
-            <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" />
-            <Text style={styles.actionButtonText}>Create Session</Text>
-          </TouchableOpacity>
-
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => router.push("/groups")}
@@ -206,23 +172,59 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Settings Button */}
-        <TouchableOpacity style={styles.settingsButton}>
-          <Ionicons name="settings-outline" size={20} color="#7C3AED" />
-          <Text style={styles.settingsText}>Account Settings</Text>
-        </TouchableOpacity>
+        {/* Settings Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Settings</Text>
 
-        {/* Logout Button */}
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={() => {
-            authService.logout();
-            router.replace("/login");
-          }}
-        >
-          <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.settingsButton}>
+            <Ionicons name="settings-outline" size={20} color="#7C3AED" />
+            <Text style={styles.settingsText}>Account Settings</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.settingsButton}>
+            <Ionicons name="shield-outline" size={20} color="#7C3AED" />
+            <Text style={styles.settingsText}>Security</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.settingsButton}>
+            <Ionicons name="notifications-outline" size={20} color="#7C3AED" />
+            <Text style={styles.settingsText}>Notifications</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.settingsButton}>
+            <Ionicons name="help-circle-outline" size={20} color="#7C3AED" />
+            <Text style={styles.settingsText}>Help</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.settingsButton}>
+            <Ionicons name="bug-outline" size={20} color="#7C3AED" />
+            <Text style={styles.settingsText}>Report Bug</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.settingsButton}>
+            <Ionicons
+              name="information-circle-outline"
+              size={20}
+              color="#7C3AED"
+            />
+            <Text style={styles.settingsText}>About</Text>
+          </TouchableOpacity>
+
+          {/* Logout Button */}
+          <TouchableOpacity
+            style={[styles.settingsButton, styles.logoutButtonContainer]}
+            onPress={() => {
+              authService.logout();
+              router.replace("/login");
+            }}
+          >
+            <Ionicons name="log-out-outline" size={20} color="#EF4444" />
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Add padding at bottom to ensure content is visible above tab bar */}
+        <View style={styles.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -339,6 +341,7 @@ const styles = StyleSheet.create({
     padding: 20,
     margin: 16,
     marginTop: 0,
+    marginBottom: 24, // Extra bottom margin
   },
   sectionTitle: {
     fontSize: 18,
@@ -346,87 +349,56 @@ const styles = StyleSheet.create({
     color: "white",
     marginBottom: 16,
   },
-  emptyText: {
-    color: "#9CA3AF",
-    textAlign: "center",
-    marginVertical: 10,
-  },
-  sessionItem: {
-    backgroundColor: "#283548",
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
-  },
-  sessionInfoContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  sessionId: {
-    color: "#FFFFFF",
-    fontWeight: "500",
-    fontSize: 15,
-  },
-  statusBadge: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 4,
-  },
-  pendingStatus: {
-    backgroundColor: "#F59E0B",
-  },
-  completedStatus: {
-    backgroundColor: "#10B981",
-  },
-  statusText: {
-    color: "#FFFFFF",
-    fontWeight: "bold",
-  },
-  actionsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    margin: 16,
-  },
-  actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#7C3AED",
-    borderRadius: 16,
-    padding: 16,
-  },
-  actionButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "500",
-    marginLeft: 8,
-  },
   settingsButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1F2937",
+    backgroundColor: "#283548", // Changed from "#1F2937" for better contrast
     borderRadius: 16,
     padding: 16,
-    margin: 16,
-    marginTop: 0,
+    marginBottom: 12,
   },
   settingsText: {
     fontSize: 16,
-    color: "#7C3AED",
+    color: "white",
     fontWeight: "500",
     marginLeft: 12,
   },
-  logoutButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#1F2937",
-    borderRadius: 16,
-    padding: 16,
-    margin: 16,
-    marginTop: 0,
+  logoutButtonContainer: {
+    marginTop: 16,
   },
   logoutText: {
     fontSize: 16,
     color: "#EF4444",
     fontWeight: "500",
     marginLeft: 12,
+  },
+  actionsContainer: {
+    flexDirection: "row",
+    justifyContent: "center", // Changed from "space-around" to "center"
+    marginHorizontal: 16,
+    marginVertical: 16,
+  },
+  actionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center", // Center the content
+    backgroundColor: "#7C3AED",
+    borderRadius: 16,
+    padding: 16,
+    width: "100%", // Make button take full width
+  },
+  actionButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "500",
+    marginLeft: 8,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    paddingBottom: 24,
+  },
+  bottomSpacer: {
+    height: 24,
   },
 });
