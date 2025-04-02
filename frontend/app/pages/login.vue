@@ -52,7 +52,7 @@ async function signIn() {
 
         if (data.token) {
             authStore.setToken(data.token);
-            const { data: user, error, status} = await useUserApi().fetchMe(data.token);
+            const { data: user, error, status} = await useUserApi().fetchMe();
             if (error.value) {
                 errorMessage.value = error.value.message;
                 throw new Error('Failed to fetch user data');

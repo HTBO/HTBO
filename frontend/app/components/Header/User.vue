@@ -12,7 +12,7 @@ provide('isUserMenuOpen', isUserMenuOpen);
 <template>
     <div class="relative">
         <button @click="toggleMenu" class="group size-10 border-2 border-primary-600 rounded-full cursor-pointer">
-            <NuxtImg :src="user?.avatarUrl" alt="User Avatar" class="group-hover:opacity-75 rounded-full duration-300" />
+            <NuxtImg :src="user?.avatarUrl" class="group-hover:opacity-75 rounded-full duration-300" />
         </button>
         <HeaderUserMenu :avatar-url="user?.avatarUrl!" :username="user?.username!" :email="user?.email!"/>
     </div>

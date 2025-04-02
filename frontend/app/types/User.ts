@@ -5,19 +5,19 @@ export interface User {
     username: string
     email: string
     avatarUrl: string
-    friends: {
-        userId: string | User,
+    friends: Array<{
+        userId: string,
         status: 'pending' | 'accepted' | 'rejected'
-    }
+    }>
     games: any[]
-    sessions: {
+    sessions: Array<{
         sessionId: string,
         status: 'pending' | 'accepted' | 'rejected'
-    }
-    groups: {
+    }>
+    groups: Array<{
         groupId: string,
         status: 'pending' | 'accepted' | 'rejected'
-    }
+    }>
     created_at: string
     updated_at: string
 }

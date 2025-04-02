@@ -20,10 +20,10 @@ export const useUserApi = () => {
         }
     }
     
-    const fetchMe = (token: string) => {
+    const fetchMe = () => {
         return useLazyFetch<User>(`${API_URL}/me`, {
             headers: {
-                Authorization: `Bearer ${token}`,
+                Authorization: `Bearer ${authStore.token}`,
             }
         })
     }
