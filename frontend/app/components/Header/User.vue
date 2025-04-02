@@ -1,13 +1,20 @@
 <script setup lang="ts">
 const user = useAuthStore().user;
+
+const isUserMenuOpen = ref(false);
+const toggleMenu = () => {
+    isUserMenuOpen.value = !isUserMenuOpen.value;
+};
+
+provide('isUserMenuOpen', isUserMenuOpen);
 </script>
 
 <template>
-    <div class="realtive">
-        <div class="group size-10 border-2 border-primary-600 rounded-full cursor-pointer">
+    <div class="relative">
+        <button @click="toggleMenu" class="group size-10 border-2 border-primary-600 rounded-full cursor-pointer">
             <NuxtImg :src="user?.avatarUrl" alt="User Avatar" class="group-hover:opacity-75 rounded-full duration-300" />
-        </div>
-        <HeaderUserMenu :avatar-url="user?.avatarUrl!" :username="user?.username!"/>
+        </button>
+        <HeaderUserMenu :avatar-url="user?.avatarUrl!" :username="user?.username!" :email="user?.email!"/>
     </div>
 </template>
 

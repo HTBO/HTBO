@@ -79,18 +79,15 @@ async function signUp() {
                         <input id="remember" name="remember" type="checkbox" class="w-4 h-4 text-primary-500 border-gray-300 rounded focus:ring-primary-500" />
                         <label for="remember" class="text-sm text-gray-400">Remember me</label>
                     </div>
-                    <div class="text-sm">
-                        <NuxtLink to="/forgot-password" class="text-primary-500 hover:text-primary-500/80 duration-300">Forgot password?</NuxtLink>
-                    </div>
                 </div>
                 <div>
                     <button type="submit" class="w-full p-3.5 bg-primary-600 hover:bg-primary-600/80 font-medium shadow-xl shadow-primary-600/25 rounded-2xl duration-300">
-                        Sign in
+                        Sign Up
                     </button>
                 </div>
             </form>
             <div>
-                <p class="text-sm text-center text-gray-400">Don't have an account? <NuxtLink to="/register"><span class="text-primary-500 hover:text-primary-500/80 duration-300">Sign up</span></NuxtLink>
+                <p class="text-sm text-center text-gray-400">Have an account? <NuxtLink to="/login"><span class="text-primary-500 hover:text-primary-500/80 duration-300">Sign in</span></NuxtLink>
                 </p>
             </div>
             <!-- <div class="flex items-center justify-center">

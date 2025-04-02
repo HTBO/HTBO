@@ -1,18 +1,65 @@
 <script setup lang="ts">
-defineProps<{
-    avatarUrl: string
-    username: string
-}>()
+import UserMenuItem from './UserMenuItem.vue';
+
+const props = defineProps<{
+    avatarUrl: string;
+    username: string;
+    email: string;
+}>();
+
+const isMenuOpen = inject('isUserMenuOpen') as Ref<boolean>;
+
+const menuItems = [
+    {
+        name: 'Settings',
+        icon: 'settings',
+        link: '/dashboard/settings'
+    },
+    {
+        name: 'Logout',
+        icon: 'logout',
+        iconColor: 'text-red-500',
+        action: () => {
+            // Add logout logic here
+            console.log('Logout clicked');
+        }
+    }
+]
+
+const handleClickOutside = (event: MouseEvent) => {
+    const menu = document.querySelector('.user-menu') as HTMLElement;
+    if (menu && !menu.contains(event.target as Node)) {
+        isMenuOpen.value = false;
+    }
+}
+
+watch(isMenuOpen, (newValue) => {
+    if (newValue) {
+        setTimeout(() => {
+            document.addEventListener('click', handleClickOutside);
+        }, 0);
+    } else {
+        document.removeEventListener('click', handleClickOutside);
+    }
+});
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside);
+});
 </script>
 
 <template>
-    <div class="absolute right-0 w-56 h-40 flex flex-col m-5 p-3 bg-surface-800 rounded-xl">
-        <NuxtLink :to="''" class="flex items-center gap-2 p-2 hover:bg-gray-600 cursor-pointer rounded-md duration-300">
-            <div class="size-8 border-2 border-primary-600 rounded-full">
-                <NuxtImg :src="avatarUrl" alt="User Avatar" class="rounded-full duration-300" />
+    <div class="user-menu absolute right-0 top-12 w-[20rem] flex flex-col gap-2 p-3 bg-surface-900 rounded-xl duration-200" :class="[isMenuOpen ? 'opacity-100' : 'opacity-0 -translate-y-5 scale-95 pointer-events-none']">
+        <div class="flex items-center gap-4 p-3 bg-gray-900/70 rounded-xl duration-300">
+            <NuxtLink to="/dashboard" class="group size-16 border-2 border-primary-600 rounded-full">
+                <NuxtImg :src="avatarUrl" alt="User Avatar" class="group-hover:opacity-70 rounded-full duration-300" />
+            </NuxtLink>
+            <div class="flex flex-col gap-0.5">
+                <span class="text-xl font-semibold">{{ username }}</span>
+                <p class="text-sm text-gray-500 text-nowrap">{{ email }}</p>
             </div>
-            <span class="font-semibold">{{ username }}</span>
-        </NuxtLink>
+        </div>
+        <UserMenuItem v-for="item in menuItems" :item="item"/>
     </div>
 </template>
 

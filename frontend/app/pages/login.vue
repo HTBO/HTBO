@@ -61,7 +61,6 @@ async function signIn() {
                 throw new Error('User not found');
             }
             authStore.setUser(user.value);
-            console.log('User data:', authStore.user);
         }
 
         router.push('/dashboard');
@@ -93,7 +92,7 @@ async function signIn() {
                         <label for="remember" class="text-sm text-gray-400">Remember me</label>
                     </div>
                     <div class="text-sm">
-                        <NuxtLink to="/forgot-password" class="text-primary-500 hover:text-primary-500/80 duration-300">Forgot password?</NuxtLink>
+                        <NuxtLink to="/login" class="text-primary-500 hover:text-primary-500/80 duration-300">Forgot password?</NuxtLink>
                     </div>
                 </div>
                 <div>
