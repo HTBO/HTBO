@@ -199,7 +199,7 @@ export default function ProfileScreen() {
 
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => router.push("/friends")}
+            onPress={() => router.push("/groups")}
           >
             <Ionicons name="people-outline" size={20} color="#FFFFFF" />
             <Text style={styles.actionButtonText}>Find Friends</Text>
