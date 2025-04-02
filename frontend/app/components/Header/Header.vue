@@ -3,7 +3,7 @@
 </script>
 
 <template>
-    <header class="flex justify-end p-5">
+    <header class="flex justify-end">
         <HeaderUser/>
     </header>
 </template>

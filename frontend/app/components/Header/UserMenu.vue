@@ -20,8 +20,7 @@ const menuItems = [
         icon: 'logout',
         iconColor: 'text-red-500',
         action: () => {
-            // Add logout logic here
-            console.log('Logout clicked');
+            useUserApi().logout()
         }
     }
 ]
@@ -49,9 +48,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="user-menu absolute right-0 top-12 w-[20rem] flex flex-col gap-2 p-3 bg-surface-900 rounded-xl duration-200" :class="[isMenuOpen ? 'opacity-100' : 'opacity-0 -translate-y-5 scale-95 pointer-events-none']">
+    <div class="user-menu absolute z-10 right-0 top-12 w-[20rem] flex flex-col gap-2 p-3 bg-surface-900 rounded-xl duration-200" :class="[isMenuOpen ? 'opacity-100' : 'opacity-0 -translate-y-5 scale-95 pointer-events-none']">
         <div class="flex items-center gap-4 p-3 bg-gray-900/70 rounded-xl duration-300">
-            <NuxtLink to="/dashboard" class="group size-16 border-2 border-primary-600 rounded-full">
+            <NuxtLink :to="`/dashboard/users/${username}`" class="group size-16 border-2 border-primary-600 rounded-full">
                 <NuxtImg :src="avatarUrl" alt="User Avatar" class="group-hover:opacity-70 rounded-full duration-300" />
             </NuxtLink>
             <div class="flex flex-col gap-0.5">

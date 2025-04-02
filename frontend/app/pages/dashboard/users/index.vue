@@ -1,6 +1,8 @@
 <script setup lang="ts">
-onMounted(() => {
-  navigateTo('/login')
+
+definePageMeta({
+    layout: 'dashboard',
+    middleware: 'auth',
 })
 </script>
 
@@ -9,7 +11,6 @@ onMounted(() => {
 
     </div>
 </template>
-
 
 <style scoped>
 
