@@ -3,7 +3,7 @@
 </script>
 
 <template>
-    <div class="h-full">
+    <div class="relative flex h-full">
         <MenuSidebar/>
         <div class="w-full">
             <Header/>
