@@ -45,8 +45,17 @@ const createSession = async (req, res) => {
             description,
             participants: Array.from(userIds).map(userId => ({
                 user: userId,
-                status: 'pending'
+                sessionStatus: 'pending'
             }))
+        });
+
+        await User.findByIdAndUpdate(hostId, {
+            $addToSet: {
+                sessions: {
+                    sessionId: mongoSession._id,
+                    sessionStatus: 'host'
+                }
+            }
         });
 
         const bulkOps = Array.from(userIds).map(userId => ({
@@ -56,8 +65,7 @@ const createSession = async (req, res) => {
                     $addToSet: {
                         sessions: {
                             sessionId: mongoSession._id,
-                            status: 'pending'
-                        }
+                            sessionStatus: 'pending'                        }
                     }
                 }
             }
@@ -77,6 +85,63 @@ const createSession = async (req, res) => {
         }
 
         res.status(500).json({ error: 'Server error', details: error.message });
+    }
+};
+
+const confirmSession = async (req, res) => {
+    try {
+        const { userToUpdate, sessionId, action } = req.body;
+        const userId = userToUpdate;
+        if (!mongoose.Types.ObjectId.isValid(sessionId)) 
+            return res.status(400).json({ error: 'Invalid session ID' });
+        if (action == "accept"){
+
+            const updatedSession = await Session.findOneAndUpdate(
+                { 
+                    _id: sessionId,
+                    "participants.user": userId,
+                    "participants.sessionStatus": "pending"
+                },
+                { $set: { "participants.$.sessionStatus": action === "accept" ? "accepted" : "rejected" } },
+                { new: true }
+            );
+            if (!updatedSession) 
+                return res.status(404).json({ error: "No pending session invitation found" });
+
+        } else if (action == "reject")
+        {
+            const sessionUpdateResult = await Session.updateMany(
+                { 'participants.user': userId },
+                { $pull: { participants: { user: userId } } }
+            );
+        }
+
+        const updatedUser = await User.findOneAndUpdate(
+            { 
+                _id: userId,
+                "sessions.sessionId": sessionId 
+            },
+            { $set: { "sessions.$.sessionStatus": action === "accept" ? "accepted" : "rejected" } },
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            await Session.updateOne(
+                { _id: sessionId, "participants.user": userId },
+                { $set: { "participants.$.status": "pending" } }
+            );
+            return res.status(400).json({ error: "Failed to update user session status" });
+        }
+
+        res.status(200).json({ 
+            message: `Session invitation ${action}ed successfully`,
+            session: updatedSession,
+            user: updatedUser
+        });
+        
+    } catch (error) {
+        console.error("Session confirmation error:", error);
+        res.status(500).json({ error: "Server error", details: error.message });
     }
 };
 
@@ -145,13 +210,13 @@ const updateSession = async (req, res) => {
                 if (!userExists)
                     return res.status(404).json({ error: `User not found: ${userId}` });
 
-                newParticipants.push({ user: userId, status: 'pending' });
+                newParticipants.push({ user: userId, sessionStatus: 'pending' });
                 bulkOps.push({
                     updateOne: {
                         filter: { _id: userId },
                         update: {
                             $addToSet: {
-                                sessions: { sessionId: session._id, status: 'pending' }
+                                sessions: { sessionId: session._id, sessionStatus: 'pending' }
                             }
                         }
                     }
@@ -279,6 +344,7 @@ const deleteSession = async (req, res) => {
 
 module.exports = {
     createSession,
+    confirmSession,
     getAllSessions,
     getSessionById,
     updateSession,

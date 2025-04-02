@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Session = require('../models/Session');
 const Group = require('../models/Group');
+const Game = require('../models/Game');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -102,7 +103,7 @@ const getMyInfo = async (req, res) => {
 const getMySessions = async (req, res) => {
     try {
         const token = req.header('Authorization').replace('Bearer ', '');
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);        
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(decoded.id);
         let sessions = await Session.find({ hostId: user._id });
         sessions.push(...await Session.find({ 'participants.user': user._id }));
@@ -180,7 +181,7 @@ const getUserByUsername = async (req, res) => {
         const { username } = req.params;
         const user = await User.findOne({ username })
         if (!user) return res.status(404).json({ error: "User not found" });
-        res.status(200).json({ user })
+        res.status(200).json(user)
     } catch (error) {
         console.error(error.message);
         if (error.name === 'CastError') return res.status(400).json({ error: 'Invalid user ID format' });
@@ -195,7 +196,7 @@ const updateUser = async (req, res) => {
 
         if (req.body.friendAction) {
             const friendActions = ['pending', 'accepted', 'rejected']
-            const { action, friendId, status } = req.body.friendAction;
+            const { action, friendId, friendStatus } = req.body.friendAction;
 
             if (!mongoose.Types.ObjectId.isValid(friendId))
                 return res.status(400).json({ error: 'Invalid friend ID format' });
@@ -222,16 +223,16 @@ const updateUser = async (req, res) => {
                     const addUser = addedFriend.friends.find(friend => friend.userId.equals(req.params.id))
 
                     if (!friend) return res.status(404).json({ error: 'Friend not found' });
-                    if (!friendActions.includes(status)) return res.status(400).json({ error: 'Invalid status' });
+                    if (!friendActions.includes(friendStatus)) return res.status(400).json({ error: 'Invalid status' });
 
-                    if (status == "rejected") {
+                    if (friendStatus == "rejected") {
                         await user.removeFriend();
                         await addedFriend.removeFriend();
                     } else {
-                        friend.status = status;
-                        addUser.status = status;
-                        await user.statusUpdate();
-                        await addedFriend.statusUpdate();
+                        friend.friendStatus = friendStatus;
+                        addUser.friendStatus = friendStatus;
+                        await user.statusUpdate(user.id, "accepted");
+                        await addedFriend.statusUpdate(friendId, "accepted");
                     }
                     break;
 
@@ -244,13 +245,13 @@ const updateUser = async (req, res) => {
                 return res.status(400).json({ error: 'Invalid game ID' });
             switch (action) {
                 case "add":
-                    if (user.games.some(g => g.gameId.equals(gameObjectId))) 
+                    if (user.games.some(g => g.gameId.equals(gameObjectId)))
                         return res.status(400).json({ error: 'Game already in collection' });
                     await user.editUserGames(gameObjectId, "add");
                     break;
 
                 case "remove":
-                    if (!user.games.some(g => g.gameId.equals(gameObjectId))) 
+                    if (!user.games.some(g => g.gameId.equals(gameObjectId)))
                         return res.status(400).json({ error: 'Game not in collection' });
                     await user.editUserGames(gameObjectId, "remove");
                     break;
@@ -270,129 +271,144 @@ const updateUser = async (req, res) => {
                     await user.removeSession(sessionId);
                     break;
                 default:
-                    break;
+                    return res.status(400).json({ error: 'Invalid session action' });
             }
-        } else {
-            const updates = Object.keys(req.body);
-            const allowedUpdates = ['username', 'email'];
-            const isValidOperation = updates.every(update =>
-                allowedUpdates.includes(update)
+        } else if (req.body.groupAction) {
+            const { groupId, action } = req.body.groupAction;
+            if (!mongoose.Types.ObjectId.isValid(groupId))
+                return res.status(400).json({ error: 'Invalid group ID' });
+            switch (action) {
+                case "accept": {
+                    await user.addGroup(groupId);
+                    break;
+                }
+                case "remove":
+                    await user.removeGroup(groupId);
+                    break;
+                default:
+                    return res.status(400).json({ error: 'Invalid group action' });
+            };
+        }  else {
+                const updates = Object.keys(req.body);
+                const allowedUpdates = ['username', 'email'];
+                const isValidOperation = updates.every(update =>
+                    allowedUpdates.includes(update)
+                );
+
+                if (!isValidOperation) return res.status(400).json({ error: 'Invalid updates!' });
+
+                updates.forEach(update => user[update] = req.body[update]);
+                await user.save();
+            }
+
+            const updatedUser = await User.findById(user.id)
+                .select('-passwordHash')
+                .populate('friends.userId', 'username avatarUrl');
+
+            res.status(200).json(updatedUser);
+        } catch (error) {
+            console.error(error.message);
+
+            if (error.name === 'CastError')
+                return res.status(400).json({ error: 'Invalid user ID format' });
+
+            if (error.name === 'ValidationError')
+                return res.status(400).json({ error: error.message });
+
+            if (error.code === 11000) {
+                const field = Object.keys(error.keyPattern)[0];
+                return res.status(400).json({ error: `${field} already exists` });
+            }
+
+            res.status(500).json({ error: 'Server error' });
+        }
+    };
+
+    const deleteUser = async (req, res) => {
+        try {
+            const user = await User.findById(req.params.id);
+            if (!user) return res.status(404).json({ error: 'User not found' });
+
+            let stats = {
+                hostSessionsDeleted: 0,
+                ownerGroupsDeleted: 0,
+                participantGroupsCleaned: 0,
+                participantSessionsCleaned: 0,
+                usersUpdated: 0
+            };
+            const hostSessions = await Session.find({ hostId: user._id });
+            const groupsOwned = await Group.find({ ownerId: user._id })
+            if (hostSessions.length > 0) {
+                const sessionIds = hostSessions.map(session => session._id);
+
+                const allParticipants = [...new Set(
+                    hostSessions.flatMap(session =>
+                        session.participants.map(p => p.user)
+                    )
+                )];
+
+                const userUpdateResult = await User.updateMany(
+                    { _id: { $in: allParticipants } },
+                    { $pull: { sessions: { sessionId: { $in: sessionIds } } } }
+                );
+                stats.usersUpdated += userUpdateResult.modifiedCount;
+
+                // Delete host sessions
+                const deleteResult = await Session.deleteMany({ _id: { $in: sessionIds } });
+                stats.hostSessionsDeleted += deleteResult.deletedCount;
+            }
+
+            if (groupsOwned.length > 0) {
+                const groupsIds = groupsOwned.map(group => group._id);
+                const allMembers = [...new Set(
+                    groupsOwned.flatMap(group => group.members.map(m => m.memberId))
+                )];
+
+                const userGroupUpdateResult = await User.updateMany(
+                    { _id: { $in: allMembers } },
+                    { $pull: { groups: { groupId: { $in: groupsIds } } } }
+                );
+                stats.usersUpdated += userGroupUpdateResult.modifiedCount;
+
+                const deleteGroupResult = await Group.deleteMany({ _id: { $in: groupsIds } });
+                stats.ownerGroupsDeleted += deleteGroupResult.deletedCount;
+            }
+
+            // Handle user as participant in other sessions
+            const sessionUpdateResult = await Session.updateMany(
+                { 'participants.user': user._id },
+                { $pull: { participants: { user: user._id } } }
             );
+            stats.participantSessionsCleaned += sessionUpdateResult.modifiedCount;
+            await User.findByIdAndDelete(req.params.id);
+            res.status(200).json({
+                message: 'User deleted successfully',
+                data: stats
+            });
 
-            if (!isValidOperation) return res.status(400).json({ error: 'Invalid updates!' });
-
-            updates.forEach(update => user[update] = req.body[update]);
-            await user.save();
+        } catch (error) {
+            console.error('Deletion error:', error);
+            res.status(error.name === 'CastError' ? 400 : 500).json({
+                error: error.name === 'CastError'
+                    ? 'Invalid user ID format'
+                    : 'Server error'
+            });
         }
+    };
 
-        const updatedUser = await User.findById(user.id)
-            .select('-passwordHash')
-            .populate('friends.userId', 'username avatarUrl');
-
-        res.status(200).json(updatedUser);
-    } catch (error) {
-        console.error(error.message);
-
-        if (error.name === 'CastError')
-            return res.status(400).json({ error: 'Invalid user ID format' });
-
-        if (error.name === 'ValidationError')
-            return res.status(400).json({ error: error.message });
-
-        if (error.code === 11000) {
-            const field = Object.keys(error.keyPattern)[0];
-            return res.status(400).json({ error: `${field} already exists` });
-        }
-
-        res.status(500).json({ error: 'Server error' });
-    }
-};
-
-const deleteUser = async (req, res) => {
-    try {
-        const user = await User.findById(req.params.id);
-        if (!user) return res.status(404).json({ error: 'User not found' });
-
-        let stats = {
-            hostSessionsDeleted: 0,
-            ownerGroupsDeleted: 0,
-            participantGroupsCleaned: 0,
-            participantSessionsCleaned: 0,
-            usersUpdated: 0
-        };
-        const hostSessions = await Session.find({ hostId: user._id });
-        const groupsOwned = await Group.find({ ownerId: user._id })
-        if (hostSessions.length > 0) {
-            const sessionIds = hostSessions.map(session => session._id);
-
-            const allParticipants = [...new Set(
-                hostSessions.flatMap(session =>
-                    session.participants.map(p => p.user)
-                )
-            )];
-
-            const userUpdateResult = await User.updateMany(
-                { _id: { $in: allParticipants } },
-                { $pull: { sessions: { sessionId: { $in: sessionIds } } } }
-            );
-            stats.usersUpdated += userUpdateResult.modifiedCount;
-
-            // Delete host sessions
-            const deleteResult = await Session.deleteMany({ _id: { $in: sessionIds } });
-            stats.hostSessionsDeleted += deleteResult.deletedCount;
-        }
-
-        if (groupsOwned.length > 0) {
-            const groupsIds = groupsOwned.map(group => group._id);
-            const allMembers = [...new Set(
-                groupsOwned.flatMap(group => group.members.map(m => m.memberId))
-            )];
-
-            const userGroupUpdateResult = await User.updateMany(
-                { _id: { $in: allMembers } },
-                { $pull: { groups: { groupId: { $in: groupsIds } } } }
-            );
-            stats.usersUpdated += userGroupUpdateResult.modifiedCount;
-
-            const deleteGroupResult = await Group.deleteMany({ _id: { $in: groupsIds } });
-            stats.ownerGroupsDeleted += deleteGroupResult.deletedCount;
-        }
-
-        // Handle user as participant in other sessions
-        const sessionUpdateResult = await Session.updateMany(
-            { 'participants.user': user._id },
-            { $pull: { participants: { user: user._id } } }
-        );
-        stats.participantSessionsCleaned += sessionUpdateResult.modifiedCount;
-        await User.findByIdAndDelete(req.params.id);
-        res.status(200).json({
-            message: 'User deleted successfully',
-            data: stats
-        });
-
-    } catch (error) {
-        console.error('Deletion error:', error);
-        res.status(error.name === 'CastError' ? 400 : 500).json({
-            error: error.name === 'CastError'
-                ? 'Invalid user ID format'
-                : 'Server error'
-        });
-    }
-};
-
-module.exports = {
-    getAllUsers,
-    getUserById,
-    getUserByUsername,
-    getMyInfo,
-    getMySessions,
-    getMyGroups,
-    getMyFriends,
-    getMyGames,
-    registerUser,
-    refreshToken,
-    loginUser,
-    logoutUser,
-    updateUser,
-    deleteUser
-};
+    module.exports = {
+        getAllUsers,
+        getUserById,
+        getUserByUsername,
+        getMyInfo,
+        getMySessions,
+        getMyGroups,
+        getMyFriends,
+        getMyGames,
+        registerUser,
+        refreshToken,
+        loginUser,
+        logoutUser,
+        updateUser,
+        deleteUser
+    };

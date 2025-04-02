@@ -6,9 +6,9 @@ const friendSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    status: {
+    friendStatus: {
         type: String,
-        enum: ['pending', 'accepted', 'rejected'],
+        enum: ['pending', 'accepted'],
         default: 'pending'
     },
 }, { _id: false });
@@ -27,9 +27,9 @@ const sessionSchema = new mongoose.Schema({
         ref: 'Session',
         required: true
     },
-    status: {
+    sessionStatus: {
         type: String,
-        enum: ['pending', 'accepted', 'rejected'],
+        enum: ['pending', 'accepted', 'host'],
         default: 'pending'
     },
 }, {_id: false});
@@ -40,9 +40,9 @@ const groupSchema = new mongoose.Schema({
         ref: 'Group',
         required: true
     },
-    status: {
+    groupStatus: {
         type: String,
-        enum: ['pending', 'accepted', 'rejected'],
+        enum: ['pending', 'accepted', 'owner'],
         default: 'pending'
     },
 }, {_id: false});
@@ -103,7 +103,7 @@ userSchema.virtual('profileUrl').get(function () {
 
 userSchema.methods.addFriend = function (userId) {
     if (!this.friends.some(f => f.userId.equals(userId))) {
-        this.friends.push({ userId, status: 'pending' })
+        this.friends.push({ userId, friendStatus: 'pending' })
     }
     return this.save();
 };
@@ -116,7 +116,7 @@ userSchema.methods.removeFriend = function (userId) {
 }
 
 userSchema.methods.statusUpdate = function (userId, status) {
-    this.friends.some(f => f.userId.equals(userId)).status = status;
+    this.friends.some(f => f.userId.equals(userId)).friendStatus = status;
     return this.save();
 }
 
@@ -130,13 +130,31 @@ userSchema.methods.editUserGames = function (gameId, status) {
     return this.save()
 }
 
-// userSchema.methods.removeGame = function(gameId){
-//     return this.save();
-// }
+userSchema.methods.addGroup = function (groupId) {
+    if (!this.groups.some(g => g.groupId.equals(groupId))) {
+        this.groups.push({groupId, groupStatus: "pending"})
+    }
+    return this.save();
+}
+
+userSchema.methods.removeGroup = function (groupId) {
+    if (!this.groups.some(g => g.groupId.equals(groupId))) {
+        this.groups.splice(groupId, 1);
+    }
+    return this.save();
+}
+
+userSchema.methods.updateGroupStatus = function (groupId, status) {
+    console.log(groupId, status);
+    console.log(this.groups.some(g => g.groupId.equals(groupId)));
+    
+    this.groups.some(g => g.groupId.equals(groupId)).groupStatus = status;
+    return this.save();
+}
 
 userSchema.methods.addSession = function (sessionId) {
     if (!this.sessions.some(s => s.hostId.equals(sessionId))) {
-        this.sessions.push({sessionId: sessionId, status: "pending"})        
+        this.sessions.push({sessionId: sessionId, sessionStatus: "pending"})        
     }
     return this.save();
 }

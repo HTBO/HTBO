@@ -14,7 +14,6 @@ async function verifyToken(req, res, next) {
         const blacklisted = await BlacklistToken.findOne({ token });
         if (blacklisted) return res.status(401).json({ error: 'Token revoked | ERRC: 030' });
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        console.log(decoded);
         
         req.userId = decoded.id;
         next();

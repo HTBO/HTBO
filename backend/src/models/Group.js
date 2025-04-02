@@ -6,7 +6,7 @@ const memberSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    status: {
+    groupStatus: {
         type: String,
         enum: ['pending', 'accepted', 'rejected', 'owner'],
         default: 'pending'

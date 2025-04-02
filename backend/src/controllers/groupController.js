@@ -26,7 +26,7 @@ const createGroup = async (req, res) => {
             description,
             members: members.map(member => ({
                 memberId: new mongoose.Types.ObjectId(member.memberId),
-                status: "pending"
+                groupStatus: "pending"
             }))
         });
         const bulkOps = members.map(m => ({
@@ -34,7 +34,7 @@ const createGroup = async (req, res) => {
                 filter: { _id: new mongoose.Types.ObjectId(m.memberId) },
                 update: {
                     $addToSet: {
-                        groups: { groupId: newGroup._id, status: "pending" }
+                        groups: { groupId: newGroup._id, groupStatus: "pending" }
                     }
                 }
             }
@@ -44,7 +44,7 @@ const createGroup = async (req, res) => {
                 filter: { _id: ownerId },
                 update: {
                     $addToSet: {
-                        groups: { groupId: newGroup._id, status: 'owner' }
+                        groups: { groupId: newGroup._id, groupStatus: 'owner' }
                     }
                 }
             }
@@ -182,6 +182,7 @@ const updateGroup = async (req, res) => {
                 await User.bulkWrite(bulkOps);
 
             return res.json(group);
+
 
         } else {
             const allowedUpdates = ['name', 'description'];
