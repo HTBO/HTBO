@@ -35,6 +35,7 @@ export default function AddFriendScreen() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isAddingFriend, setIsAddingFriend] = useState<FriendStatus>({});
   const [addedFriends, setAddedFriends] = useState<FriendStatus>({}); // Track added friends
+  const [isRemovingFriend, setIsRemovingFriend] = useState<FriendStatus>({});
 
   useEffect(() => {
     const getUserData = async () => {
@@ -195,6 +196,67 @@ export default function AddFriendScreen() {
     }
   };
 
+  const handleRemoveFriend = async (friendId: string) => {
+    if (!currentUserId) {
+      setError("You need to be logged in to manage friends.");
+      return;
+    }
+
+    setIsRemovingFriend((prev) => ({ ...prev, [friendId]: true }));
+
+    try {
+      const token = await authService.getToken();
+
+      if (!token) {
+        throw new Error("Not authenticated");
+      }
+
+      const payload = {
+        friendAction: {
+          action: "remove",
+          friendId: friendId,
+        },
+      };
+
+      const response = await fetch(
+        `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/${currentUserId}`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const responseText = await response.text();
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to cancel friend request. Status: ${response.status}. Response: ${responseText}`
+        );
+      }
+
+      // Remove from pending friends list
+      setAddedFriends((prev) => {
+        const updated = { ...prev };
+        delete updated[friendId];
+        return updated;
+      });
+    } catch (err) {
+      console.error("Error canceling friend request:", err);
+      alert(
+        `Failed to cancel friend request: ${
+          err instanceof Error ? err.message : "Unknown error"
+        }`
+      );
+    } finally {
+      setIsRemovingFriend((prev) => ({ ...prev, [friendId]: false }));
+    }
+  };
+
   const checkFriendStatus = async () => {
     try {
       const token = await authService.getToken();
@@ -235,7 +297,6 @@ export default function AddFriendScreen() {
           statusValues.add(friend.status);
         }
       });
-      console.log("All possible friend status values:", [...statusValues]);
 
       // Create a new object to track pending friends
       const pendingFriendsMap: FriendStatus = {};
@@ -259,7 +320,6 @@ export default function AddFriendScreen() {
         }
       });
 
-      console.log("Pending friends from API:", pendingFriendsMap);
 
       // Update the addedFriends state with the pending friends
       setAddedFriends(pendingFriendsMap);
@@ -273,19 +333,13 @@ export default function AddFriendScreen() {
   }, []);
 
   useEffect(() => {
-    console.log("addedFriends state updated:", addedFriends);
   }, [addedFriends]);
 
   const renderUserItem = ({ item }: { item: UserModel }) => {
     // Ensure itemId is always a string, never undefined
     const itemId = normalizeId(item._id || item.id);
 
-    console.log(
-      `Rendering user ${
-        item.username
-      } with ID: ${itemId}, isPending: ${!!addedFriends[itemId]}`
-    );
-
+    
     // Only proceed if we have a valid ID
     if (!itemId) {
       console.warn(`Skipping user ${item.username} - no valid ID`);
@@ -295,6 +349,7 @@ export default function AddFriendScreen() {
     // Check addedFriends state using the string ID
     const isPending = !!addedFriends[itemId];
     const isAdding = !!isAddingFriend[itemId];
+    const isRemoving = !!isRemovingFriend[itemId];
     return (
       <View style={styles.userItem}>
         <Image
@@ -310,13 +365,19 @@ export default function AddFriendScreen() {
         <TouchableOpacity
           style={[
             styles.addButton,
-            isAdding && styles.addButtonDisabled,
+            (isAdding || isRemoving) && styles.addButtonDisabled,
             isPending && styles.pendingButton,
           ]}
-          onPress={() => handleAddFriend(itemId)}
-          disabled={isAdding || isPending}
+          onPress={() => {
+            if (isPending) {
+              handleRemoveFriend(itemId);
+            } else {
+              handleAddFriend(itemId);
+            }
+          }}
+          disabled={isAdding || isRemoving}
         >
-          {isAdding ? (
+          {isAdding || isRemoving ? (
             <ActivityIndicator size="small" color="white" />
           ) : isPending ? (
             <View style={styles.addedButtonContent}>

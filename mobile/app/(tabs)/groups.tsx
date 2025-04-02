@@ -1,10 +1,12 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Image } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { Friend, FriendStatus } from '../../models/FriendModel';
+import { UserModel } from '../../models/UserModel';
+import { authService } from '../../services/authService';
 
-// Sample data for groups
 const GROUPS = [
   {
     id: '1',
@@ -48,57 +50,101 @@ const GROUPS = [
   },
 ];
 
-const FRIENDS = [
-  {
-    id: '1',
-    name: 'Alex Johnson',
-    status: 'Online',
-    lastSeen: 'Now',
-    avatar: "",
-  },
-  {
-    id: '2',
-    name: 'Riley Smith',
-    status: 'Playing Rocket League',
-    lastSeen: '10 minutes ago',
-    avatar: "",
-  },
-  {
-    id: '3',
-    name: 'Taylor Williams',
-    status: 'Offline',
-    lastSeen: '2 hours ago',
-    avatar: "",
-  },
-  {
-    id: '4',
-    name: 'Jordan Brown',
-    status: 'Online',
-    lastSeen: 'Now',
-    avatar: "",
-  },
-  {
-    id: '5',
-    name: 'Casey Miller',
-    status: 'Playing Fortnite',
-    lastSeen: '30 minutes ago',
-    avatar: "",
-  },
-];
-
 export default function SocialScreen() {
   const [activeTab, setActiveTab] = useState('friends');
   const [searchQuery, setSearchQuery] = useState('');
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [detailedFriends, setDetailedFriends] = useState<UserModel[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
-  // Filter friends and groups based on search query
-  const filteredFriends = useMemo(() => {
-    if (!searchQuery.trim()) return FRIENDS;
+  const fetchFriends = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const token = await authService.getToken();
+      
+      if (!token) {
+        throw new Error("Authentication required");
+      }
+      
+      const response = await fetch(
+        'https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/myfriends',
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Failed to load friends. Status: ${response.status}`);
+      }
+      
+      const friendsData: Friend[] = await response.json();
+      setFriends(friendsData);
+      
+      const acceptedFriendIds: string[] = friendsData
+        .filter((friend: Friend) => friend.status === 'accepted')
+        .map((friend: Friend) => {
+          if (typeof friend.user === 'object' && friend.user && '_id' in friend.user) {
+            return friend.user._id.toString();
+          } else if (friend.userId) {
+            return friend.userId.toString();
+          } else if (typeof friend.user === 'string') {
+            return friend.user;
+          }
+          return '';
+        })
+        .filter(id => id !== '');
+      
+      const userDetailsPromises = acceptedFriendIds.map(async (userId: string) => {
+        const userResponse = await fetch(
+          `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/${userId}`,
+          {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+        
+        if (!userResponse.ok) {
+          console.warn(`Failed to fetch details for user ${userId}`);
+          return null;
+        }
+        
+        return await userResponse.json() as UserModel;
+      });
+      
+      const userDetails = await Promise.all(userDetailsPromises);
+      const validUserDetails = userDetails.filter((user): user is UserModel => user !== null);
+      
+      setDetailedFriends(validUserDetails);
+      
+    } catch (err) {
+      console.error("Failed to fetch friends:", err);
+      setError(err instanceof Error ? err.message : "Failed to load friends");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchFriends();
+  }, []);
+  
+  const filteredDetailedFriends = useMemo(() => {
+    if (!searchQuery.trim()) return detailedFriends;
     const query = searchQuery.toLowerCase().trim();
-    return FRIENDS.filter(friend => 
-      friend.name.toLowerCase().includes(query) || 
-      friend.status.toLowerCase().includes(query)
+    
+    return detailedFriends.filter(user => 
+      user.username.toLowerCase().includes(query) || 
+      user.email.toLowerCase().includes(query)
     );
-  }, [searchQuery]);
+  }, [searchQuery, detailedFriends]);
   
   const filteredGroups = useMemo(() => {
     if (!searchQuery.trim()) return GROUPS;
@@ -156,35 +202,39 @@ export default function SocialScreen() {
     </TouchableOpacity>
   );
 
-  const renderFriendItem = ({ item }: { item: typeof FRIENDS[number] }) => (
-    <TouchableOpacity 
-      style={styles.listItem} 
-      onPress={() => handleFriendPress(item.id)}
-      activeOpacity={0.7}
-    >
-      <Image style={styles.avatar} />
-      
-      <View style={styles.itemInfo}>
-        <View style={styles.itemHeader}>
-          <Text style={styles.itemName}>{item.name}</Text>
-          <Text style={styles.itemTime}>{item.lastSeen}</Text>
-        </View>
+  const renderDetailedFriendItem = ({ item }: { item: UserModel }) => {
+    return (
+      <TouchableOpacity 
+        style={styles.listItem} 
+        onPress={() => handleFriendPress(item._id)}
+        activeOpacity={0.7}
+      >
+        <Image 
+          style={styles.avatar} 
+          source={item.avatarUrl ? { uri: item.avatarUrl } : undefined} 
+        />
         
-        <View style={styles.itemFooter}>
-          <Text 
-            style={[
-              styles.lastMessage, 
-              item.status === 'Online' && styles.onlineStatus
-            ]} 
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {item.status}
-          </Text>
+        <View style={styles.itemInfo}>
+          <View style={styles.itemHeader}>
+            <Text style={styles.itemName}>{item.username}</Text>
+            <Text style={styles.itemTime}>
+              {item.updatedAt ? new Date(item.updatedAt).toLocaleDateString() : 'Unknown'}
+            </Text>
+          </View>
+          
+          <View style={styles.itemFooter}>
+            <Text 
+              style={styles.lastMessage} 
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {item.email}
+            </Text>
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
   
   return (
     <SafeAreaView style={styles.container}>
@@ -198,7 +248,6 @@ export default function SocialScreen() {
         </TouchableOpacity>
       </View>
       
-      {/* Search Bar */}
       <View style={styles.searchContainer}>
         <Ionicons name="search" size={20} color="#9CA3AF" style={styles.searchIcon} />
         <TextInput
@@ -244,18 +293,43 @@ export default function SocialScreen() {
       </View>
       
       {activeTab === 'friends' ? (
-        <FlatList
-          data={filteredFriends}
-          keyExtractor={item => item.id}
-          renderItem={renderFriendItem}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No friends found</Text>
+        <>
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#7C3AED" />
             </View>
-          }
-        />
+          ) : error ? (
+            <View style={styles.errorContainer}>
+              <Ionicons name="alert-circle" size={48} color="#EF4444" />
+              <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity 
+                style={styles.retryButton}
+                onPress={() => {
+                  setFriends([]);
+                  setDetailedFriends([]);
+                  fetchFriends();
+                }}
+              >
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <FlatList
+              data={filteredDetailedFriends}
+              keyExtractor={(item) => item._id}
+              renderItem={renderDetailedFriendItem}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.listContent}
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>
+                    {searchQuery ? 'No friends found' : 'No friends yet. Add some friends to get started!'}
+                  </Text>
+                </View>
+              }
+            />
+          )}
+        </>
       ) : (
         <FlatList
           data={filteredGroups}
@@ -292,8 +366,8 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   actionButton: {
-    padding: 8,  // Increased from 4 to 8
-    marginLeft: 8, // Add some margin for extra space
+    padding: 8,
+    marginLeft: 8,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -413,5 +487,33 @@ const styles = StyleSheet.create({
   emptyText: {
     color: '#9CA3AF',
     fontSize: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 16,
+  },
+  retryButton: {
+    marginTop: 16,
+    backgroundColor: '#374151',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontWeight: '600',
   },
 });
