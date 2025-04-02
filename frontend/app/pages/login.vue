@@ -52,6 +52,16 @@ async function signIn() {
 
         if (data.token) {
             authStore.setToken(data.token);
+            const { data: user, error, status} = await useUserApi().fetchMe(data.token);
+            if (error.value) {
+                errorMessage.value = error.value.message;
+                throw new Error('Failed to fetch user data');
+            }
+            if(!user.value) {
+                throw new Error('User not found');
+            }
+            authStore.setUser(user.value);
+            console.log('User data:', authStore.user);
         }
 
         router.push('/dashboard');

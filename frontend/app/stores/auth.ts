@@ -1,13 +1,15 @@
+import type { User } from "~/types/User";
+
 export const useAuthStore = defineStore('auth', {
     state: () => ({
         token: null as string | null,
-        user: null,
+        user: null as User | null,
     }),
     actions: {
         setToken(token: string) {
             this.token = token
         },
-        setUser(user: any) {
+        setUser(user: User | null) {
             this.user = user
         },
         clearAuth(){
