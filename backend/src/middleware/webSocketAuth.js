@@ -1,7 +1,7 @@
 // middleware/wsAuth.js
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
-const { BlacklistToken } = require('../models/BlacklistToken');
+const { BlacklistToken } = require('../auth/blacklistToken');
 const terminal = require('../utils/terminal');
 
 dotenv.config();

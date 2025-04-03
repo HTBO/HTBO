@@ -20,6 +20,29 @@ userid2 and groupid2 is optional
 }
 ```
 ---
+> confirmSession
+`POST` `{{API_URL}}/sessions/confirm`
+
+Accept invitation to a session
+```
+{
+    "userId": "<userId>",
+    "sessionId": "<sessionId>"
+}
+```
+---
+> rejectSession
+`POST` `{{API_URL}}/sessions/reject`
+
+Reject invitation to a session, or leave from a session (if already a participant)
+```
+{
+    "userId": "<userId>",
+    "sessionId": "<sessionId>"
+}
+```
+---
+
 ## GET
 > getAllSessions
 `GET` `{{API_URL}}/sessions`

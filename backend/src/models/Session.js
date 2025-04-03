@@ -7,7 +7,7 @@ const participantSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    status: {
+    sessionStatus: {
         type: String,
         enum: ['pending', 'accepted', 'rejected', 'host'],
         default: 'pending'
