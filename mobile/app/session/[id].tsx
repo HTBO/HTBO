@@ -38,7 +38,6 @@ export default function SessionDetailScreen() {
         return;
       }
 
-      // Make an API call to get the current user's profile
       const response = await fetch(
         "https://htbo-production.up.railway.app/api/users/me",
         {
@@ -55,9 +54,11 @@ export default function SessionDetailScreen() {
       }
 
       const userData = await response.json();
+      console.log("Current user data:", userData);
       setCurrentUser(userData);
     } catch (error) {
       console.error("Error fetching current user:", error);
+      Alert.alert("User Profile Error", "Failed to load your user profile");
     }
   }
 
@@ -102,15 +103,26 @@ export default function SessionDetailScreen() {
     }
   }
 
-  // Check if current user is the host
+  // Update the isHost function to compare IDs instead of usernames
   const isHost = () => {
-    if (!currentUser || !session) return false;
-    return currentUser.username === session.hostName;
+    console.log("Checking isHost by ID comparison.");
+    console.log("Current user ID:", currentUser?._id);
+    console.log("Session host ID:", session?.hostId);
+
+    if (!currentUser || !session) {
+      return false;
+    }
+
+    // Compare IDs instead of usernames
+    const isMatch = currentUser._id === session.hostId;
+    console.log("ID match:", isMatch);
+
+    return isMatch;
   };
 
   async function deleteSession() {
     try {
-      // Check if user is host before proceeding
+      // Check if user is host before proceeding (using ID comparison)
       if (!isHost()) {
         Alert.alert("Error", "Only the host can delete this session");
         return;
@@ -125,7 +137,7 @@ export default function SessionDetailScreen() {
       }
 
       const response = await fetch(
-        `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/sessions/${id}`,
+        `https://htbo-production.up.railway.app/api/sessions/${id}`,
         {
           method: "DELETE",
           headers: {
@@ -143,7 +155,6 @@ export default function SessionDetailScreen() {
         {
           text: "OK",
           onPress: () => {
-            // Navigate to the sessions screen with refresh parameter
             router.navigate({
               pathname: "/sessions",
               params: { refresh: Date.now().toString() },
@@ -163,7 +174,7 @@ export default function SessionDetailScreen() {
   }
 
   const confirmDelete = () => {
-    // Check if user is host before showing confirmation
+    // Check using the updated isHost function
     if (!isHost()) {
       Alert.alert("Error", "Only the host can delete this session");
       return;
@@ -186,7 +197,6 @@ export default function SessionDetailScreen() {
     );
   };
 
-  // Format date for display
   function formatDate(dateString: string) {
     if (!dateString) return "Date not set";
     const date = new Date(dateString);
@@ -198,7 +208,6 @@ export default function SessionDetailScreen() {
     });
   }
 
-  // Format time for display
   function formatTime(dateString: string) {
     if (!dateString) return "Time not set";
     const date = new Date(dateString);
@@ -244,7 +253,6 @@ export default function SessionDetailScreen() {
         </View>
       ) : (
         <ScrollView style={styles.scrollView}>
-          {/* Game Information Card */}
           <View style={styles.gameCard}>
             <Image
               source={
@@ -275,7 +283,6 @@ export default function SessionDetailScreen() {
             </View>
           </View>
 
-          {/* Session Details Card */}
           <View style={styles.detailCard}>
             <Text style={styles.detailTitle}>Session Information</Text>
 
@@ -299,7 +306,6 @@ export default function SessionDetailScreen() {
             </View>
           </View>
 
-          {/* Participants Card */}
           <View style={styles.detailCard}>
             <Text style={styles.detailTitle}>
               Participants ({session.participants.length})
@@ -337,14 +343,13 @@ export default function SessionDetailScreen() {
             )}
           </View>
 
-          {/* Action Buttons */}
           <View style={styles.actionContainer}>
             <TouchableOpacity style={styles.joinButton}>
               <Ionicons name="log-in-outline" size={20} color="#FFFFFF" />
               <Text style={styles.joinButtonText}>Join Session</Text>
             </TouchableOpacity>
 
-            {isHost() && (
+            {currentUser && session && currentUser._id === session.hostId ? (
               <TouchableOpacity
                 style={styles.deleteButton}
                 onPress={confirmDelete}
@@ -359,7 +364,7 @@ export default function SessionDetailScreen() {
                   </>
                 )}
               </TouchableOpacity>
-            )}
+            ) : null}
           </View>
         </ScrollView>
       )}
