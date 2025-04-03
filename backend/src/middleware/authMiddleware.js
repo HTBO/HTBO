@@ -33,6 +33,7 @@ function checkUserPermission(req, res, next) {
 
 async function checkSessionPermission (req, res, next) {
     const hostId = await Session.findById(req.params.id).select('hostId');
+    if(!hostId) return res.status(404).json({ error: 'Session not found | ERRC: 111' });
     if(req.userId !== String(hostId.hostId)) 
         return res.status(403).json({ error: 'Unauthorized access | ERRC: 110' });
     next();
@@ -40,6 +41,7 @@ async function checkSessionPermission (req, res, next) {
 
 async function checkGroupPermission (req, res, next) {
     const ownerId = await Group.findById(req.params.id).select('ownerId');
+    if(!ownerId) return res.status(404).json({ error: 'Group not found | ERRC: 121' });
     if(req.userId !== String(ownerId.ownerId)) 
         return res.status(403).json({ error: 'Unauthorized access | ERRC: 120' });
     next();

@@ -22,7 +22,11 @@
 
 `| ERRC: 110` - User is not the host of the session he tries to access
 
+`| ERRC: 111` - User is not the host of the session he tries to access, session's host not found 
+
 `| ERRC: 120` - User is not the owner of the group he tries to access
+`| ERRC: 111` - User is not the owner of the group he tries to access, group's owner not found 
+
 
 ## ERRC: 2xx - Login errors
 

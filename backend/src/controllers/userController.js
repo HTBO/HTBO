@@ -48,6 +48,9 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
     try {
         const { username, email, password } = req.body;
+        const oldToken = req.header('Authorization')?.replace('Bearer ', '');
+        if (oldToken) 
+            await invalidateToken(oldToken);
         let user;
         if (username) {
             user = await User.findOne({ username });

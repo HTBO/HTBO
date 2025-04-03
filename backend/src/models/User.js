@@ -32,7 +32,7 @@ const sessionSchema = new mongoose.Schema({
         enum: ['pending', 'accepted', 'host'],
         default: 'pending'
     },
-}, {_id: false});
+}, { _id: false });
 
 const groupSchema = new mongoose.Schema({
     groupId: {
@@ -45,7 +45,7 @@ const groupSchema = new mongoose.Schema({
         enum: ['pending', 'accepted', 'owner'],
         default: 'pending'
     },
-}, {_id: false});
+}, { _id: false });
 
 
 const userSchema = new mongoose.Schema({
@@ -90,10 +90,11 @@ const userSchema = new mongoose.Schema({
         virtuals: true,
         transform: function (doc, ret) {
             delete ret.passwordHash; //Password excluding from response
+            // delete ret._id; //Id excluding from response
             return ret;
         }
     }
-});
+}, {_id: false });
 
 userSchema.virtual('profileUrl').get(function () {
     return `/users/${this.username}`;
@@ -123,16 +124,16 @@ userSchema.methods.statusUpdate = function (userId, status) {
 userSchema.methods.editUserGames = function (gameId, status) {
     if (status == "add") {
         if (!this.games.some(g => g.gameId.equals(gameId)))
-            this.games.push({gameId})
-    } else if (status == "remove") 
+            this.games.push({ gameId })
+    } else if (status == "remove")
         this.games.splice(gameId, 1);
-    
+
     return this.save()
 }
 
 userSchema.methods.addGroup = function (groupId) {
     if (!this.groups.some(g => g.groupId.equals(groupId))) {
-        this.groups.push({groupId, groupStatus: "pending"})
+        this.groups.push({ groupId, groupStatus: "pending" })
     }
     return this.save();
 }
@@ -147,21 +148,21 @@ userSchema.methods.removeGroup = function (groupId) {
 userSchema.methods.updateGroupStatus = function (groupId, status) {
     console.log(groupId, status);
     console.log(this.groups.some(g => g.groupId.equals(groupId)));
-    
+
     this.groups.some(g => g.groupId.equals(groupId)).groupStatus = status;
     return this.save();
 }
 
 userSchema.methods.addSession = function (sessionId) {
     if (!this.sessions.some(s => s.hostId.equals(sessionId))) {
-        this.sessions.push({sessionId: sessionId, sessionStatus: "pending"})        
+        this.sessions.push({ sessionId: sessionId, sessionStatus: "pending" })
     }
     return this.save();
 }
 
-userSchema.methods.removeSession = function(sessionId){
-    if(this.sessions.some(s => s.sessionId.equals(sessionId))){
-        this.sessions.splice({sessionId: sessionId}, 1);
+userSchema.methods.removeSession = function (sessionId) {
+    if (this.sessions.some(s => s.sessionId.equals(sessionId))) {
+        this.sessions.splice({ sessionId: sessionId }, 1);
     }
     return this.save();
 }
