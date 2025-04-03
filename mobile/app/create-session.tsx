@@ -17,6 +17,9 @@ import { router, Stack } from "expo-router";
 import { Game } from "../models/GameModel";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { authService } from "../services/authService";
+import { Friend } from "../models/FriendModel";
+import { Group } from "../models/GroupModel";
+import { UserModel } from "../models/UserModel";
 
 export default function CreateSessionScreen() {
   // Basic info
@@ -33,25 +36,33 @@ export default function CreateSessionScreen() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isDatePickerVisible, setDatePickerVisible] = useState(false);
   const [isTimePickerVisible, setTimePickerVisible] = useState(false);
-  // Removed duplicate declaration of showDatePicker
-  // Removed duplicate declaration of showTimePicker
 
   const [description, setDescription] = useState("");
 
-  // User and group IDs for participants
+  // Friends & Groups data
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [detailedFriends, setDetailedFriends] = useState<UserModel[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [isLoadingFriends, setIsLoadingFriends] = useState(false);
+  const [isLoadingGroups, setIsLoadingGroups] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
+
+  // Modals for selection
+  const [showFriendsPicker, setShowFriendsPicker] = useState(false);
+  const [showGroupsPicker, setShowGroupsPicker] = useState(false);
+
+  // User and session state
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loadingUser, setLoadingUser] = useState(false);
-  const [userId1, setUserId1] = useState("");
-  const [userId2, setUserId2] = useState("");
-  const [groupId1, setGroupId1] = useState("");
-  const [groupId2, setGroupId2] = useState("");
-
-  // Loading state
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     fetchGames();
     fetchCurrentUser();
+    fetchFriends();
+    fetchGroups();
   }, []);
 
   const fetchCurrentUser = async () => {
@@ -86,13 +97,131 @@ export default function CreateSessionScreen() {
       const userData = await response.json();
       setCurrentUser(userData);
 
-      // Set userId1 to current user's ID automatically
-      setUserId1(userData._id);
+      // Auto-select current user
+      if (userData._id) {
+        setSelectedFriends([userData._id]);
+      }
     } catch (error) {
       console.error("Error fetching user data:", error);
       Alert.alert("Error", "Failed to load your user profile");
     } finally {
       setLoadingUser(false);
+    }
+  };
+
+  const fetchFriends = async () => {
+    setIsLoadingFriends(true);
+    setError(null);
+
+    try {
+      const token = await authService.getToken();
+
+      if (!token) {
+        throw new Error("Authentication required");
+      }
+
+      const response = await fetch(
+        "https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/myfriends",
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to load friends. Status: ${response.status}`);
+      }
+
+      const friendsData: Friend[] = await response.json();
+      setFriends(friendsData);
+
+      const acceptedFriendIds: string[] = friendsData
+        .filter((friend: Friend) => friend.status === "accepted")
+        .map((friend: Friend) => {
+          if (
+            typeof friend.user === "object" &&
+            friend.user &&
+            "_id" in friend.user
+          ) {
+            return friend.user._id.toString();
+          } else if (friend.userId) {
+            return friend.userId.toString();
+          } else if (typeof friend.user === "string") {
+            return friend.user;
+          }
+          return "";
+        })
+        .filter((id) => id !== "");
+
+      const userDetailsPromises = acceptedFriendIds.map(
+        async (userId: string) => {
+          const userResponse = await fetch(
+            `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/${userId}`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (!userResponse.ok) {
+            console.warn(`Failed to fetch details for user ${userId}`);
+            return null;
+          }
+
+          return (await userResponse.json()) as UserModel;
+        }
+      );
+
+      const userDetails = await Promise.all(userDetailsPromises);
+      const validUserDetails = userDetails.filter(
+        (user): user is UserModel => user !== null
+      );
+
+      setDetailedFriends(validUserDetails);
+    } catch (err) {
+      console.error("Failed to fetch friends:", err);
+      setError(err instanceof Error ? err.message : "Failed to load friends");
+    } finally {
+      setIsLoadingFriends(false);
+    }
+  };
+
+  const fetchGroups = async () => {
+    setIsLoadingGroups(true);
+    setError(null);
+
+    try {
+      const token = await authService.getToken();
+
+      if (!token) {
+        throw new Error("Authentication required");
+      }
+
+      const response = await fetch(
+        "https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/mygroups",
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to load groups. Status: ${response.status}`);
+      }
+
+      const groupsData: Group[] = await response.json();
+      setGroups(groupsData);
+    } catch (err) {
+      console.error("Failed to fetch groups:", err);
+      setError(err instanceof Error ? err.message : "Failed to load groups");
+    } finally {
+      setIsLoadingGroups(false);
     }
   };
 
@@ -131,6 +260,28 @@ export default function CreateSessionScreen() {
     }
   };
 
+  // Toggle friend selection
+  const toggleFriend = (friendId: string) => {
+    setSelectedFriends((prev) => {
+      if (prev.includes(friendId)) {
+        return prev.filter((id) => id !== friendId);
+      } else {
+        return [...prev, friendId];
+      }
+    });
+  };
+
+  // Toggle group selection
+  const toggleGroup = (groupId: string) => {
+    setSelectedGroups((prev) => {
+      if (prev.includes(groupId)) {
+        return prev.filter((id) => id !== groupId);
+      } else {
+        return [...prev, groupId];
+      }
+    });
+  };
+
   // Date picker handlers
   const showDatePicker = () => {
     setDatePickerVisible(true);
@@ -141,10 +292,7 @@ export default function CreateSessionScreen() {
   };
 
   const handleDateConfirm = (selectedDate: Date) => {
-    // Store the full date object for later use
     setSelectedDate(selectedDate);
-
-    // Just for display purposes in the UI
     const formattedDate = selectedDate.toLocaleDateString("en-US", {
       month: "2-digit",
       day: "2-digit",
@@ -164,21 +312,18 @@ export default function CreateSessionScreen() {
   };
 
   const handleTimeConfirm = (selectedTime: Date) => {
-    // Update the selected date with the new time values
     if (selectedDate) {
       const updatedDate = new Date(selectedDate);
       updatedDate.setHours(selectedTime.getHours());
       updatedDate.setMinutes(selectedTime.getMinutes());
       setSelectedDate(updatedDate);
     } else {
-      // If no date was previously selected, use today with the selected time
       const updatedDate = new Date();
       updatedDate.setHours(selectedTime.getHours());
-      updatedDate.setMinutes(selectedTime.getMinutes());
+      updatedDate.setMinutes(updatedTime.getMinutes());
       setSelectedDate(updatedDate);
     }
 
-    // Just for display purposes in the UI
     const formattedTime = selectedTime.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
@@ -195,10 +340,10 @@ export default function CreateSessionScreen() {
     }
 
     // Form validation
-    // if (!selectedGame || !selectedDate || !userId1) {
-    //   Alert.alert("Missing Fields", "Please fill out all required fields");
-    //   return;
-    // }
+    if (!selectedGame || !selectedDate) {
+      Alert.alert("Missing Fields", "Please select a game and date/time");
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -213,25 +358,29 @@ export default function CreateSessionScreen() {
       // Format date directly from the Date object to ISO format
       const scheduledAt = selectedDate ? selectedDate.toISOString() : null;
 
-      // Define participant type
-      type Participant = { user?: string; group?: string };
+      // Build participants array according to the required format
+      const participants = [];
 
-      // Create participants array
-      const participants: Participant[] = [{ user: userId1 }];
+      // Add selected friends as participants
+      selectedFriends.forEach((friendId) => {
+        participants.push({ user: friendId });
+      });
 
-      // Add optional participants
-      if (userId2) participants.push({ user: userId2 });
-      if (groupId1) participants.push({ group: groupId1 });
-      if (groupId2) participants.push({ group: groupId2 });
+      // Add selected groups as participants
+      selectedGroups.forEach((groupId) => {
+        participants.push({ group: groupId });
+      });
 
-      // Create session object
+      // Create session object with the exact format required by the API
       const sessionData = {
         hostId: currentUser._id,
-        gameId: selectedGame.id, // Use the ID from the selected game object
+        gameId: selectedGame.id,
         scheduledAt: scheduledAt,
         description: description,
         participants: participants,
       };
+
+      console.log("Sending session data:", JSON.stringify(sessionData));
 
       // Send to API
       const response = await fetch(
@@ -245,8 +394,7 @@ export default function CreateSessionScreen() {
           body: JSON.stringify(sessionData),
         }
       );
-      console.log(JSON.stringify(sessionData));
-      // console.log(response);
+
       if (!response.ok) {
         throw new Error(`Server responded with status: ${response.status}`);
       }
@@ -259,7 +407,6 @@ export default function CreateSessionScreen() {
     } catch (error) {
       console.error("Error creating session:", error);
 
-      // More specific error message
       if (error instanceof Error && error.message.includes("status")) {
         Alert.alert(
           "Server Error",
@@ -294,8 +441,6 @@ export default function CreateSessionScreen() {
 
       <ScrollView style={styles.scrollView}>
         <View style={styles.formContainer}>
-          {/* We removed the Host ID input since it's auto-fetched */}
-
           {/* Game Selection */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Game (required)</Text>
@@ -360,7 +505,7 @@ export default function CreateSessionScreen() {
             </View>
           </Modal>
 
-          {/* Date & Time - Now with pickers */}
+          {/* Date & Time */}
           <View style={styles.row}>
             <View style={[styles.inputGroup, styles.halfWidth]}>
               <Text style={styles.label}>Date (required)</Text>
@@ -394,7 +539,7 @@ export default function CreateSessionScreen() {
             />
           )}
 
-{isTimePickerVisible && (
+          {isTimePickerVisible && (
             <DateTimePicker
               value={selectedDate || new Date()}
               mode="time"
@@ -406,49 +551,118 @@ export default function CreateSessionScreen() {
             />
           )}
 
-          {/* Participants */}
+          {/* Friends Selection */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>User ID 1 (required)</Text>
-            <TextInput
-              style={styles.input}
-              value={userId1}
-              onChangeText={setUserId1}
-              placeholder="Enter user ID..."
-              placeholderTextColor="#6B7280"
-            />
+            <Text style={styles.label}>Select Friends</Text>
+            {isLoadingFriends ? (
+              <ActivityIndicator
+                size="small"
+                color="#7C3AED"
+                style={styles.loader}
+              />
+            ) : error ? (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>Failed to load friends</Text>
+                <TouchableOpacity
+                  onPress={fetchFriends}
+                  style={styles.retryButton}
+                >
+                  <Ionicons name="refresh" size={16} color="white" />
+                  <Text style={styles.retryText}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.selectionContainer}>
+                {detailedFriends.length === 0 ? (
+                  <Text style={styles.noDataText}>No friends available</Text>
+                ) : (
+                  detailedFriends.map((friend) => (
+                    <TouchableOpacity
+                      key={friend._id}
+                      style={[
+                        styles.selectionItem,
+                        selectedFriends.includes(friend._id) &&
+                          styles.selectedItem,
+                        currentUser &&
+                          friend._id === currentUser._id &&
+                          styles.currentUserItem,
+                      ]}
+                      onPress={() =>
+                        friend._id !== currentUser._id &&
+                        toggleFriend(friend._id)
+                      }
+                    >
+                      <Text
+                        style={[
+                          styles.selectionText,
+                          selectedFriends.includes(friend._id) &&
+                            styles.selectedText,
+                          currentUser &&
+                            friend._id === currentUser._id &&
+                            styles.currentUserText,
+                        ]}
+                      >
+                        {friend.username}{" "}
+                        {currentUser && friend._id === currentUser._id
+                          ? "(You)"
+                          : ""}
+                      </Text>
+                    </TouchableOpacity>
+                  ))
+                )}
+              </View>
+            )}
           </View>
 
+          {/* Groups Selection */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>User ID 2 (optional)</Text>
-            <TextInput
-              style={styles.input}
-              value={userId2}
-              onChangeText={setUserId2}
-              placeholder="Enter optional user ID..."
-              placeholderTextColor="#6B7280"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Group ID 1 (optional)</Text>
-            <TextInput
-              style={styles.input}
-              value={groupId1}
-              onChangeText={setGroupId1}
-              placeholder="Enter group ID..."
-              placeholderTextColor="#6B7280"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Group ID 2 (optional)</Text>
-            <TextInput
-              style={styles.input}
-              value={groupId2}
-              onChangeText={setGroupId2}
-              placeholder="Enter optional group ID..."
-              placeholderTextColor="#6B7280"
-            />
+            <Text style={styles.label}>Select Groups</Text>
+            {isLoadingGroups ? (
+              <ActivityIndicator
+                size="small"
+                color="#7C3AED"
+                style={styles.loader}
+              />
+            ) : error ? (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>Failed to load groups</Text>
+                <TouchableOpacity
+                  onPress={fetchGroups}
+                  style={styles.retryButton}
+                >
+                  <Ionicons name="refresh" size={16} color="white" />
+                  <Text style={styles.retryText}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.selectionContainer}>
+                {groups.length === 0 ? (
+                  <Text style={styles.noDataText}>No groups available</Text>
+                ) : (
+                  groups.map((group) => (
+                    <TouchableOpacity
+                      key={group.id}
+                      style={[
+                        styles.selectionItem,
+                        selectedGroups.includes(group.id) &&
+                          styles.selectedItem,
+                      ]}
+                      onPress={() => toggleGroup(group.id)}
+                    >
+                      <Text
+                        style={[
+                          styles.selectionText,
+                          selectedGroups.includes(group.id) &&
+                            styles.selectedText,
+                        ]}
+                      >
+                        {group.name} ({group.members.length})
+                      </Text>
+                    </TouchableOpacity>
+                  ))
+                )}
+              </View>
+            )}
           </View>
 
           {/* Description */}
@@ -464,14 +678,6 @@ export default function CreateSessionScreen() {
               numberOfLines={4}
             />
           </View>
-
-          {/* Loading indicator when fetching user data */}
-          {loadingUser && (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="#7C3AED" />
-              <Text style={styles.loadingText}>Loading your profile...</Text>
-            </View>
-          )}
 
           {/* Create Button */}
           <TouchableOpacity
@@ -613,5 +819,70 @@ const styles = StyleSheet.create({
     color: "#E5E7EB",
     marginLeft: 8,
     fontSize: 14,
+  },
+  // New styles for friend/group selection
+  selectionContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 8,
+  },
+  selectionItem: {
+    backgroundColor: "#1F2937",
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    margin: 4,
+  },
+  selectedItem: {
+    backgroundColor: "#4F46E5",
+  },
+  currentUserItem: {
+    backgroundColor: "#22C55E", // Green for current user
+    opacity: 0.8,
+  },
+  selectionText: {
+    color: "#D1D5DB",
+    fontSize: 14,
+  },
+  selectedText: {
+    color: "white",
+  },
+  currentUserText: {
+    color: "white",
+    fontWeight: "bold",
+  },
+  loader: {
+    marginVertical: 10,
+  },
+  errorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#371827",
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 8,
+  },
+  errorText: {
+    color: "#F87171",
+    fontSize: 14,
+  },
+  retryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#4B5563",
+    borderRadius: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  retryText: {
+    color: "white",
+    fontSize: 12,
+    marginLeft: 4,
+  },
+  noDataText: {
+    color: "#9CA3AF",
+    fontSize: 14,
+    marginVertical: 10,
   },
 });
