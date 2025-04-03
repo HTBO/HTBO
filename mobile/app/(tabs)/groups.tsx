@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -14,61 +14,24 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Friend, FriendStatus } from "../../models/FriendModel";
 import { UserModel } from "../../models/UserModel";
+import { Group } from "../../models/GroupModel";
 import { authService } from "../../services/authService";
-
-const GROUPS = [
-  {
-    id: "1",
-    name: "FIFA Weekend Squad",
-    lastMessage: "Is everyone ready for tonight's match?",
-    time: "12:42 PM",
-    unread: 3,
-    avatar: "",
-  },
-  {
-    id: "2",
-    name: "Rocket League Team",
-    lastMessage: "I'll be online in 10 minutes",
-    time: "11:20 AM",
-    unread: 0,
-    avatar: "",
-  },
-  {
-    id: "3",
-    name: "Fortnite Pros",
-    lastMessage: "Let's drop at Tilted Towers",
-    time: "Yesterday",
-    unread: 0,
-    avatar: "",
-  },
-  {
-    id: "4",
-    name: "College Gaming Club",
-    lastMessage: "Tournament is scheduled for Saturday",
-    time: "Yesterday",
-    unread: 5,
-    avatar: "",
-  },
-  {
-    id: "5",
-    name: "Among Us Crew",
-    lastMessage: "I saw Red vent!",
-    time: "Monday",
-    unread: 0,
-    avatar: "",
-  },
-];
 
 export default function SocialScreen() {
   const [activeTab, setActiveTab] = useState("friends");
   const [searchQuery, setSearchQuery] = useState("");
   const [friends, setFriends] = useState<Friend[]>([]);
   const [detailedFriends, setDetailedFriends] = useState<UserModel[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [isLoadingFriends, setIsLoadingFriends] = useState(false);
+  const [isLoadingGroups, setIsLoadingGroups] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const friendsInitialized = useRef(false);
+  const groupsInitialized = useRef(false);
+
   const fetchFriends = async () => {
-    setIsLoading(true);
+    setIsLoadingFriends(true);
     setError(null);
 
     try {
@@ -144,12 +107,58 @@ export default function SocialScreen() {
       console.error("Failed to fetch friends:", err);
       setError(err instanceof Error ? err.message : "Failed to load friends");
     } finally {
-      setIsLoading(false);
+      setIsLoadingFriends(false);
+    }
+  };
+
+  const fetchGroups = async () => {
+    setIsLoadingGroups(true);
+    setError(null);
+
+    try {
+      const token = await authService.getToken();
+
+      if (!token) {
+        throw new Error("Authentication required");
+      }
+
+      const response = await fetch(
+        "https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/mygroups",
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to load groups. Status: ${response.status}`);
+      }
+
+      const groupsData: Group[] = await response.json();
+      console.log("Groups loaded:", groupsData);
+      setGroups(groupsData);
+    } catch (err) {
+      console.error("Failed to fetch groups:", err);
+      setError(err instanceof Error ? err.message : "Failed to load groups");
+    } finally {
+      setIsLoadingGroups(false);
     }
   };
 
   useEffect(() => {
-    fetchFriends();
+    if (!friendsInitialized.current) {
+      fetchFriends();
+      friendsInitialized.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!groupsInitialized.current) {
+      fetchGroups();
+      groupsInitialized.current = true;
+    }
   }, []);
 
   const filteredDetailedFriends = useMemo(() => {
@@ -164,14 +173,15 @@ export default function SocialScreen() {
   }, [searchQuery, detailedFriends]);
 
   const filteredGroups = useMemo(() => {
-    if (!searchQuery.trim()) return GROUPS;
+    if (!searchQuery.trim()) return groups;
     const query = searchQuery.toLowerCase().trim();
-    return GROUPS.filter(
+
+    return groups.filter(
       (group) =>
         group.name.toLowerCase().includes(query) ||
-        group.lastMessage.toLowerCase().includes(query)
+        (group.description && group.description.toLowerCase().includes(query))
     );
-  }, [searchQuery]);
+  }, [searchQuery, groups]);
 
   const handleGroupPress = (groupId: string) => {
     router.push({
@@ -194,7 +204,7 @@ export default function SocialScreen() {
    */
   const acceptFriendRequest = async (friendId: string): Promise<boolean> => {
     try {
-      setIsLoading(true);
+      setIsLoadingFriends(true);
 
       // Get current user's token and ID
       const token = await authService.getToken();
@@ -246,11 +256,24 @@ export default function SocialScreen() {
       );
       return false;
     } finally {
-      setIsLoading(false);
+      setIsLoadingFriends(false);
     }
   };
 
-  const renderGroupItem = ({ item }: { item: (typeof GROUPS)[number] }) => (
+  const handleRetryFriends = () => {
+    setFriends([]);
+    setDetailedFriends([]);
+    friendsInitialized.current = false;
+    fetchFriends();
+  };
+
+  const handleRetryGroups = () => {
+    setGroups([]);
+    groupsInitialized.current = false;
+    fetchGroups();
+  };
+
+  const renderGroupItem = ({ item }: { item: Group }) => (
     <TouchableOpacity
       style={styles.listItem}
       onPress={() => handleGroupPress(item.id)}
@@ -261,7 +284,9 @@ export default function SocialScreen() {
       <View style={styles.itemInfo}>
         <View style={styles.itemHeader}>
           <Text style={styles.itemName}>{item.name}</Text>
-          <Text style={styles.itemTime}>{item.time}</Text>
+          <Text style={styles.itemTime}>
+            {new Date(item.updatedAt).toLocaleDateString()}
+          </Text>
         </View>
 
         <View style={styles.itemFooter}>
@@ -270,14 +295,12 @@ export default function SocialScreen() {
             numberOfLines={1}
             ellipsizeMode="tail"
           >
-            {item.lastMessage}
+            {item.description || "No description"}
           </Text>
 
-          {item.unread > 0 && (
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadText}>{item.unread}</Text>
-            </View>
-          )}
+          <View style={styles.unreadBadge}>
+            <Text style={styles.unreadText}>{item.members.length}</Text>
+          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -320,15 +343,12 @@ export default function SocialScreen() {
   };
 
   const renderFriendItem = ({ item }: { item: Friend | UserModel }) => {
-    // Determine if this is a detailed user or a basic friend object
     const isDetailedUser = "_id" in item;
 
-    // For detailed users (already accepted friends), use the existing rendering
     if (isDetailedUser) {
       return renderDetailedFriendItem({ item: item as UserModel });
     }
 
-    // For pending friend requests
     const friendItem = item as Friend;
     const isPending = friendItem.status === "pending";
     const userId =
@@ -357,9 +377,9 @@ export default function SocialScreen() {
           <TouchableOpacity
             style={styles.acceptButton}
             onPress={() => userId && acceptFriendRequest(userId)}
-            disabled={isLoading}
+            disabled={isLoadingFriends}
           >
-            {isLoading ? (
+            {isLoadingFriends ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
               <Text style={styles.acceptButtonText}>Accept</Text>
@@ -367,6 +387,57 @@ export default function SocialScreen() {
           </TouchableOpacity>
         )}
       </View>
+    );
+  };
+
+  const PendingFriendsSection = () => {
+    const pendingFriends = friends.filter(
+      (friend) => friend.status === "pending"
+    );
+
+    if (pendingFriends.length === 0) return null;
+
+    return (
+      <>
+        <Text style={styles.sectionHeader}>Pending Friend Requests</Text>
+        {pendingFriends.map((friend) => {
+          const userId =
+            typeof friend.user === "object"
+              ? friend.user._id
+              : friend.userId || friend.user;
+
+          return (
+            <View key={userId} style={styles.listItem}>
+              <Image style={styles.avatar} />
+
+              <View style={styles.itemInfo}>
+                <View style={styles.itemHeader}>
+                  <Text style={styles.itemName}>
+                    {typeof friend.user === "object"
+                      ? friend.user.username || "Unknown User"
+                      : "Friend Request"}
+                  </Text>
+                  <Text style={[styles.itemTime, styles.pendingText]}>
+                    Pending
+                  </Text>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={styles.acceptButton}
+                onPress={() => userId && acceptFriendRequest(userId)}
+                disabled={isLoadingFriends}
+              >
+                {isLoadingFriends ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.acceptButtonText}>Accept</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          );
+        })}
+      </>
     );
   };
 
@@ -450,7 +521,7 @@ export default function SocialScreen() {
 
       {activeTab === "friends" ? (
         <>
-          {isLoading ? (
+          {isLoadingFriends ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#7C3AED" />
             </View>
@@ -460,49 +531,72 @@ export default function SocialScreen() {
               <Text style={styles.errorText}>{error}</Text>
               <TouchableOpacity
                 style={styles.retryButton}
-                onPress={() => {
-                  setFriends([]);
-                  setDetailedFriends([]);
-                  fetchFriends();
-                }}
+                onPress={handleRetryFriends}
+              >
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <>
+              <PendingFriendsSection />
+              <Text style={[styles.sectionHeader, { marginTop: 10 }]}>
+                Friends
+              </Text>
+              <FlatList
+                data={filteredDetailedFriends}
+                keyExtractor={(item) => item._id}
+                renderItem={renderDetailedFriendItem}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.listContent}
+                ListEmptyComponent={
+                  <View style={styles.emptyContainer}>
+                    <Text style={styles.emptyText}>
+                      {searchQuery
+                        ? "No friends found"
+                        : "No friends yet. Add some friends to get started!"}
+                    </Text>
+                  </View>
+                }
+              />
+            </>
+          )}
+        </>
+      ) : (
+        <>
+          {isLoadingGroups ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#7C3AED" />
+            </View>
+          ) : error ? (
+            <View style={styles.errorContainer}>
+              <Ionicons name="alert-circle" size={48} color="#EF4444" />
+              <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={handleRetryGroups}
               >
                 <Text style={styles.retryButtonText}>Retry</Text>
               </TouchableOpacity>
             </View>
           ) : (
             <FlatList
-              data={friends}
-              keyExtractor={(item) =>
-                "_id" in item ? item._id : item.userId || item.user
-              }
-              renderItem={renderFriendItem}
+              data={filteredGroups}
+              keyExtractor={(item) => item.id}
+              renderItem={renderGroupItem}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.listContent}
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
                   <Text style={styles.emptyText}>
                     {searchQuery
-                      ? "No friends found"
-                      : "No friends yet. Add some friends to get started!"}
+                      ? "No groups found"
+                      : "No groups yet. Create a group to get started!"}
                   </Text>
                 </View>
               }
             />
           )}
         </>
-      ) : (
-        <FlatList
-          data={filteredGroups}
-          keyExtractor={(item) => item.id}
-          renderItem={renderGroupItem}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No groups found</Text>
-            </View>
-          }
-        />
       )}
     </SafeAreaView>
   );
@@ -688,6 +782,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   pendingText: {
-    color: "#F59E0B", // amber color for pending
+    color: "#F59E0B",
+  },
+  sectionHeader: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#9CA3AF",
+    marginTop: 20,
+    marginBottom: 10,
+    paddingHorizontal: 16,
   },
 });
