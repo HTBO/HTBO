@@ -21,12 +21,45 @@ export default function SessionDetailScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
+    fetchCurrentUser();
     if (id) {
       fetchSessionDetails(id as string);
     }
   }, [id]);
+
+  async function fetchCurrentUser() {
+    try {
+      const token = await authService.getToken();
+      if (!token) {
+        console.error("No authentication token available");
+        return;
+      }
+
+      // Make an API call to get the current user's profile
+      const response = await fetch(
+        "https://htbo-production.up.railway.app/api/users/me",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch user profile: ${response.status}`);
+      }
+
+      const userData = await response.json();
+      setCurrentUser(userData);
+    } catch (error) {
+      console.error("Error fetching current user:", error);
+    }
+  }
 
   async function fetchSessionDetails(sessionId: string) {
     try {
@@ -69,8 +102,20 @@ export default function SessionDetailScreen() {
     }
   }
 
+  // Check if current user is the host
+  const isHost = () => {
+    if (!currentUser || !session) return false;
+    return currentUser.username === session.hostName;
+  };
+
   async function deleteSession() {
     try {
+      // Check if user is host before proceeding
+      if (!isHost()) {
+        Alert.alert("Error", "Only the host can delete this session");
+        return;
+      }
+
       setIsDeleting(true);
 
       const token = await authService.getToken();
@@ -118,6 +163,12 @@ export default function SessionDetailScreen() {
   }
 
   const confirmDelete = () => {
+    // Check if user is host before showing confirmation
+    if (!isHost()) {
+      Alert.alert("Error", "Only the host can delete this session");
+      return;
+    }
+
     Alert.alert(
       "Delete Session",
       "Are you sure you want to delete this session? This action cannot be undone.",
@@ -293,20 +344,22 @@ export default function SessionDetailScreen() {
               <Text style={styles.joinButtonText}>Join Session</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={confirmDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <>
-                  <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
-                  <Text style={styles.deleteButtonText}>Delete</Text>
-                </>
-              )}
-            </TouchableOpacity>
+            {isHost() && (
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={confirmDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
+                    <Text style={styles.deleteButtonText}>Delete</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
           </View>
         </ScrollView>
       )}
