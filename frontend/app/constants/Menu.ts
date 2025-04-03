@@ -21,7 +21,7 @@ export const menu: MenuGroup[] = [
             },
             {
                 title: "Friends",
-                icon: "person",
+                icon: "friends",
                 link: "/dashboard/friends"
             }
         ]
