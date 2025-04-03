@@ -32,16 +32,12 @@ const validateEnvironment = () => {
 
 const setupChangeStreams = () => {
   const db = mongoose.connection;
-  console.log(db);
-  
   const userChangeStream = db.collection('users').watch();
   const gameChangeStream = db.collection('games').watch();
 
   userChangeStream.on('change', (change) => {
     io.emit('user-change', change);
-    terminal.info(`User collection change detected: ${change.operationType}`);
-    console.log(change);
-    
+    terminal.info(`User collection change detected: ${change.operationType}`);   
   });
 
   gameChangeStream.on('change', (change) => {
