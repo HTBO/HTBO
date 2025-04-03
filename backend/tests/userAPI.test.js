@@ -48,8 +48,8 @@ beforeEach(async () => {
         "password": "joe"
     })
     userToken = login.body.token;    
-    testOneId = (await request(app).get('/api/users/username/JoeBiden')).body.user._id
-    testTwoId = (await request(app).get('/api/users/username/TrumpBiden')).body.user._id
+    testOneId = (await request(app).get('/api/users/username/JoeBiden')).body._id
+    testTwoId = (await request(app).get('/api/users/username/TrumpBiden')).body._id
 }, 30000);
 
 afterEach(async () => {
@@ -97,12 +97,12 @@ describe("User API PATCH Tests", () => {
             friendAction: {
                 action: "update-status",
                 friendId: testOneId,
-                status: "accepted"
+                friendStatus: "accepted"
             }
         });
         expect(response.status).toBe(200);
         expect(response.body.friends.length).toBe(1);
-        expect(response.body.friends[0].status).toBe("accepted")
+        expect(response.body.friends[0].friendStatus).toBe("accepted")
         // console.log((response.body.friends[0].status));
         // console.log(response.body.friends.length);
 
@@ -138,10 +138,10 @@ describe("User API PATCH Tests", () => {
             friendAction: {
                 action: "update-status",
                 friendId: testTwoId,
-                status: "accepted"
+                friendStatus: "accepted"
             }
         });
-        expect(response.body.friends[0].status).toBe("accepted")
+        expect(response.body.friends[0].friendStatus).toBe("accepted")
         const login = await request(app).post('/api/users/login').send({
             "username": "TrumpBiden",
             "password": "trump"

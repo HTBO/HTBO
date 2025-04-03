@@ -25,7 +25,8 @@ class RateLimiter {
   middleware() {
     return async (req, res, next) => {
         if (!this.collection) return next();
-        if(req.clientIP == "127.0.0.1") return next();
+        if (req.clientIP == "127.0.0.1") return next();
+        if (req.originalUrl.includes('favicon.ico')) return next();
         const ip = req.clientIP ? req.clientIP : req.ip.replace('::ffff:', '');
         const now = Date.now();
         const windowStart = Math.floor(now / this.windowMs) * this.windowMs;

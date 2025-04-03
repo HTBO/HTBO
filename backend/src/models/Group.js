@@ -6,7 +6,7 @@ const memberSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    status: {
+    groupStatus: {
         type: String,
         enum: ['pending', 'accepted', 'rejected', 'owner'],
         default: 'pending'
@@ -48,4 +48,6 @@ const groupSchema = new mongoose.Schema({
     }
 });
 
-module.exports = mongoose.model('Group', groupSchema);
+const Group = mongoose.model('Group', groupSchema);
+
+module.exports = Group;

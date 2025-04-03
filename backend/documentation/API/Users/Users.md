@@ -1,7 +1,7 @@
 ### userController.js
 ## POST
 > registerUser
-`POST http://localhost:5000/api/users/register`
+`POST` `{{API_URL}}/users/register`
 ```
 {
 "username": "test",
@@ -10,7 +10,7 @@
 }
 ```
 > loginUser
-`POST http://localhost:5000/api/users/login`
+`POST` `{{API_URL}}/users/login`
 ```
 {
 "username": "test",
@@ -22,21 +22,47 @@ OR
 "password": "test"
 }
 ```
+
+> logoutUser
+`POST` `{{API_URL}}/users/logout`
+```
+Bearer token needed
+```
+
+> refreshToken
+`POST` `{{API_URL}}/users/refresh`
+```
+Bearer token needed
+```
+
 ---
 ## GET
 > getAllUsers
-`GET http://localhost:5000/api/users`
+`GET` `{{API_URL}}/users`
 
 > getUserById
-`GET http://localhost:5000/api/users/<userid>`
+`GET` `{{API_URL}}/users/<userid>`
 
 > getUserByUsername
-`GET http://localhost:5000/api/users/<username>`
+`GET` `{{API_URL}}/users/<username>`
+
+> getMyInfo
+`GET` `{{API_URL}}/users/me`
+
+> getMySessions
+`GET` `{{API_URL}}/users/mysessions`
+
+> getMyGroups
+`GET` `{{API_URL}}/users/mygroups`
+
+> getMyGames
+`GET` `{{API_URL}}/users/mygames`
+
 ---
 
 ## UPDATE (PATCH)
 > updateUser
-`PATCH http://localhost:5000/api/users/<userid>`
+`PATCH` `{{API_URL}}/users/<userid>`
 - User updates:
     - username
     - email
@@ -105,5 +131,5 @@ OR
 ---
 ## DELETE
 > deleteUser
-`DELETE http://localhost:5000/api/users/<userid>`
+`DELETE` `{{API_URL}}/users/<userid>`
 ---

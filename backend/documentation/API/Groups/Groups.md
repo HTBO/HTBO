@@ -2,7 +2,7 @@
 # Requests: 
 ## POST
 > createGroup
-`POST http://localhost:5000/api/groups`
+`POST` `{{API_URL}}/groups`
 
 Single or multiple member additions at the same time,
 userid3 is optional
@@ -21,17 +21,39 @@ userid3 is optional
     ]
 }
 ```
+---
+> confirmGroup
+`POST` `{{API_URL}}/groups/confirm`
 
+Accept invitation to a group
+```
+{
+    "userId": "<userId>",
+    "groupId": "<groupId>"
+}
+```
+---
+> rejectGroup
+`POST` `{{API_URL}}/groups/reject`
+
+Reject invitation to a group, or leave from the gorup (if already a member)
+```
+{
+    "userId": "<userId>",
+    "groupId": "<groupId>"
+}
+```
+---
 ## GET
 > getAllGroups
-`GET http://localhost:5000/api/groups`
+`GET` `{{API_URL}}/groups`
 
-> getSessionById
-`GET http://localhost:5000/api/groups/<groupid>`
+> getSessionByIdíx
+`GET` `{{API_URL}}/groups/<groupid>`
 ---
 ## UPDATE (PATCH)
 > updateGroup
-`PATCH http://localhost:5000/api/groups/<groupid>`
+`PATCH` `{{API_URL}}/groups/<groupid>`
 - Group updates:
     - name
     - description
@@ -80,6 +102,6 @@ userid2 are optional
 ---
 ## DELETE
 > deleteGroup
-`DELETE http://localhost:5000/api/groups/<groupid>`
+`DELETE` `{{API_URL}}/groups/<groupid>`
 ---
 

@@ -1,7 +1,7 @@
 ### gamesController.js
 ## POST
 > createGame
-`POST http://localhost:5000/api/games`
+`POST` `{{API_URL}}/games`
 ```
 {
 "name": "testgame",
@@ -17,15 +17,15 @@
 ---
 ## GET
 > getAllGames
-`GET http://localhost:5000/api/games`
+`GET` `{{API_URL}}/games`
 
 > getGameById
-`GET http://localhost:5000/api/games/<gameid>`
+`GET` `{{API_URL}}/games/<gameid>`
 ---
 
 ## UPDATE (PATCH)
 > updateGame
-`PATCH http://localhost:5000/api/games/<gameid>`
+`PATCH` `{{API_URL}}/games/<gameid>`
 - Game updates:
     - name
     - description
@@ -36,4 +36,4 @@
 ---
 ## DELETE
 > deleteGame
-`DELETE http://localhost:5000/api/games/<gameid>`
+`DELETE` `{{API_URL}}/games/<gameid>`
