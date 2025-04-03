@@ -7,6 +7,7 @@ import {
   Image,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, Stack, useLocalSearchParams } from "expo-router";
@@ -19,6 +20,7 @@ export default function SessionDetailScreen() {
   const [session, setSession] = useState<SessionModel>(defaultSession);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -66,6 +68,72 @@ export default function SessionDetailScreen() {
       setIsLoading(false);
     }
   }
+
+  async function deleteSession() {
+    try {
+      setIsDeleting(true);
+
+      const token = await authService.getToken();
+      if (!token) {
+        setError("Authentication required");
+        return;
+      }
+
+      const response = await fetch(
+        `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/sessions/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      Alert.alert("Success", "Session deleted successfully", [
+        {
+          text: "OK",
+          onPress: () => {
+            // Navigate to the sessions screen with refresh parameter
+            router.navigate({
+              pathname: "/sessions",
+              params: { refresh: Date.now().toString() },
+            });
+          },
+        },
+      ]);
+    } catch (error) {
+      console.error("Error deleting session:", error);
+      Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "Failed to delete session"
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
+  const confirmDelete = () => {
+    Alert.alert(
+      "Delete Session",
+      "Are you sure you want to delete this session? This action cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          onPress: deleteSession,
+          style: "destructive",
+        },
+      ]
+    );
+  };
 
   // Format date for display
   function formatDate(dateString: string) {
@@ -225,9 +293,19 @@ export default function SessionDetailScreen() {
               <Text style={styles.joinButtonText}>Join Session</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.shareButton}>
-              <Ionicons name="share-social-outline" size={20} color="#FFFFFF" />
-              <Text style={styles.shareButtonText}>Share</Text>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={confirmDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
+                  <Text style={styles.deleteButtonText}>Delete</Text>
+                </>
+              )}
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -422,9 +500,9 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
   },
-  shareButton: {
+  deleteButton: {
     flex: 1,
-    backgroundColor: "#4B5563",
+    backgroundColor: "#EF4444",
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
@@ -432,7 +510,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     gap: 8,
   },
-  shareButtonText: {
+  deleteButtonText: {
     color: "white",
     fontWeight: "bold",
     fontSize: 16,
