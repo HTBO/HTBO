@@ -18,6 +18,7 @@
     "@expo/metro-runtime": "~4.0.1",
     "@expo/server": "^0.5.3",
     "@expo/vector-icons": "^14.0.2",
+    "@expo/webpack-config": "^19.0.1",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@react-native-community/datetimepicker": "8.2.0",
     "@react-navigation/bottom-tabs": "^7.2.0",
