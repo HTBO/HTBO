@@ -443,7 +443,7 @@ export default function CreateSessionScreen() {
         <View style={styles.formContainer}>
           {/* Game Selection */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Game (required)</Text>
+            <Text style={styles.label}>Game</Text>
             <TouchableOpacity
               style={styles.input}
               onPress={() => setShowGamePicker(true)}
@@ -508,7 +508,7 @@ export default function CreateSessionScreen() {
           {/* Date & Time */}
           <View style={styles.row}>
             <View style={[styles.inputGroup, styles.halfWidth]}>
-              <Text style={styles.label}>Date (required)</Text>
+              <Text style={styles.label}>Date</Text>
               <TouchableOpacity style={styles.input} onPress={showDatePicker}>
                 <Text style={date ? styles.inputText : styles.placeholderText}>
                   {date ? date : "MM/DD/YYYY"}
@@ -517,7 +517,7 @@ export default function CreateSessionScreen() {
             </View>
 
             <View style={[styles.inputGroup, styles.halfWidth]}>
-              <Text style={styles.label}>Time (required)</Text>
+              <Text style={styles.label}>Time</Text>
               <TouchableOpacity style={styles.input} onPress={showTimePicker}>
                 <Text style={time ? styles.inputText : styles.placeholderText}>
                   {time ? time : "HH:MM AM/PM"}
