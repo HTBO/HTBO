@@ -13,7 +13,7 @@ import {
 import { useLocalSearchParams, Stack } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { Group } from "../../models/GroupModel";
+import { Group, GroupMemberReference } from "../../models/GroupModel";
 import { UserModel } from "../../models/UserModel";
 import { authService } from "../../services/authService";
 import { router } from "expo-router";
@@ -74,9 +74,9 @@ function GroupDetailContent() {
       // Fetch group members
       if (groupData.members && groupData.members.length > 0) {
         const memberPromises = groupData.members.map(
-          async (memberId: string) => {
+          async (member: GroupMemberReference) => {
             const memberResponse = await fetch(
-              `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/${memberId}`,
+              `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/${member.memberId}`,
               {
                 method: "GET",
                 headers: {
@@ -86,7 +86,9 @@ function GroupDetailContent() {
             );
 
             if (!memberResponse.ok) return null;
-            return await memberResponse.json();
+            const userData = await memberResponse.json();
+            // Add the groupStatus from the member object to the user data
+            return { ...userData, groupStatus: member.groupStatus };
           }
         );
 
@@ -123,7 +125,11 @@ function GroupDetailContent() {
     );
   };
 
-  const renderMemberItem = ({ item }: { item: UserModel }) => (
+  const renderMemberItem = ({
+    item,
+  }: {
+    item: UserModel & { groupStatus?: string };
+  }) => (
     <View style={styles.memberItem}>
       <Image
         style={styles.memberAvatar}
@@ -132,6 +138,20 @@ function GroupDetailContent() {
       <View style={styles.memberInfo}>
         <Text style={styles.memberName}>{item.username}</Text>
         <Text style={styles.memberEmail}>{item.email}</Text>
+        {item.groupStatus && (
+          <View
+            style={[
+              styles.statusBadge,
+              item.groupStatus === "accepted"
+                ? styles.acceptedStatus
+                : item.groupStatus === "pending"
+                ? styles.pendingStatus
+                : styles.rejectedStatus,
+            ]}
+          >
+            <Text style={styles.statusText}>{item.groupStatus}</Text>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -404,5 +424,26 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: "white",
     fontWeight: "600",
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginTop: 4,
+    alignSelf: "flex-start",
+  },
+  acceptedStatus: {
+    backgroundColor: "rgba(16, 185, 129, 0.2)",
+  },
+  pendingStatus: {
+    backgroundColor: "rgba(252, 211, 77, 0.2)",
+  },
+  rejectedStatus: {
+    backgroundColor: "rgba(239, 68, 68, 0.2)",
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "500",
+    textTransform: "capitalize",
   },
 });

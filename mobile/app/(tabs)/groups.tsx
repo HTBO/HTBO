@@ -18,10 +18,14 @@ import { Group } from "../../models/GroupModel";
 import { authService } from "../../services/authService";
 
 export default function SocialScreen() {
+  console.log("Component rendering");
   const [activeTab, setActiveTab] = useState("friends");
   const [searchQuery, setSearchQuery] = useState("");
   const [friends, setFriends] = useState<Friend[]>([]);
   const [detailedFriends, setDetailedFriends] = useState<UserModel[]>([]);
+  const [pendingFriendsDetails, setPendingFriendsDetails] = useState<
+    Record<string, UserModel>
+  >({});
   const [groups, setGroups] = useState<Group[]>([]);
   const [isLoadingFriends, setIsLoadingFriends] = useState(false);
   const [isLoadingGroups, setIsLoadingGroups] = useState(false);
@@ -30,10 +34,12 @@ export default function SocialScreen() {
   const friendsInitialized = useRef(false);
   const groupsInitialized = useRef(false);
 
-  const fetchFriends = async () => {
-    setIsLoadingFriends(true);
-    setError(null);
-
+  /**
+   * Gets user details by user ID
+   * @param userId The ID of the user to fetch details for
+   * @returns Promise resolving to UserModel or null if error
+   */
+  const getUserById = async (userId: string): Promise<UserModel | null> => {
     try {
       const token = await authService.getToken();
 
@@ -42,7 +48,7 @@ export default function SocialScreen() {
       }
 
       const response = await fetch(
-        "https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/myfriends",
+        `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/${userId}`,
         {
           method: "GET",
           headers: {
@@ -52,14 +58,99 @@ export default function SocialScreen() {
       );
 
       if (!response.ok) {
+        console.warn(`Failed to fetch details for user ${userId}`);
+        return null;
+      }
+
+      const userData = await response.json();
+      return userData as UserModel;
+    } catch (error) {
+      console.error(`Error fetching user ${userId}:`, error);
+      return null;
+    }
+  };
+
+  // Add useEffect to fetch pending friend details
+  useEffect(() => {
+    const fetchPendingFriendsDetails = async () => {
+      const pendingFriends = friends.filter(
+        (friend) => friend.friendStatus === "pending"
+      );
+
+      if (pendingFriends.length === 0) return;
+
+      const pendingDetailsMap: Record<string, UserModel> = {};
+
+      for (const friend of pendingFriends) {
+        let userId = "";
+
+        if (typeof friend.user === "object" && friend.user) {
+          userId = friend.user._id || friend.user.id;
+        } else if (typeof friend.user === "string") {
+          userId = friend.user;
+        } else if (friend.userId) {
+          userId = friend.userId;
+        }
+
+        if (userId) {
+          const userData = await getUserById(userId);
+          if (userData) {
+            pendingDetailsMap[userId] = userData;
+          }
+        }
+      }
+
+      setPendingFriendsDetails(pendingDetailsMap);
+    };
+
+    if (friends.length > 0) {
+      fetchPendingFriendsDetails();
+    }
+  }, [friends]);
+
+  const fetchFriends = async () => {
+    console.log("fetchFriends function called");
+    setIsLoadingFriends(true);
+    setError(null);
+
+    try {
+      console.log("Getting auth token");
+      const token = await authService.getToken();
+
+      if (!token) {
+        console.log("No token available");
+        throw new Error("Authentication required");
+      }
+
+      console.log("Making API request to /users/myfriends");
+      const response = await fetch(
+        "https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/myfriends",
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      console.log("Friends API Response:", response.status);
+      if (!response.ok) {
         throw new Error(`Failed to load friends. Status: ${response.status}`);
       }
 
       const friendsData: Friend[] = await response.json();
+      console.log("Friends data loaded:", friendsData);
       setFriends(friendsData);
 
-      const acceptedFriendIds: string[] = friendsData
-        .filter((friend: Friend) => friend.status === "accepted")
+      // Count and log friends with accepted status
+      const acceptedFriends = friendsData.filter(
+        (friend: Friend) => friend.friendStatus === "accepted"
+      );
+      console.log(
+        `Found ${acceptedFriends.length} accepted friends:`,
+        JSON.stringify(acceptedFriends, null, 2)
+      );
+
+      const acceptedFriendIds: string[] = acceptedFriends
         .map((friend: Friend) => {
           if (
             typeof friend.user === "object" &&
@@ -89,11 +180,14 @@ export default function SocialScreen() {
           );
 
           if (!userResponse.ok) {
-            console.warn(`Failed to fetch details for user ${userId}`);
+            console.warn(
+              `Failed to fetch details for user ${userId}, status: ${userResponse.status}`
+            );
             return null;
           }
 
-          return (await userResponse.json()) as UserModel;
+          const userData = await userResponse.json();
+          return userData as UserModel;
         }
       );
 
@@ -137,10 +231,8 @@ export default function SocialScreen() {
       }
 
       const groupsData: Group[] = await response.json();
-      console.log("Groups loaded:", groupsData);
       setGroups(groupsData);
     } catch (err) {
-      console.error("Failed to fetch groups:", err);
       setError(err instanceof Error ? err.message : "Failed to load groups");
     } finally {
       setIsLoadingGroups(false);
@@ -148,7 +240,12 @@ export default function SocialScreen() {
   };
 
   useEffect(() => {
+    console.log(
+      "Friends initialization effect running, initialized:",
+      friendsInitialized.current
+    );
     if (!friendsInitialized.current) {
+      console.log("Calling fetchFriends from useEffect");
       fetchFriends();
       friendsInitialized.current = true;
     }
@@ -182,6 +279,16 @@ export default function SocialScreen() {
         (group.description && group.description.toLowerCase().includes(query))
     );
   }, [searchQuery, groups]);
+
+  useEffect(() => {
+    // Add a console log after detailedFriends is updated
+    console.log("detailedFriends updated:", detailedFriends);
+  }, [detailedFriends]);
+
+  useEffect(() => {
+    // Add a console log after filteredDetailedFriends is updated
+    console.log("filteredDetailedFriends updated:", filteredDetailedFriends);
+  }, [filteredDetailedFriends]);
 
   const handleGroupPress = (groupId: string) => {
     router.push({
@@ -321,11 +428,9 @@ export default function SocialScreen() {
         <View style={styles.itemInfo}>
           <View style={styles.itemHeader}>
             <Text style={styles.itemName}>{item.username}</Text>
-            <Text style={styles.itemTime}>
-              {item.updatedAt
-                ? new Date(item.updatedAt).toLocaleDateString()
-                : "Unknown"}
-            </Text>
+            <View style={styles.acceptedBadge}>
+              <Text style={styles.acceptedText}>Accepted</Text>
+            </View>
           </View>
 
           <View style={styles.itemFooter}>
@@ -335,6 +440,11 @@ export default function SocialScreen() {
               ellipsizeMode="tail"
             >
               {item.email}
+            </Text>
+            <Text style={styles.itemTime}>
+              {item.updatedAt
+                ? new Date(item.updatedAt).toLocaleDateString()
+                : "Unknown"}
             </Text>
           </View>
         </View>
@@ -350,11 +460,17 @@ export default function SocialScreen() {
     }
 
     const friendItem = item as Friend;
-    const isPending = friendItem.status === "pending";
+    const isPending = friendItem.friendStatus === "pending";
     const userId =
       typeof friendItem.user === "object"
         ? friendItem.user._id
         : friendItem.userId || friendItem.user;
+
+    // Get username from friend item object
+    const username =
+      typeof friendItem.user === "object" && friendItem.user?.username
+        ? friendItem.user.username
+        : "Unknown User";
 
     return (
       <View style={styles.listItem}>
@@ -362,29 +478,34 @@ export default function SocialScreen() {
 
         <View style={styles.itemInfo}>
           <View style={styles.itemHeader}>
-            <Text style={styles.itemName}>
-              {typeof friendItem.user === "object"
-                ? friendItem.user.username || "Unknown User"
-                : "Friend Request"}
-            </Text>
-            <Text style={[styles.itemTime, isPending && styles.pendingText]}>
-              {isPending ? "Pending" : friendItem.status}
-            </Text>
+            <Text style={styles.itemName}>{username}</Text>
+            {/* Remove the pending text here as it's redundant with the section header */}
           </View>
         </View>
 
         {isPending && (
-          <TouchableOpacity
-            style={styles.acceptButton}
-            onPress={() => userId && acceptFriendRequest(userId)}
-            disabled={isLoadingFriends}
-          >
-            {isLoadingFriends ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Text style={styles.acceptButtonText}>Accept</Text>
-            )}
-          </TouchableOpacity>
+          <View style={styles.actionButtonsContainer}>
+            <TouchableOpacity
+              style={styles.declineButton}
+              onPress={() =>
+                console.log("Decline functionality to be implemented")
+              }
+              disabled={isLoadingFriends}
+            >
+              <Text style={styles.declineButtonText}>Decline</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.acceptButton}
+              onPress={() => userId && acceptFriendRequest(userId)}
+              disabled={isLoadingFriends}
+            >
+              {isLoadingFriends ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.acceptButtonText}>Accept</Text>
+              )}
+            </TouchableOpacity>
+          </View>
         )}
       </View>
     );
@@ -392,7 +513,7 @@ export default function SocialScreen() {
 
   const PendingFriendsSection = () => {
     const pendingFriends = friends.filter(
-      (friend) => friend.status === "pending"
+      (friend) => friend.friendStatus === "pending"
     );
 
     if (pendingFriends.length === 0) return null;
@@ -400,40 +521,74 @@ export default function SocialScreen() {
     return (
       <>
         <Text style={styles.sectionHeader}>Pending Friend Requests</Text>
-        {pendingFriends.map((friend) => {
-          const userId =
-            typeof friend.user === "object"
-              ? friend.user._id
-              : friend.userId || friend.user;
+        {pendingFriends.map((friend, index) => {
+          // Extract user ID with better null checking
+          let userId = "";
+
+          if (
+            typeof friend.user === "object" &&
+            friend.user &&
+            friend.user._id
+          ) {
+            userId = String(friend.user._id);
+          } else if (typeof friend.user === "string") {
+            userId = friend.user;
+          } else if (friend.userId) {
+            userId = String(friend.userId);
+          }
+
+          // Use a fallback key to ensure uniqueness
+          const uniqueKey = userId || `pending-friend-${index}`;
+          console.log("Using key for pending friend:", uniqueKey);
+
+          // Get username from the fetched user details
+          const userDetails = userId ? pendingFriendsDetails[userId] : null;
+          const username = userDetails?.username || "Loading...";
 
           return (
-            <View key={userId} style={styles.listItem}>
-              <Image style={styles.avatar} />
+            <View key={uniqueKey} style={styles.listItem}>
+              <Image
+                style={styles.avatar}
+                source={
+                  userDetails?.avatarUrl
+                    ? { uri: userDetails.avatarUrl }
+                    : undefined
+                }
+              />
 
               <View style={styles.itemInfo}>
                 <View style={styles.itemHeader}>
-                  <Text style={styles.itemName}>
-                    {typeof friend.user === "object"
-                      ? friend.user.username || "Unknown User"
-                      : "Friend Request"}
-                  </Text>
-                  <Text style={[styles.itemTime, styles.pendingText]}>
-                    Pending
-                  </Text>
+                  <Text style={styles.itemName}>{username}</Text>
+                  {userDetails?.email && (
+                    <Text style={styles.itemTime} numberOfLines={1}>
+                      {userDetails.email}
+                    </Text>
+                  )}
                 </View>
               </View>
 
-              <TouchableOpacity
-                style={styles.acceptButton}
-                onPress={() => userId && acceptFriendRequest(userId)}
-                disabled={isLoadingFriends}
-              >
-                {isLoadingFriends ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.acceptButtonText}>Accept</Text>
-                )}
-              </TouchableOpacity>
+              <View style={styles.actionButtonsContainer}>
+                <TouchableOpacity
+                  style={styles.declineButton}
+                  onPress={() =>
+                    console.log("Decline functionality to be implemented")
+                  }
+                  disabled={isLoadingFriends}
+                >
+                  <Text style={styles.declineButtonText}>Decline</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.acceptButton}
+                  onPress={() => userId && acceptFriendRequest(userId)}
+                  disabled={isLoadingFriends}
+                >
+                  {isLoadingFriends ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.acceptButtonText}>Accept</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
           );
         })}
@@ -539,8 +694,13 @@ export default function SocialScreen() {
           ) : (
             <>
               <PendingFriendsSection />
+              {console.log(
+                "Rendering friends section with:",
+                filteredDetailedFriends.length,
+                "friends"
+              )}
               <Text style={[styles.sectionHeader, { marginTop: 10 }]}>
-                Friends
+                Friends ({filteredDetailedFriends.length})
               </Text>
               <FlatList
                 data={filteredDetailedFriends}
@@ -553,8 +713,16 @@ export default function SocialScreen() {
                     <Text style={styles.emptyText}>
                       {searchQuery
                         ? "No friends found"
-                        : "No friends yet. Add some friends to get started!"}
+                        : "No accepted friends yet. Add some friends and accept requests to see them here!"}
                     </Text>
+                    <TouchableOpacity
+                      style={[styles.retryButton, { marginTop: 12 }]}
+                      onPress={handleRetryFriends}
+                    >
+                      <Text style={styles.retryButtonText}>
+                        Refresh Friends
+                      </Text>
+                    </TouchableOpacity>
                   </View>
                 }
               />
@@ -772,11 +940,26 @@ const styles = StyleSheet.create({
   },
   acceptButton: {
     backgroundColor: "#22C55E",
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 6,
+    minWidth: 70,
+    alignItems: "center",
   },
   acceptButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "bold",
+    fontSize: 14,
+  },
+  declineButton: {
+    backgroundColor: "#EF4444",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 6,
+    minWidth: 70,
+    alignItems: "center",
+  },
+  declineButtonText: {
     color: "#FFFFFF",
     fontWeight: "bold",
     fontSize: 14,
@@ -791,5 +974,22 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 10,
     paddingHorizontal: 16,
+  },
+  actionButtonsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  acceptedBadge: {
+    backgroundColor: "#22C55E",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    marginLeft: 8,
+  },
+  acceptedText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "600",
   },
 });

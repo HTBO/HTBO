@@ -21,6 +21,12 @@ import { Friend } from "../models/FriendModel";
 import { Group } from "../models/GroupModel";
 import { UserModel } from "../models/UserModel";
 
+// Add a Participant interface right after the imports
+interface Participant {
+  user?: string;
+  group?: string;
+}
+
 export default function CreateSessionScreen() {
   // Basic info
   const [title, setTitle] = useState("");
@@ -138,7 +144,7 @@ export default function CreateSessionScreen() {
       setFriends(friendsData);
 
       const acceptedFriendIds: string[] = friendsData
-        .filter((friend: Friend) => friend.status === "accepted")
+        .filter((friend: Friend) => friend.friendStatus === "accepted")
         .map((friend: Friend) => {
           if (
             typeof friend.user === "object" &&
@@ -320,7 +326,7 @@ export default function CreateSessionScreen() {
     } else {
       const updatedDate = new Date();
       updatedDate.setHours(selectedTime.getHours());
-      updatedDate.setMinutes(updatedTime.getMinutes());
+      updatedDate.setMinutes(selectedTime.getMinutes()); // Fixed typo: updatedTime -> selectedTime
       setSelectedDate(updatedDate);
     }
 
@@ -358,8 +364,8 @@ export default function CreateSessionScreen() {
       // Format date directly from the Date object to ISO format
       const scheduledAt = selectedDate ? selectedDate.toISOString() : null;
 
-      // Build participants array according to the required format
-      const participants = [];
+      // Define participants with proper type
+      const participants: Participant[] = [];
 
       // Add selected friends as participants
       selectedFriends.forEach((friendId) => {

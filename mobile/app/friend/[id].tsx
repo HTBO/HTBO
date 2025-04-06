@@ -28,7 +28,9 @@ export default function FriendDetailScreen() {
 
 function FriendDetailContent() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [friend, setFriend] = useState<UserModel | null>(null);
+  const [friend, setFriend] = useState<
+    (UserModel & { friendStatus?: string }) | null
+  >(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,8 +51,37 @@ function FriendDetailContent() {
         throw new Error("Authentication required");
       }
 
+      // First get the friend relationship to get friendStatus
+      const friendsResponse = await fetch(
+        "https://htbo-production.up.railway.app/api/users/myfriends",
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      let friendStatus = "";
+
+      if (friendsResponse.ok) {
+        const friendsData = await friendsResponse.json();
+        // Find this specific friend in the list
+        const friendRelationship = friendsData.find((f: any) => {
+          if (typeof f.user === "object" && f.user && f.user._id) {
+            return f.user._id === id;
+          }
+          return f.userId === id || f.user === id;
+        });
+
+        if (friendRelationship) {
+          friendStatus = friendRelationship.friendStatus || "";
+        }
+      }
+
+      // Then get the user details
       const response = await fetch(
-        `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/${id}`,
+        `https://htbo-production.up.railway.app/api/users/${id}`,
         {
           method: "GET",
           headers: {
@@ -66,7 +97,7 @@ function FriendDetailContent() {
       }
 
       const friendData = await response.json();
-      setFriend(friendData);
+      setFriend({ ...friendData, friendStatus });
     } catch (err) {
       console.error("Failed to fetch friend details:", err);
       setError(
@@ -159,6 +190,20 @@ function FriendDetailContent() {
           />
           <Text style={styles.username}>{friend.username}</Text>
           <Text style={styles.email}>{friend.email}</Text>
+          {friend.friendStatus && (
+            <View
+              style={[
+                styles.statusBadge,
+                friend.friendStatus === "accepted"
+                  ? styles.acceptedStatus
+                  : friend.friendStatus === "pending"
+                  ? styles.pendingStatus
+                  : styles.rejectedStatus,
+              ]}
+            >
+              <Text style={styles.statusText}>{friend.friendStatus}</Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.actionsSection}>
@@ -274,5 +319,26 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: "white",
     fontWeight: "600",
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginTop: 12,
+  },
+  acceptedStatus: {
+    backgroundColor: "rgba(16, 185, 129, 0.2)",
+  },
+  pendingStatus: {
+    backgroundColor: "rgba(252, 211, 77, 0.2)",
+  },
+  rejectedStatus: {
+    backgroundColor: "rgba(239, 68, 68, 0.2)",
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "white",
+    textTransform: "capitalize",
   },
 });

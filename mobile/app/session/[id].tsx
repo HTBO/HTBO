@@ -329,14 +329,16 @@ export default function SessionDetailScreen() {
                   <View
                     style={[
                       styles.statusBadge,
-                      participant.status === "accepted"
+                      participant.sessionStatus === "accepted"
                         ? styles.acceptedStatus
-                        : participant.status === "pending"
+                        : participant.sessionStatus === "pending"
                         ? styles.pendingStatus
                         : styles.declinedStatus,
                     ]}
                   >
-                    <Text style={styles.statusText}>{participant.status}</Text>
+                    <Text style={styles.statusText}>
+                      {participant.sessionStatus}
+                    </Text>
                   </View>
                 </View>
               ))

@@ -1,37 +1,36 @@
-import { ImageSource } from './UserModel';
+import { ImageSource } from "./UserModel";
 
-export interface Participant {
-  userId: string;
-  username?: string;
-  status: 'accepted' | 'pending' | 'declined';
+export interface SessionParticipant {
+  _id: string;
+  username: string;
+  email?: string;
+  sessionStatus: "pending" | "accepted" | "rejected";
 }
 
 export interface SessionModel {
   _id: string;
-  id?: string;
-  hostId: string;
-  hostName?: string;
-  hostAvatar?: ImageSource;
-  gameId: string;
-  gameName?: string;
-  gameImage?: ImageSource;
   description: string;
+  gameName: string;
+  gameImage?: string;
+  hostId: string;
+  hostName: string;
+  participants: SessionParticipant[];
   scheduledAt: string;
-  participants: Participant[];
   createdAt: string;
   updatedAt: string;
 }
 
 // Default values for initializing session state
 export const defaultSession: SessionModel = {
-  _id: '',
-  hostId: '',
-  gameId: '',
-  description: 'Not described',
-  scheduledAt: '',
+  _id: "",
+  description: "",
+  gameName: "",
+  hostId: "",
+  hostName: "",
   participants: [],
-  createdAt: '',
-  updatedAt: ''
+  scheduledAt: "",
+  createdAt: "",
+  updatedAt: "",
 };
 
 // Session list type for state management
@@ -43,6 +42,33 @@ export function formatSession(rawSession: any): SessionModel {
     ...rawSession,
     gameImage: rawSession.gameImage ? { uri: rawSession.gameImage } : null,
     hostAvatar: rawSession.hostAvatar ? { uri: rawSession.hostAvatar } : null,
-    participants: rawSession.participants || []
+    participants: rawSession.participants || [],
   };
+}
+
+// Add these models for other parts of the application where relevant
+
+export interface FriendModel {
+  _id: string;
+  username: string;
+  email?: string;
+  friendStatus: "pending" | "accepted" | "rejected";
+}
+
+export interface GroupMember {
+  _id: string;
+  username: string;
+  email?: string;
+  groupStatus: "pending" | "accepted" | "rejected";
+}
+
+export interface GroupModel {
+  _id: string;
+  name: string;
+  description?: string;
+  ownerId: string;
+  ownerName: string;
+  members: GroupMember[];
+  createdAt: string;
+  updatedAt: string;
 }
