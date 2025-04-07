@@ -34,6 +34,9 @@ export default function CreateGroupScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [groupDescription, setGroupDescription] = useState("");
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string>("");
 
   // Fetch friends from the API
   const fetchFriends = async () => {
@@ -91,6 +94,42 @@ export default function CreateGroupScreen() {
     }
   };
 
+  // Create a function to fetch the current user's info
+  const fetchCurrentUser = async () => {
+    try {
+      const token = await authService.getToken();
+      if (!token) throw new Error("Authentication required");
+
+      const response = await fetch(
+        "https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/me",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to get current user. Status: ${response.status}`
+        );
+      }
+
+      const userData = await response.json();
+      console.log("Current user data:", userData);
+
+      // Set the current user ID from the _id field
+      if (userData && userData._id) {
+        setCurrentUserId(userData._id);
+      } else {
+        throw new Error("User ID not found in response");
+      }
+    } catch (err) {
+      console.error("Error fetching current user:", err);
+      setError(err instanceof Error ? err.message : "Failed to get user info");
+    }
+  };
+
   // Toggle friend selection
   const toggleFriendSelection = (friend: UserModel) => {
     if (selectedFriends.some((f) => f._id === friend._id)) {
@@ -126,19 +165,74 @@ export default function CreateGroupScreen() {
   );
 
   // Create group handler
-  const handleCreateGroup = () => {
-    // Implement API call to create group with selectedFriends
-    console.log("Creating group:", {
-      name: groupName,
-      category: selectedCategory,
-      members: selectedFriends.map((f) => f._id),
-    });
-    // Add API implementation here
+  const handleCreateGroup = async () => {
+    if (!groupName || !selectedCategory || selectedFriends.length === 0) return;
+    if (!currentUserId) {
+      setError("User ID not available. Please try again.");
+      return;
+    }
+
+    setIsCreatingGroup(true);
+    setError(null);
+
+    try {
+      const token = await authService.getToken();
+      if (!token) throw new Error("Authentication required");
+
+      // Use the fetched current user ID instead of hardcoded value
+      const requestBody = {
+        ownerId: currentUserId,
+        name: groupName,
+        description: groupDescription,
+        members: selectedFriends.map((friend) => ({
+          memberId: friend._id,
+        })),
+      };
+
+      console.log("Creating group with data:", requestBody);
+
+      const response = await fetch(
+        "https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/groups/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `Failed to create group: ${response.status} ${errorText}`
+        );
+      }
+
+      const result = await response.json();
+      console.log("Group created successfully:", result);
+
+      // Reset form fields
+      setGroupName("");
+      setGroupDescription("");
+      setSelectedCategory(null);
+      setSelectedFriends([]);
+
+      // Navigate back or show success message
+      alert("Group created successfully!");
+    } catch (err) {
+      console.error("Error creating group:", err);
+      setError(err instanceof Error ? err.message : "Failed to create group");
+    } finally {
+      setIsCreatingGroup(false);
+    }
   };
 
   // Fetch friends when component mounts
   useEffect(() => {
     fetchFriends();
+    fetchCurrentUser();
   }, []);
 
   return (
@@ -177,6 +271,21 @@ export default function CreateGroupScreen() {
             placeholderTextColor="#6B7280"
             value={groupName}
             onChangeText={setGroupName}
+          />
+        </View>
+
+        {/* Group Description */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Description</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter group description..."
+            placeholderTextColor="#6B7280"
+            value={groupDescription}
+            onChangeText={setGroupDescription}
+            multiline
+            numberOfLines={3}
+            textAlignVertical="top"
           />
         </View>
 
@@ -302,15 +411,25 @@ export default function CreateGroupScreen() {
         <TouchableOpacity
           style={[
             styles.createButton,
-            (!groupName || !selectedCategory || selectedFriends.length === 0) &&
+            (isCreatingGroup ||
+              !groupName ||
+              !selectedCategory ||
+              selectedFriends.length === 0) &&
               styles.disabledButton,
           ]}
           onPress={handleCreateGroup}
           disabled={
-            !groupName || !selectedCategory || selectedFriends.length === 0
+            isCreatingGroup ||
+            !groupName ||
+            !selectedCategory ||
+            selectedFriends.length === 0
           }
         >
-          <Text style={styles.createButtonText}>Create Group</Text>
+          {isCreatingGroup ? (
+            <ActivityIndicator size="small" color="white" />
+          ) : (
+            <Text style={styles.createButtonText}>Create Group</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
 
