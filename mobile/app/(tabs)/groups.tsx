@@ -74,29 +74,69 @@ export default function SocialScreen() {
   useEffect(() => {
     const fetchPendingFriendsDetails = async () => {
       const pendingFriends = friends.filter(
-        (friend) => friend.friendStatus === "pending"
+        (friend) =>
+          friend.friendStatus === "pending"
       );
 
       if (pendingFriends.length === 0) return;
 
+      console.log(
+        "Pending friends data:",
+        JSON.stringify(pendingFriends, null, 2)
+      );
       const pendingDetailsMap: Record<string, UserModel> = {};
 
       for (const friend of pendingFriends) {
+        // Extract user ID based on updated Friend model
         let userId = "";
+        let userDetails: UserModel | null = null;
 
-        if (typeof friend.user === "object" && friend.user) {
-          userId = friend.user._id || friend.user.id;
+        // Check if userId is a UserDetails object (new API response format)
+        if (
+          typeof friend.userId === "object" &&
+          friend.userId !== null &&
+          friend.userId._id
+        ) {
+          userId = friend.userId._id;
+
+          // We can use the embedded UserDetails directly without an API call
+          userDetails = {
+            _id: friend.userId._id,
+            username: friend.userId.username,
+            email: friend.userId.email || "",
+            avatarUrl: friend.userId.avatarUrl,
+            // Add other required fields from UserModel
+            id: friend.userId.id || friend.userId._id,
+          };
+
+          pendingDetailsMap[userId] = userDetails;
+          continue; // Skip the API call since we already have the details
+        }
+        // Fall back to previous extraction methods for backwards compatibility
+        else if (typeof friend.user === "object" && friend.user) {
+          if (friend.user._id) {
+            userId = String(friend.user._id);
+          } else if (friend.user.id) {
+            userId = String(friend.user.id);
+          }
         } else if (typeof friend.user === "string") {
           userId = friend.user;
-        } else if (friend.userId) {
+        } else if (typeof friend.userId === "string") {
           userId = friend.userId;
         }
 
-        if (userId) {
-          const userData = await getUserById(userId);
-          if (userData) {
-            pendingDetailsMap[userId] = userData;
-          }
+        if (!userId) {
+          console.warn("Could not extract user ID from friend:", friend);
+          continue;
+        }
+
+        // Only fetch if we need to (if userId wasn't a UserDetails object)
+        console.log(`Fetching details for user ID: ${userId}`);
+        const userData = await getUserById(userId);
+        if (userData) {
+          pendingDetailsMap[userId] = userData;
+        } else {
+          console.warn(`Failed to get user details for ID: ${userId}`);
         }
       }
 
@@ -109,94 +149,110 @@ export default function SocialScreen() {
   }, [friends]);
 
   const fetchFriends = async () => {
-    console.log("fetchFriends function called");
     setIsLoadingFriends(true);
     setError(null);
 
     try {
-      console.log("Getting auth token");
       const token = await authService.getToken();
+      if (!token) throw new Error("Authentication required");
 
-      if (!token) {
-        console.log("No token available");
-        throw new Error("Authentication required");
-      }
-
-      console.log("Making API request to /users/myfriends");
+      // This is the GET request to fetch friends
       const response = await fetch(
         "https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/myfriends",
         {
-          method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
-      console.log("Friends API Response:", response.status);
+
       if (!response.ok) {
         throw new Error(`Failed to load friends. Status: ${response.status}`);
       }
 
       const friendsData: Friend[] = await response.json();
-      console.log("Friends data loaded:", friendsData);
-      setFriends(friendsData);
-
-      // Count and log friends with accepted status
-      const acceptedFriends = friendsData.filter(
-        (friend: Friend) => friend.friendStatus === "accepted"
-      );
       console.log(
-        `Found ${acceptedFriends.length} accepted friends:`,
-        JSON.stringify(acceptedFriends, null, 2)
+        "Raw friends data received:",
+        JSON.stringify(friendsData, null, 2)
       );
 
-      const acceptedFriendIds: string[] = acceptedFriends
-        .map((friend: Friend) => {
-          if (
-            typeof friend.user === "object" &&
-            friend.user &&
-            "_id" in friend.user
+      // Filter only accepted friends
+      const acceptedFriends = friendsData.filter(
+        (friend) => friend.friendStatus === "accepted"
+      );
+
+      console.log(`Found ${acceptedFriends.length} accepted friends`);
+
+      // Improved mapping to handle all possible formats
+      const acceptedFriendsDetails = acceptedFriends
+        .map((friend) => {
+          // Case 1: userId is an object with user details
+          if (typeof friend.userId === "object" && friend.userId !== null) {
+            return {
+              _id: friend.userId._id,
+              username: friend.userId.username || "Unknown",
+              email: friend.userId.email || "",
+              avatarUrl: friend.userId.avatarUrl,
+              friends: [],
+              games: [],
+              sessions: [],
+              groups: [],
+              createdAt: "",
+              updatedAt: "",
+              friendStatus: "accepted",
+            } as UserModel;
+          }
+          // Case 2: user is an object with user details
+          else if (typeof friend.user === "object" && friend.user !== null) {
+            return {
+              _id: friend.user._id || friend.user.id || "",
+              username: friend.user.username || "Unknown",
+              email: friend.user.email || "",
+              avatarUrl: friend.user.avatarUrl,
+              friends: [],
+              games: [],
+              sessions: [],
+              groups: [],
+              createdAt: "",
+              updatedAt: "",
+              friendStatus: "accepted",
+            } as UserModel;
+          }
+          // Case 3: userId is a string - we'd need to fetch details separately
+          else if (
+            typeof friend.userId === "string" ||
+            typeof friend.user === "string"
           ) {
-            return friend.user._id.toString();
-          } else if (friend.userId) {
-            return friend.userId.toString();
-          } else if (typeof friend.user === "string") {
-            return friend.user;
-          }
-          return "";
-        })
-        .filter((id) => id !== "");
-
-      const userDetailsPromises = acceptedFriendIds.map(
-        async (userId: string) => {
-          const userResponse = await fetch(
-            `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/${userId}`,
-            {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-
-          if (!userResponse.ok) {
-            console.warn(
-              `Failed to fetch details for user ${userId}, status: ${userResponse.status}`
+            const id =
+              typeof friend.userId === "string" ? friend.userId : friend.user;
+            console.log(
+              `Friend with string ID found: ${id}, will need details`
             );
-            return null;
+            // Return minimal info for now
+            return {
+              _id: id as string,
+              username: "User " + id,
+              email: "",
+              friends: [],
+              games: [],
+              sessions: [],
+              groups: [],
+              createdAt: "",
+              updatedAt: "",
+              friendStatus: "accepted",
+            } as UserModel;
           }
 
-          const userData = await userResponse.json();
-          return userData as UserModel;
-        }
+          return null;
+        })
+        .filter((friend): friend is UserModel => friend !== null);
+
+      console.log(
+        `Processed ${acceptedFriendsDetails.length} accepted friends into detailed format`
       );
 
-      const userDetails = await Promise.all(userDetailsPromises);
-      const validUserDetails = userDetails.filter(
-        (user): user is UserModel => user !== null
-      );
-
-      setDetailedFriends(validUserDetails);
+      setDetailedFriends(acceptedFriendsDetails);
+      setFriends(friendsData);
     } catch (err) {
       console.error("Failed to fetch friends:", err);
       setError(err instanceof Error ? err.message : "Failed to load friends");
@@ -240,10 +296,6 @@ export default function SocialScreen() {
   };
 
   useEffect(() => {
-    console.log(
-      "Friends initialization effect running, initialized:",
-      friendsInitialized.current
-    );
     if (!friendsInitialized.current) {
       console.log("Calling fetchFriends from useEffect");
       fetchFriends();
@@ -312,6 +364,11 @@ export default function SocialScreen() {
   const acceptFriendRequest = async (friendId: string): Promise<boolean> => {
     try {
       setIsLoadingFriends(true);
+      console.log("Accepting friend request with ID:", friendId);
+
+      if (!friendId || typeof friendId !== "string") {
+        throw new Error("Invalid friend ID provided");
+      }
 
       // Get current user's token and ID
       const token = await authService.getToken();
@@ -322,14 +379,22 @@ export default function SocialScreen() {
         throw new Error("Authentication required");
       }
 
-      // Prepare the request payload
+      // Format the friend ID - ensure it's a clean string without any wrapper objects
+      // This handles cases where the ID might be nested in an object or have extra quotes
+      const cleanFriendId = friendId.trim();
+
+      console.log("Using cleaned friend ID for request:", cleanFriendId);
+
+      // Prepare the request payload with friendStatus instead of status
       const payload = {
         friendAction: {
           action: "update-status",
-          friendId: friendId,
-          status: "accepted",
+          friendId: cleanFriendId,
+          friendStatus: "accepted",
         },
       };
+
+      console.log("Sending payload:", JSON.stringify(payload));
 
       // Make the API call
       const response = await fetch(
@@ -460,26 +525,46 @@ export default function SocialScreen() {
     }
 
     const friendItem = item as Friend;
-    const isPending = friendItem.friendStatus === "pending";
-    const userId =
-      typeof friendItem.user === "object"
-        ? friendItem.user._id
-        : friendItem.userId || friendItem.user;
+    const isPending =
+      friendItem.friendStatus === "pending" || friendItem.status === "pending";
 
-    // Get username from friend item object
-    const username =
-      typeof friendItem.user === "object" && friendItem.user?.username
-        ? friendItem.user.username
-        : "Unknown User";
+    // Extract user info with updated model support
+    let userId: string | undefined;
+    let username = "Unknown User";
+    let avatarUrl: string | undefined;
+
+    // Use UserDetails from userId if available (new model)
+    if (typeof friendItem.userId === "object" && friendItem.userId !== null) {
+      userId = friendItem.userId._id;
+      username = friendItem.userId.username;
+      avatarUrl = friendItem.userId.avatarUrl;
+    }
+    // Fall back to user object for backward compatibility
+    else if (typeof friendItem.user === "object" && friendItem.user) {
+      userId = friendItem.user._id;
+      username = friendItem.user.username || "Unknown User";
+      avatarUrl = friendItem.user.avatarUrl;
+    }
+    // Use string ID from either field
+    else {
+      userId =
+        typeof friendItem.userId === "string"
+          ? friendItem.userId
+          : typeof friendItem.user === "string"
+          ? friendItem.user
+          : undefined;
+    }
 
     return (
       <View style={styles.listItem}>
-        <Image style={styles.avatar} />
+        <Image
+          style={styles.avatar}
+          source={avatarUrl ? { uri: avatarUrl } : undefined}
+        />
 
         <View style={styles.itemInfo}>
           <View style={styles.itemHeader}>
             <Text style={styles.itemName}>{username}</Text>
-            {/* Remove the pending text here as it's redundant with the section header */}
           </View>
         </View>
 
@@ -513,7 +598,8 @@ export default function SocialScreen() {
 
   const PendingFriendsSection = () => {
     const pendingFriends = friends.filter(
-      (friend) => friend.friendStatus === "pending"
+      (friend) =>
+        friend.friendStatus === "pending" || friend.status === "pending"
     );
 
     if (pendingFriends.length === 0) return null;
@@ -522,46 +608,54 @@ export default function SocialScreen() {
       <>
         <Text style={styles.sectionHeader}>Pending Friend Requests</Text>
         {pendingFriends.map((friend, index) => {
-          // Extract user ID with better null checking
           let userId = "";
+          let username = "Loading...";
+          let email = "";
+          let avatarUrl: string | undefined = undefined;
 
-          if (
-            typeof friend.user === "object" &&
-            friend.user &&
-            friend.user._id
-          ) {
-            userId = String(friend.user._id);
+          // First check if userId is a UserDetails object (new format)
+          if (typeof friend.userId === "object" && friend.userId !== null) {
+            userId = friend.userId._id;
+            username = friend.userId.username;
+            email = friend.userId.email || "";
+            avatarUrl = friend.userId.avatarUrl;
+            console.log("Using UserDetails directly:", username);
+          }
+          // Fall back to previous extraction methods
+          else if (typeof friend.user === "object" && friend.user) {
+            userId = friend.user._id || friend.user.id || "";
+            username = friend.user.username || "Unknown";
+            email = friend.user.email || "";
+            avatarUrl = friend.user.avatarUrl;
           } else if (typeof friend.user === "string") {
             userId = friend.user;
-          } else if (friend.userId) {
-            userId = String(friend.userId);
+          } else if (typeof friend.userId === "string") {
+            userId = friend.userId;
           }
 
-          // Use a fallback key to ensure uniqueness
-          const uniqueKey = userId || `pending-friend-${index}`;
-          console.log("Using key for pending friend:", uniqueKey);
+          // Try to get additional details if necessary
+          if (userId && !avatarUrl && userId in pendingFriendsDetails) {
+            const userDetails = pendingFriendsDetails[userId];
+            username = userDetails.username;
+            email = userDetails.email || "";
+            avatarUrl = userDetails.avatarUrl;
+          }
 
-          // Get username from the fetched user details
-          const userDetails = userId ? pendingFriendsDetails[userId] : null;
-          const username = userDetails?.username || "Loading...";
+          const uniqueKey = userId || `pending-friend-${index}`;
 
           return (
             <View key={uniqueKey} style={styles.listItem}>
               <Image
                 style={styles.avatar}
-                source={
-                  userDetails?.avatarUrl
-                    ? { uri: userDetails.avatarUrl }
-                    : undefined
-                }
+                source={avatarUrl ? { uri: avatarUrl } : undefined}
               />
 
               <View style={styles.itemInfo}>
                 <View style={styles.itemHeader}>
                   <Text style={styles.itemName}>{username}</Text>
-                  {userDetails?.email && (
+                  {email && (
                     <Text style={styles.itemTime} numberOfLines={1}>
-                      {userDetails.email}
+                      {email}
                     </Text>
                   )}
                 </View>
