@@ -9,10 +9,13 @@ definePageMeta({
 
 const route = useRoute()
 const authStore = useAuthStore()
+const { getUserStatus } = useUserStatus()
 const fetchUserByUsername = useUserApi().getUserByUsername
 const { username } = route.params as { username: string }
 
 const { data: user, error, status } = fetchUserByUsername(username);
+
+const userStatus = computed<UserStatus>(() => getUserStatus(user.value, authStore.user))
 
 const addFriend = () => { };
 
@@ -20,6 +23,7 @@ const activeTab = ref<Tab | null>(profileTabs[0] ?? null)
 </script>
 
 <template>
+    <Loading v-if="status === 'pending'"/>
     <Transition name="fade">
         <div v-if="status === 'success'" class="flex flex-col gap-5">
             <div>
@@ -41,23 +45,24 @@ const activeTab = ref<Tab | null>(profileTabs[0] ?? null)
                     </div>
                     <div class="flex-1 flex justify-end items-center">
                         <ClientOnly>
-                            <NuxtLink v-if="authStore.user?._id === user?._id" to="/dashboard" class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 font-semibold py-2 px-4 rounded-lg duration-300">
+                            <NuxtLink v-if="userStatus === 'me'" to="/dashboard" class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 font-semibold py-2 px-4 rounded-lg duration-300">
                                 <Icon name="icons:edit" size="1.25rem" />
                                 <p>Edit Profile</p>
                             </NuxtLink>
-                            <button @click="addFriend" v-else class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 font-semibold py-2 px-4 rounded-lg duration-300">
-                                <Icon name="icons:add" size="1.25rem" />
-                                Add Friend
-                            </button>
+                            <template v-else>
+                                <button @click="addFriend" class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 font-semibold py-2 px-4 rounded-lg duration-300">
+                                    <Icon name="icons:add" size="1.25rem" />
+                                    Add Friend
+                                </button>
+                            </template>
                         </ClientOnly>
                     </div>
                 </div>
             </div>
-            <TabNavigation :tabs="profileTabs" @update:active-tab="activeTab = $event"/>
-            <component :is="activeTab?.component" :user="user"/>
+            <TabNavigation :tabs="profileTabs" @update:active-tab="activeTab = $event" />
+            <component :is="activeTab?.component" :user="user" />
         </div>
     </Transition>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>
