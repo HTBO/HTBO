@@ -121,15 +121,11 @@ export default function CreateSessionScreen() {
 
     try {
       const token = await authService.getToken();
-
-      if (!token) {
-        throw new Error("Authentication required");
-      }
+      if (!token) throw new Error("Authentication required");
 
       const response = await fetch(
         "https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/myfriends",
         {
-          method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -141,53 +137,32 @@ export default function CreateSessionScreen() {
       }
 
       const friendsData: Friend[] = await response.json();
+      console.log("Friends data received:", friendsData);
       setFriends(friendsData);
 
-      const acceptedFriendIds: string[] = friendsData
-        .filter((friend: Friend) => friend.friendStatus === "accepted")
-        .map((friend: Friend) => {
-          if (
-            typeof friend.user === "object" &&
-            friend.user &&
-            "_id" in friend.user
-          ) {
-            return friend.user._id.toString();
-          } else if (friend.userId) {
-            return friend.userId.toString();
-          } else if (typeof friend.user === "string") {
-            return friend.user;
+      // Filter only accepted friends and convert to UserModel format
+      const acceptedFriends = friendsData
+        .filter((friend) => friend.friendStatus === "accepted")
+        .map((friend) => {
+          if (typeof friend.userId === "object" && friend.userId !== null) {
+            return {
+              _id: friend.userId._id,
+              username: friend.userId.username || "Unknown",
+              email: friend.userId.email || "",
+              avatarUrl: friend.userId.avatarUrl,
+              friends: [],
+              games: [],
+              sessions: [],
+              groups: [],
+              createdAt: "",
+              updatedAt: "",
+            } as UserModel;
           }
-          return "";
+          return null;
         })
-        .filter((id) => id !== "");
+        .filter((friend): friend is UserModel => friend !== null);
 
-      const userDetailsPromises = acceptedFriendIds.map(
-        async (userId: string) => {
-          const userResponse = await fetch(
-            `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/${userId}`,
-            {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-
-          if (!userResponse.ok) {
-            console.warn(`Failed to fetch details for user ${userId}`);
-            return null;
-          }
-
-          return (await userResponse.json()) as UserModel;
-        }
-      );
-
-      const userDetails = await Promise.all(userDetailsPromises);
-      const validUserDetails = userDetails.filter(
-        (user): user is UserModel => user !== null
-      );
-
-      setDetailedFriends(validUserDetails);
+      setDetailedFriends(acceptedFriends);
     } catch (err) {
       console.error("Failed to fetch friends:", err);
       setError(err instanceof Error ? err.message : "Failed to load friends");
