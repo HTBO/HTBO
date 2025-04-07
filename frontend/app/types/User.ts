@@ -6,8 +6,8 @@ export interface User {
     email: string
     avatarUrl: string
     friends: Array<{
-        userId: string,
-        status: 'pending' | 'accepted' | 'rejected'
+        userId: string | User,
+        friendStatus: 'pending' | 'accepted' | 'rejected'
     }>
     games: any[]
     sessions: Array<{

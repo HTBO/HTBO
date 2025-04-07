@@ -1,4 +1,5 @@
 import type { User } from "~/types/User"
+import { getAuthHeaders } from "~/utils/authUtils";
 
 export const useUserApi = () => {
     const runtimeConfig = useRuntimeConfig();
@@ -8,38 +9,42 @@ export const useUserApi = () => {
     const router = useRouter();
 
     const logout = async () => {
-        const res = await $fetch(`${API_URL}/logout`, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${authStore.token}`,
-            },
-        })
-        if (res) {
-            authStore.clearAuth();
-            router.push("/login");
+        try {
+            const res = await $fetch(`${API_URL}/logout`, {
+                method: "POST",
+                headers: getAuthHeaders(),
+            });
+            if (res) {
+                authStore.clearAuth();
+                router.push("/login");
+            }
+        } catch (error) {
+            console.error("Logout failed:", error);
         }
-    }
-    
-    const fetchMe = () => {
+    };
+
+    const getMe = () => {
         return useLazyFetch<User>(`${API_URL}/me`, {
-            headers: {
-                Authorization: `Bearer ${authStore.token}`,
-            }
-        })
-    }
+            headers: getAuthHeaders(),
+        });
+    };
 
+    const getUserById = (id: string) => {
+        return $fetch<User>(`${API_URL}/${id}`, {
+            headers: getAuthHeaders(),
+        });
+    };
 
-    const fetchUserByUsername = (username: string) => {
-        return useLazyFetch(`${API_URL}/username/${username}`, {
-            headers: {
-                Authorization: `Bearer ${authStore.token}`,
-            }
-        })
-    }
+    const getUserByUsername = (username: string) => {
+        return useLazyFetch<User>(`${API_URL}/username/${username}`, {
+            headers: getAuthHeaders(),
+        });
+    };
 
     return {
         logout,
-        fetchMe,
-        fetchUserByUsername,
-    }
-}
+        getMe,
+        getUserById,
+        getUserByUsername,
+    };
+};

@@ -9,8 +9,6 @@ const props = defineProps<{
     }
 }>()
 
-console.log(props.item)
-
 const clickHandler = () => {
     if (props.item.link) {
         useRouter().push(props.item.link)

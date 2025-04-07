@@ -2,6 +2,7 @@ import type { User } from "~/types/User";
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({
+        initialized: false,
         token: null as string | null,
         user: null as User | null,
     }),
@@ -9,6 +10,8 @@ export const useAuthStore = defineStore('auth', {
         initializeAuth() {
             const cookie = document.cookie.split('; ').find(row => row.startsWith('authToken='))
             this.token = cookie ? cookie.split('=')[1] ?? null : null
+            if(this.token)
+                this.initialized = true
         },
         setToken(token: string) {
             this.token = token

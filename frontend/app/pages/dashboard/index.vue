@@ -3,6 +3,7 @@
 definePageMeta({
     layout: 'dashboard',
     requiresAuth: true,
+    middleware: 'auth'
 })
 </script>
 
