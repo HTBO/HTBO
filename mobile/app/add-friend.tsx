@@ -36,6 +36,7 @@ export default function AddFriendScreen() {
   const [isAddingFriend, setIsAddingFriend] = useState<FriendStatus>({});
   const [addedFriends, setAddedFriends] = useState<FriendStatus>({}); // Track added friends
   const [isRemovingFriend, setIsRemovingFriend] = useState<FriendStatus>({});
+  const [acceptedFriends, setAcceptedFriends] = useState<FriendStatus>({});
 
   useEffect(() => {
     const getUserData = async () => {
@@ -47,7 +48,7 @@ export default function AddFriendScreen() {
           userData.friends
             ?.filter(
               (friend: Friend) =>
-                typeof friend === "object" && friend.status === "pending"
+                typeof friend === "object" && friend.friendStatus === "pending"
             )
             .map((friend: Friend) => {
               let id = "";
@@ -94,7 +95,7 @@ export default function AddFriendScreen() {
   const fetchUsers = async (query: string) => {
     try {
       // Force refresh friend data before search
-      await checkFriendStatus(); // This should update addedFriends with latest data
+      await checkFriendStatus();
 
       const token = await authService.getToken();
 
@@ -120,9 +121,13 @@ export default function AddFriendScreen() {
 
       const data = await response.json();
 
+      // Filter out current user and users who are already accepted friends
       const filteredResults = data.filter((user: UserModel) => {
-        const userId = user._id || user.id;
-        return userId !== currentUserId;
+        const userId = normalizeId(user._id || user.id);
+        return (
+          userId !== currentUserId && 
+          !acceptedFriends[userId]
+        );
       });
 
       setSearchResults(filteredResults);
@@ -290,22 +295,17 @@ export default function AddFriendScreen() {
         return;
       }
 
-      // Extract and log all unique status values
-      const statusValues = new Set();
-      userData.friends.forEach((friend: Friend) => {
-        if (friend.status) {
-          statusValues.add(friend.status);
-        }
-      });
-
-      // Create a new object to track pending friends
+      // Create maps to track pending and accepted friends
       const pendingFriendsMap: FriendStatus = {};
+      const acceptedFriendsMap: FriendStatus = {};
 
-      // Log each friend with their status for detailed inspection
-      userData.friends.forEach((friend: Friend, index: number) => {
+      // Process each friend and update the appropriate map
+      userData.friends.forEach((friend: Friend) => {
         let friendId = "";
         if (friend.userId) {
-          friendId = friend.userId;
+          friendId = typeof friend.userId === "object" && friend.userId._id 
+            ? friend.userId._id 
+            : String(friend.userId);
         } else if (friend.user) {
           if (typeof friend.user === "object" && friend.user._id) {
             friendId = friend.user._id;
@@ -316,13 +316,19 @@ export default function AddFriendScreen() {
 
         if (friendId) {
           friendId = normalizeId(friendId);
-          pendingFriendsMap[friendId] = true;
+          
+          // Only check friendStatus field
+          if (friend.friendStatus === "pending") {
+            pendingFriendsMap[friendId] = true;
+          } else if (friend.friendStatus === "accepted") {
+            acceptedFriendsMap[friendId] = true;
+          }
         }
       });
 
-
-      // Update the addedFriends state with the pending friends
+      // Update the states
       setAddedFriends(pendingFriendsMap);
+      setAcceptedFriends(acceptedFriendsMap);
     } catch (error) {
       console.error("Error checking friend status:", error);
     }
@@ -338,7 +344,6 @@ export default function AddFriendScreen() {
   const renderUserItem = ({ item }: { item: UserModel }) => {
     // Ensure itemId is always a string, never undefined
     const itemId = normalizeId(item._id || item.id);
-
     
     // Only proceed if we have a valid ID
     if (!itemId) {
@@ -346,10 +351,16 @@ export default function AddFriendScreen() {
       return null;
     }
 
-    // Check addedFriends state using the string ID
+    // Don't render already accepted friends
+    if (acceptedFriends[itemId]) {
+      return null;
+    }
+
+    // Check status using the string ID
     const isPending = !!addedFriends[itemId];
     const isAdding = !!isAddingFriend[itemId];
     const isRemoving = !!isRemovingFriend[itemId];
+    
     return (
       <View style={styles.userItem}>
         <Image
