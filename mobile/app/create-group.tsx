@@ -247,6 +247,9 @@ export default function CreateGroupScreen() {
           headerTitleStyle: {
             fontWeight: "bold",
           },
+          // Add these lines to customize the back button
+          headerBackTitle: " ",  // Empty string for iOS
+          headerBackVisible: true,  // Show back button
         }}
       />
 

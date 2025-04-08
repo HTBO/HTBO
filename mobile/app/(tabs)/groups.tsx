@@ -16,6 +16,8 @@ import { Friend, FriendStatus } from "../../models/FriendModel";
 import { UserModel } from "../../models/UserModel";
 import { Group } from "../../models/GroupModel";
 import { authService } from "../../services/authService";
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
 
 export default function SocialScreen() {
   console.log("Component rendering");
@@ -295,20 +297,23 @@ export default function SocialScreen() {
     }
   };
 
-  useEffect(() => {
-    if (!friendsInitialized.current) {
-      console.log("Calling fetchFriends from useEffect");
+  useFocusEffect(
+    useCallback(() => {
+      console.log('Screen focused, refreshing data...');
+      // Reset initialization flags to force refresh
+      friendsInitialized.current = false;
+      groupsInitialized.current = false;
+      
+      // Fetch fresh data
       fetchFriends();
-      friendsInitialized.current = true;
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!groupsInitialized.current) {
       fetchGroups();
-      groupsInitialized.current = true;
-    }
-  }, []);
+
+      return () => {
+        // Cleanup if needed
+        console.log('Screen unfocused');
+      };
+    }, []) // Empty dependency array since we want to run this every time the screen focuses
+  );
 
   const filteredDetailedFriends = useMemo(() => {
     if (!searchQuery.trim()) return detailedFriends;
