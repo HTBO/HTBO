@@ -10,7 +10,7 @@ const createGame = async (req, res) => {
         const existingMongoGame = await Game.findOne({ name });
         if (existingMongoGame)
             return res.status(400).json({ error: "The game's name is already taken" });
-        
+
         const newGame = await Game.create({
             _id: mongoIdString,
             name,
@@ -37,6 +37,31 @@ const createGame = async (req, res) => {
     }
 };
 
+const searchGame = async (req, res) => {
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ error: 'Name query parameter is required' });
+    if (name.length < 2) return res.status(400).json({ error: 'Name must be at least 3 characters long' });
+    if (name.length > 50) return res.status(400).json({ error: 'Name must be at most 50 characters long' });
+    if (!/^[a-zA-Z0-9\s]+$/.test(name)) return res.status(400).json({ error: 'Name can only contain alphanumeric characters' });
+    const resp = await fetch(
+        "https://api.igdb.com/v4/search",
+        {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Client-ID': process.env.IGDB_CLIENT_ID,
+                'Authorization': `Bearer ${process.env.IGDB_ACCESS_TOKEN}`,
+            },
+            body: `search \"${name}\"; fields name; limit 10;`
+        })
+        .catch(err => {
+            console.error(err);
+        });
+    const data = await resp.json();
+    res.status(200).json(data);
+    // Modelsekben a gameId-t numberre kell cserélni mongoId helyett
+}
+
 const getGameById = async (req, res) => {
     try {
         const game = await Game.findById(req.params.id).populate('stores.storeId', 'name address');
@@ -44,7 +69,7 @@ const getGameById = async (req, res) => {
         res.status(200).json(game);
     } catch (error) {
         console.error('Error:', error.message);
-        if (error.name === 'CastError') 
+        if (error.name === 'CastError')
             return res.status(400).json({ error: 'Invalid game ID' });
         res.status(500).json({ error: 'Server error' });
     }
@@ -107,7 +132,7 @@ const updateGame = async (req, res) => {
             return res.status(400).json({ errors: messages });
         }
 
-        if (error.code === 11000) 
+        if (error.code === 11000)
             return res.status(400).json({ error: "The game's name is already taken" });
 
         res.status(500).json({ error: 'Server error' });
@@ -134,6 +159,7 @@ const deleteGame = async (req, res) => {
 
 module.exports = {
     createGame,
+    searchGame,
     getGameById,
     getAllGames,
     updateGame,
