@@ -21,7 +21,29 @@ userid3 is optional
     ]
 }
 ```
+---
+> confirmGroup
+`POST` `{{API_URL}}/groups/confirm`
 
+Accept invitation to a group
+```
+{
+    "userId": "<userId>",
+    "groupId": "<groupId>"
+}
+```
+---
+> rejectGroup
+`POST` `{{API_URL}}/groups/reject`
+
+Reject invitation to a group, or leave from the gorup (if already a member)
+```
+{
+    "userId": "<userId>",
+    "groupId": "<groupId>"
+}
+```
+---
 ## GET
 > getAllGroups
 `GET` `{{API_URL}}/groups`
