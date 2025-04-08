@@ -30,6 +30,7 @@ export default function SocialScreen() {
   const [isLoadingFriends, setIsLoadingFriends] = useState(false);
   const [isLoadingGroups, setIsLoadingGroups] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [processingFriends, setProcessingFriends] = useState<{[key: string]: boolean}>({});
 
   const friendsInitialized = useRef(false);
   const groupsInitialized = useRef(false);
@@ -74,8 +75,7 @@ export default function SocialScreen() {
   useEffect(() => {
     const fetchPendingFriendsDetails = async () => {
       const pendingFriends = friends.filter(
-        (friend) =>
-          friend.friendStatus === "pending"
+        (friend) => friend.friendStatus === "pending"
       );
 
       if (pendingFriends.length === 0) return;
@@ -432,6 +432,87 @@ export default function SocialScreen() {
     }
   };
 
+  // Add this function to implement the decline functionality
+  const declineFriendRequest = async (friendId: string): Promise<boolean> => {
+    if (!friendId || typeof friendId !== "string") {
+      console.error("Invalid friend ID:", friendId);
+      return false;
+    }
+  
+    const cleanId = friendId.trim();
+    console.log(`Starting decline process for friend ID: ${cleanId}`);
+    
+    // Check if we're already processing this friend
+    if (processingFriends[cleanId]) {
+      console.log(`Already processing friend ${cleanId}, skipping duplicate request`);
+      return false;
+    }
+    
+    // Mark this specific friend as being processed
+    setProcessingFriends(prev => ({ ...prev, [cleanId]: true }));
+    
+    try {
+      console.log(`Declining friend request with ID: ${cleanId}`);
+      
+      // Get current user's token and ID
+      const token = await authService.getToken();
+      const userData = await authService.getUserData();
+      const currentUserId = userData._id || userData.id;
+  
+      if (!token || !currentUserId) {
+        throw new Error("Authentication required");
+      }
+  
+      // Create the payload
+      const payload = {
+        friendAction: {
+          action: "remove",
+          friendId: cleanId,
+        }
+      };
+  
+      console.log(`Sending decline payload for ${cleanId}:`, JSON.stringify(payload));
+  
+      // Make the API call using PATCH
+      const response = await fetch(
+        `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/${currentUserId}`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+  
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `Failed to decline friend request for ${cleanId}. Status: ${response.status}. ${errorText}`
+        );
+      }
+  
+      console.log(`Successfully declined friend request for ${cleanId}`);
+      
+      // Refresh the friends list
+      await fetchFriends();
+      return true;
+    } catch (error) {
+      console.error(`Error declining friend request for ${cleanId}:`, error);
+      setError(
+        error instanceof Error
+          ? error.message
+          : `Failed to decline friend request for ${cleanId}`
+      );
+      return false;
+    } finally {
+      // Clear the processing state for this specific friend
+      console.log(`Clearing processing state for ${cleanId}`);
+      setProcessingFriends(prev => ({ ...prev, [cleanId]: false }));
+    }
+  };
+
   const handleRetryFriends = () => {
     setFriends([]);
     setDetailedFriends([]);
@@ -525,8 +606,7 @@ export default function SocialScreen() {
     }
 
     const friendItem = item as Friend;
-    const isPending =
-      friendItem.friendStatus === "pending";
+    const isPending = friendItem.friendStatus === "pending";
 
     // Extract user info with updated model support
     let userId: string | undefined;
@@ -572,9 +652,7 @@ export default function SocialScreen() {
           <View style={styles.actionButtonsContainer}>
             <TouchableOpacity
               style={styles.declineButton}
-              onPress={() =>
-                console.log("Decline functionality to be implemented")
-              }
+              onPress={() => userId && declineFriendRequest(userId)}
               disabled={isLoadingFriends}
             >
               <Text style={styles.declineButtonText}>Decline</Text>
@@ -596,6 +674,7 @@ export default function SocialScreen() {
     );
   };
 
+  // Update the PendingFriendsSection
   const PendingFriendsSection = () => {
     const pendingFriends = friends.filter(
       (friend) => friend.friendStatus === "pending"
@@ -607,6 +686,7 @@ export default function SocialScreen() {
       <>
         <Text style={styles.sectionHeader}>Pending Friend Requests</Text>
         {pendingFriends.map((friend, index) => {
+          // Extract a consistent, reliable ID for this friend
           let userId = "";
           let username = "Loading...";
           let email = "";
@@ -631,15 +711,15 @@ export default function SocialScreen() {
             userId = friend.userId;
           }
 
-          // Try to get additional details if necessary
-          if (userId && !avatarUrl && userId in pendingFriendsDetails) {
-            const userDetails = pendingFriendsDetails[userId];
-            username = userDetails.username;
-            email = userDetails.email || "";
-            avatarUrl = userDetails.avatarUrl;
+          // Skip rendering if no valid userId is found
+          if (!userId) {
+            console.warn(`No valid userId found for pending friend at index ${index}`);
+            return null;
           }
 
-          const uniqueKey = userId || `pending-friend-${index}`;
+          // Store this friend's ID in a data attribute to ensure the correct ID is used
+          const uniqueKey = `pending-friend-${userId}-${index}`;
+          const isProcessing = processingFriends[userId] || false;
 
           return (
             <View key={uniqueKey} style={styles.listItem}>
@@ -662,19 +742,27 @@ export default function SocialScreen() {
               <View style={styles.actionButtonsContainer}>
                 <TouchableOpacity
                   style={styles.declineButton}
-                  onPress={() =>
-                    console.log("Decline functionality to be implemented")
-                  }
-                  disabled={isLoadingFriends}
+                  onPress={() => {
+                    console.log(`Declining friend with ID: ${userId}`); 
+                    declineFriendRequest(userId);
+                  }}
+                  disabled={isProcessing}
                 >
-                  <Text style={styles.declineButtonText}>Decline</Text>
+                  {isProcessing ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.declineButtonText}>Decline</Text>
+                  )}
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.acceptButton}
-                  onPress={() => userId && acceptFriendRequest(userId)}
-                  disabled={isLoadingFriends}
+                  onPress={() => {
+                    console.log(`Accepting friend with ID: ${userId}`);
+                    acceptFriendRequest(userId);
+                  }}
+                  disabled={isProcessing}
                 >
-                  {isLoadingFriends ? (
+                  {isProcessing ? (
                     <ActivityIndicator size="small" color="#FFFFFF" />
                   ) : (
                     <Text style={styles.acceptButtonText}>Accept</Text>
@@ -683,7 +771,7 @@ export default function SocialScreen() {
               </View>
             </View>
           );
-        })}
+        }).filter(Boolean)}
       </>
     );
   };
@@ -915,7 +1003,7 @@ const styles = StyleSheet.create({
   },
   listItem: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center", // Ensure vertical centering
     paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: "#1F2937",
@@ -929,6 +1017,7 @@ const styles = StyleSheet.create({
   itemInfo: {
     flex: 1,
     marginLeft: 12,
+    justifyContent: "center", // Add this to center content vertically
   },
   itemHeader: {
     flexDirection: "row",
@@ -1070,6 +1159,7 @@ const styles = StyleSheet.create({
   actionButtonsContainer: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center", // Add this to center buttons
     gap: 8,
   },
   acceptedBadge: {

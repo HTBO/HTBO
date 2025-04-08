@@ -98,11 +98,11 @@ export default function AddFriendScreen() {
       await checkFriendStatus();
 
       const token = await authService.getToken();
-
       if (!token) {
         throw new Error("Not authenticated");
       }
 
+      // Keep the API call but also implement client-side filtering
       const response = await fetch(
         `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users?search=${encodeURIComponent(
           query
@@ -120,16 +120,29 @@ export default function AddFriendScreen() {
       }
 
       const data = await response.json();
+      console.log(`Received ${data.length} users from API`);
+      
+      // Convert search query to lowercase for case-insensitive comparison
+      const lowerCaseQuery = query.toLowerCase();
 
-      // Filter out current user and users who are already accepted friends
+      // Apply more thorough filtering:
+      // 1. Filter out current user
+      // 2. Filter out accepted friends
+      // 3. Only include users whose username or email matches the search query
       const filteredResults = data.filter((user: UserModel) => {
         const userId = normalizeId(user._id || user.id);
+        const username = (user.username || "").toLowerCase();
+        const email = (user.email || "").toLowerCase();
+        
+        // Check all conditions for inclusion
         return (
           userId !== currentUserId && 
-          !acceptedFriends[userId]
+          !acceptedFriends[userId] &&
+          (username.includes(lowerCaseQuery) || email.includes(lowerCaseQuery))
         );
       });
 
+      console.log(`Filtered to ${filteredResults.length} matching users for query: "${query}"`);
       setSearchResults(filteredResults);
     } catch (err) {
       console.error("Error fetching users:", err);
