@@ -526,7 +526,7 @@ export default function SocialScreen() {
 
     const friendItem = item as Friend;
     const isPending =
-      friendItem.friendStatus === "pending" || friendItem.status === "pending";
+      friendItem.friendStatus === "pending";
 
     // Extract user info with updated model support
     let userId: string | undefined;
@@ -598,8 +598,7 @@ export default function SocialScreen() {
 
   const PendingFriendsSection = () => {
     const pendingFriends = friends.filter(
-      (friend) =>
-        friend.friendStatus === "pending" || friend.status === "pending"
+      (friend) => friend.friendStatus === "pending"
     );
 
     if (pendingFriends.length === 0) return null;
@@ -619,7 +618,6 @@ export default function SocialScreen() {
             username = friend.userId.username;
             email = friend.userId.email || "";
             avatarUrl = friend.userId.avatarUrl;
-            console.log("Using UserDetails directly:", username);
           }
           // Fall back to previous extraction methods
           else if (typeof friend.user === "object" && friend.user) {
