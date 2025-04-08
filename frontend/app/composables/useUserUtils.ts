@@ -15,7 +15,7 @@ export const useUserStatus = () => {
       return id === targetUser._id
     })
 
-    return friend?.status as UserStatus || 'none'
+    return friend?.friendStatus as UserStatus || 'none'
   }
 
   const isMe = (targetUser: any, currentUser: any): boolean => {

@@ -1,6 +1,6 @@
 import type { User } from "./User";
 
 export interface Friend {
-    status: string;
+    friendStatus: string;
     userId: string | User;
 }

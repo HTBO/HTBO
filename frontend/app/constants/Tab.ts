@@ -1,11 +1,10 @@
-import { SectionsSessions } from "#components";
-import FriendsSection from "~/components/FriendsSection.vue";
+import { SectionsFriends, SectionsSessions } from "#components";
 import type { Tab } from "~/types/Tab";
 
 export const profileTabs: Tab[] = [
     {
         name: 'Friends',
-        component: markRaw(FriendsSection)
+        component: markRaw(SectionsFriends)
     },
     {
         name: 'Sessions',

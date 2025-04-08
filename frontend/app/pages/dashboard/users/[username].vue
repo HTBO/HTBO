@@ -33,7 +33,7 @@ const activeTab = ref<Tab | null>(profileTabs[0] ?? null)
                 <div class="-mt-12 h-24 flex justify-center p-5 px-10 bg-gray-800/50 drop-shadow-xl inset-shadow-sm inset-shadow-gray-700/50 backdrop-blur-md rounded-xl">
                     <div class="flex-1 flex">
                         <div class="flex flex-col items-center">
-                            <p class="text-lg font-semibold">{{ user?.friends.length }}</p>
+                            <p class="text-lg font-semibold">{{ user?.friends.filter(friend => friend.friendStatus === 'accepted').length }}</p>
                             <p class="font-lg font-semibold">Friends</p>
                         </div>
                     </div>

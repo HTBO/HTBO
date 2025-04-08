@@ -29,6 +29,12 @@ export const useUserApi = () => {
         });
     };
 
+    const getAllUsers = () => {
+        return $fetch<User[]>(`${API_URL}`, {
+            headers: getAuthHeaders(),
+        });
+    }
+
     const getUserById = (id: string) => {
         return $fetch<User>(`${API_URL}/${id}`, {
             headers: getAuthHeaders(),
@@ -44,6 +50,7 @@ export const useUserApi = () => {
     return {
         logout,
         getMe,
+        getAllUsers,
         getUserById,
         getUserByUsername,
     };
