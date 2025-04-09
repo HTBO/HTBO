@@ -1,3 +1,4 @@
+import type { TokenResponse } from "~/types/Response";
 import type { User } from "~/types/User"
 import { getAuthHeaders } from "~/utils/authUtils";
 
@@ -7,6 +8,7 @@ export const useUserApi = () => {
 
     const authStore = useAuthStore();
     const router = useRouter();
+    const toast = useToast();
 
     const logout = async () => {
         try {
@@ -21,6 +23,13 @@ export const useUserApi = () => {
         } catch (error) {
             console.error("Logout failed:", error);
         }
+    };
+
+    const refreshToken = async () => {
+        return useFetch<TokenResponse>(`${API_URL}/refresh`, {
+            method: 'POST',
+            headers: getAuthHeaders()
+        });
     };
 
     const getMe = () => {
@@ -59,19 +68,50 @@ export const useUserApi = () => {
                     }
                 }
             });
-            return res;
+            if (res) {
+                toast.add({title: 'Success', description: 'Friend added successfully', color: 'success'});
+                return true;
+            }
+            return false;
         }
         catch (error) {
-            console.error("Add friend failed:", error);
+            toast.add({title: 'Error', description: 'An error occurred while sending the friend request', color: 'error'});
+            return false;
+        }
+    };
+
+    const cancelFriendRequest = async (userId: string) => {
+        try {
+            const res = await $fetch(`${API_URL}/${getUserId()}`, {
+                method: "PATCH",
+                headers: getAuthHeaders(),
+                body: {
+                    friendAction: {
+                        action: "remove",
+                        friendId: userId,
+                    }
+                }
+            });
+            if (res) {
+                toast.add({title: 'Success', description: 'Friend request cancelled successfully', color: 'success'});
+                return true;
+            }
+            return false;
+        }
+        catch (error) {
+            toast.add({title: 'Error', description: 'An error occurred while cancelling the friend request', color: 'error'});
+            return false;
         }
     };
 
     return {
         logout,
+        refreshToken,
         getMe,
         getAllUsers,
         getUserById,
         getUserByUsername,
         addFriend,
+        cancelFriendRequest,
     };
 };

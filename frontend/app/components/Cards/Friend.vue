@@ -15,14 +15,15 @@ const userStatus = computed<UserStatus>(() => getUserStatus(props.friend, authSt
 const addFriend = async () => {
     const { addFriend } = useUserApi();
     try {
-        await addFriend(props.friend._id);
-        toast.add({title: 'Friend request sent!', description: `You have sent a friend request to ${props.friend.username}`, color: 'success'});
-        await Promise.all([
-            authStore.refreshUser(),
-            refreshUsers?.()
-        ]);
+        const success = await addFriend(props.friend._id);
+        if (success) {
+            await Promise.all([
+                authStore.refreshUser(),
+                refreshUsers?.()
+            ]);
+        }
     } catch (error) {
-        toast.add({title: 'Error', description: 'An error occurred while sending the friend request', color: 'error'});
+        throw error;
     }
 }
 </script>
@@ -43,7 +44,7 @@ const addFriend = async () => {
                     <span v-else-if="userStatus === 'accepted'" class="text-sm text-green-500 font-semibold">Friend</span>
                     <span v-else-if="userStatus === 'pending'" class="text-sm text-yellow-500 font-semibold">Pending</span>
                     <button v-else-if="userStatus === 'none'" @click="addFriend" class="flex items-center justify-center p-1.5 bg-green-600/50 hover:bg-green-600/80 rounded-lg duration-300">
-                        <Icon name="icons:add-friend" size="1.75rem"/>
+                        <Icon name="icons:add-friend" size="1.75rem" />
                     </button>
                 </div>
             </div>
@@ -51,6 +52,4 @@ const addFriend = async () => {
     </div>
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>

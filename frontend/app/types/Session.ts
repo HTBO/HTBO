@@ -6,10 +6,10 @@ export interface Session {
     gameId: string
     schduledAt: Date
     description: string
-    participants: {
+    participants: Array<{
         user: string | User
         status: 'pending' | 'accepted' | 'rejected' | 'host'
-    }
+    }>
     groups: any[]
     createdAt: Date
     updatedAt: Date

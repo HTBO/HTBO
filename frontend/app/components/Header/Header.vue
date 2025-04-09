@@ -15,6 +15,11 @@ const route = useRoute();
 const searchValue = ref('');
 const nuxtApp = useNuxtApp();
 
+const showSearch = computed(() => {
+  return !route.path.includes('/dashboard/users/') && 
+         !route.path.includes('/dashboard/sessions/create');
+});
+
 const searchPlaceholder = computed(() => {
   switch (route.path) {
     case '/dashboard/friends':
@@ -41,7 +46,9 @@ watch(searchValue, (newValue) => {
 
 <template>
     <header class="flex justify-between">
-        <HeaderSearch v-model:searchValue="searchValue" :placeholder="searchPlaceholder" />
+        <div class="grow max-w-xl">
+          <HeaderSearch v-if="showSearch" v-model:searchValue="searchValue" :placeholder="searchPlaceholder" />
+        </div>
         <HeaderUser />
     </header>
 </template>

@@ -4,9 +4,9 @@ export interface Group {
     _id: string
     name: string
     description: string
-    members: {
+    members: Array<{
         memberId: string | User
         status: 'pending' | 'accepted' | 'rejected' | 'owner'
-    }
+    }>
     createdAt: Date
 }

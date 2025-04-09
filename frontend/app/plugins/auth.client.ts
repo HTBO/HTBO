@@ -8,6 +8,7 @@ export default defineNuxtPlugin(async () => {
             const { data: user } = await useUserApi().getMe();
             if(user.value) {
                 authStore.setUser(user.value);
+                authStore.startRefreshTokenTimer();
             }
         }
     } finally {

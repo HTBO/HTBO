@@ -10,14 +10,29 @@ definePageMeta({
 const route = useRoute()
 const authStore = useAuthStore()
 const { getUserStatus } = useUserStatus()
-const fetchUserByUsername = useUserApi().getUserByUsername
+const { getUserByUsername, cancelFriendRequest } = useUserApi()
 const { username } = route.params as { username: string }
 
-const { data: user, error, status } = fetchUserByUsername(username);
+const { data: user, error, status, refresh } = getUserByUsername(username);
 
 const userStatus = computed<UserStatus>(() => getUserStatus(user.value, authStore.user))
 
 const addFriend = () => { };
+
+const cancelFriend = async () => {
+    try {
+        if (!user.value) return;
+        const success = await cancelFriendRequest(user.value._id);
+        if (success) {
+            await Promise.all([
+                authStore.refreshUser(),
+                refresh()
+            ]);
+        }
+    } catch (error) {
+        throw error;
+    }
+}
 
 const activeTab = ref<Tab | null>(profileTabs[0] ?? null)
 </script>
@@ -49,18 +64,20 @@ const activeTab = ref<Tab | null>(profileTabs[0] ?? null)
                                 <Icon name="icons:edit" size="1.25rem" />
                                 <p>Edit Profile</p>
                             </NuxtLink>
-                            <template v-else>
-                                <button @click="addFriend" class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 font-semibold py-2 px-4 rounded-lg duration-300">
-                                    <Icon name="icons:add" size="1.25rem" />
-                                    Add Friend
-                                </button>
-                            </template>
+                            <button v-else-if="userStatus === 'none'" @click="addFriend" class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 font-semibold py-2 px-4 rounded-lg duration-300">
+                                <Icon name="icons:add" size="1.25rem" />
+                                <span>Add Friend</span>
+                            </button>
+                            <button v-else-if="userStatus === 'pending'" @click="cancelFriend" class="w-28 flex justify-center items-center gap-2 border border-yellow-500 text-yellow-500 hover:border-transparent hover:text-white hover:bg-red-600/70 font-semibold py-2 px-4 rounded-lg duration-300 group">
+                                <span><span class="group-hover:hidden">Pending</span><span class="hidden group-hover:inline">Cancel</span></span>
+                            </button>
                         </ClientOnly>
                     </div>
                 </div>
             </div>
             <TabNavigation :tabs="profileTabs" @update:active-tab="activeTab = $event" />
             <component :is="activeTab?.component" :user="user" />
+            <div class="h-screen"></div>
         </div>
     </Transition>
 </template>
