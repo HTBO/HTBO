@@ -32,8 +32,6 @@ const validateEnvironment = () => {
 
 const setupChangeStreams = () => {
   const db = mongoose.connection;
-  console.log(db);
-  
   const userChangeStream = db.collection('users').watch();
   const gameChangeStream = db.collection('games').watch();
 

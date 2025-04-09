@@ -3,14 +3,12 @@ const Game = require('../models/Game');
 
 const createGame = async (req, res) => {
     try {
-        const { name, description, publisher, releaseYear, stores } = req.body;
-
-        const mongoIdString = new mongoose.Types.ObjectId().toString();
-
+        const { id } = req.body;
+        
         const existingMongoGame = await Game.findOne({ name });
         if (existingMongoGame)
             return res.status(400).json({ error: "The game's name is already taken" });
-        
+
         const newGame = await Game.create({
             _id: mongoIdString,
             name,
@@ -44,7 +42,7 @@ const getGameById = async (req, res) => {
         res.status(200).json(game);
     } catch (error) {
         console.error('Error:', error.message);
-        if (error.name === 'CastError') 
+        if (error.name === 'CastError')
             return res.status(400).json({ error: 'Invalid game ID' });
         res.status(500).json({ error: 'Server error' });
     }
@@ -107,7 +105,7 @@ const updateGame = async (req, res) => {
             return res.status(400).json({ errors: messages });
         }
 
-        if (error.code === 11000) 
+        if (error.code === 11000)
             return res.status(400).json({ error: "The game's name is already taken" });
 
         res.status(500).json({ error: 'Server error' });

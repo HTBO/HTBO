@@ -1,39 +1,14 @@
 ### gamesController.js
+
 ## POST
-> createGame
-`POST` `{{API_URL}}/games`
+> searchGame
+`POST` `{{API_URL}}/games/search`
 ```
 {
-"name": "testgame",
-"description": "testdescription",
-"publisher": "testpublisher",
-"releaseYear": 2009,
-"stores": [{
-    "storeId": "testStoreMongoId",
-    "link": "gamesLinkOnStore"
-}]
+    "name": "cs2"
+}
+---
+{
+    "id" : 302,
 }
 ```
----
-## GET
-> getAllGames
-`GET` `{{API_URL}}/games`
-
-> getGameById
-`GET` `{{API_URL}}/games/<gameid>`
----
-
-## UPDATE (PATCH)
-> updateGame
-`PATCH` `{{API_URL}}/games/<gameid>`
-- Game updates:
-    - name
-    - description
-    - publisher
-    - releaseYear
-    - stores
-
----
-## DELETE
-> deleteGame
-`DELETE` `{{API_URL}}/games/<gameid>`
