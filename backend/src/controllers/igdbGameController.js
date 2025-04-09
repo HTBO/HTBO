@@ -1,3 +1,6 @@
+const terminal = require('../utils/terminal');
+
+
 const igdbHeaders = {
     'Accept': 'application/json',
     'Client-ID': process.env.IGDB_CLIENT_ID,
@@ -14,6 +17,7 @@ const searchGame = async (req, res) => {
         if (name.length < 2) return res.status(400).json({ error: 'Name must be at least 3 characters long' });
         if (name.length > 50) return res.status(400).json({ error: 'Name must be at most 50 characters long' });
         if (!/^[a-zA-Z0-9\s]+$/.test(name)) return res.status(400).json({ error: 'Name can only contain alphanumeric characters' });
+        terminal.info(`Searching for game: ${name}`);
         searchResponse = await fetch(
             "https://api.igdb.com/v4/games",
             {
