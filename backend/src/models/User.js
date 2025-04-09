@@ -11,6 +11,9 @@ const friendSchema = new mongoose.Schema({
         enum: ['pending', 'accepted'],
         default: 'pending'
     },
+    initiator: {
+        type: Boolean
+    }
 }, { _id: false });
 
 const sessionSchema = new mongoose.Schema({
@@ -93,28 +96,31 @@ const userSchema = new mongoose.Schema({
     }
 }, {_id: false });
 
-userSchema.virtual('profileUrl').get(function () {
-    return `/users/${this.username}`;
+userSchema.pre('save', function (next) {
+    if (this.isModified('username')) {
+        this.username = this.username.toLowerCase();
+    }
+    next();
 });
 
-
-
-userSchema.methods.addFriend = function (userId) {
-    if (!this.friends.some(f => f.userId.equals(userId))) {
-        this.friends.push({ userId, friendStatus: 'pending' })
-    }
+userSchema.methods.addFriend = function (userId, initiator) {
+    if (!this.friends.some(f => f.userId.equals(userId)))
+        this.friends.push({ userId, friendStatus: 'pending', initiator: initiator })
     return this.save();
 };
 
 userSchema.methods.removeFriend = function (userId) {
-    if (!this.friends.some(f => f.userId.equals(userId))) {
+    if (!this.friends.some(f => f.userId.equals(userId)))
         this.friends.splice(userId, 1);
-    }
     return this.save();
 }
 
 userSchema.methods.statusUpdate = function (userId, status) {
-    this.friends.some(f => f.userId.equals(userId)).friendStatus = status;
+    const friend = this.friends.find(f => f.userId.equals(userId));
+    if (!friend) {
+        throw new Error(`Friend with ID ${userId} not found`);
+    }
+    friend.friendStatus = status;
     return this.save();
 }
 
@@ -129,16 +135,14 @@ userSchema.methods.editUserGames = function (gameId, status) {
 }
 
 userSchema.methods.addGroup = function (groupId) {
-    if (!this.groups.some(g => g.groupId.equals(groupId))) {
+    if (!this.groups.some(g => g.groupId.equals(groupId)))
         this.groups.push({ groupId, groupStatus: "pending" })
-    }
     return this.save();
 }
 
 userSchema.methods.removeGroup = function (groupId) {
-    if (!this.groups.some(g => g.groupId.equals(groupId))) {
+    if (!this.groups.some(g => g.groupId.equals(groupId)))
         this.groups.splice(groupId, 1);
-    }
     return this.save();
 }
 
@@ -151,16 +155,14 @@ userSchema.methods.updateGroupStatus = function (groupId, status) {
 }
 
 userSchema.methods.addSession = function (sessionId) {
-    if (!this.sessions.some(s => s.hostId.equals(sessionId))) {
+    if (!this.sessions.some(s => s.hostId.equals(sessionId)))
         this.sessions.push({ sessionId: sessionId, sessionStatus: "pending" })
-    }
     return this.save();
 }
 
 userSchema.methods.removeSession = function (sessionId) {
-    if (this.sessions.some(s => s.sessionId.equals(sessionId))) {
+    if (this.sessions.some(s => s.sessionId.equals(sessionId)))
         this.sessions.splice({ sessionId: sessionId }, 1);
-    }
     return this.save();
 }
 

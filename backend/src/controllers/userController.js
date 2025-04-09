@@ -60,21 +60,22 @@ const loginUser = async (req, res) => {
             user = await User.findOne({ email });
             if (!user) return res.status(401).json({ error: 'Email or password does not match | ERRC: 210' });
             login("Email")
-        } else {
+        } else 
             return res.status(401).json({ error: "Please provide an email or username | ERRC: 220" })
-        }
-        async function login(method) {
-            if (!password) return res.status(401).json({ error: "Please provide the password | ERRC: 230" });
-            const passwordMatch = await bcrypt.compare(password, user.passwordHash);
-            if (!passwordMatch) return res.status(401).json({ error: `${method} or password does not match | ERRC: 240` });
-            const expiresIn = req.body.stayLoggedIn ? '30d' : '1h';
-            const token = generateToken(user, expiresIn);
-            res.status(200).json({ token })
-        }
+        
     } catch (err) {
         console.error(`${err.message} login error.`);
         res.status(500).json({ error: 'Login failed' });
     }
+}
+
+async function login(method) {
+    if (!password) return res.status(401).json({ error: "Please provide the password | ERRC: 230" });
+    const passwordMatch = await bcrypt.compare(password, user.passwordHash);
+    if (!passwordMatch) return res.status(401).json({ error: `${method} or password does not match | ERRC: 240` });
+    const expiresIn = req.body.stayLoggedIn ? '30d' : '1h';
+    const token = generateToken(user, expiresIn);
+    res.status(200).json({ token })
 }
 
 const logoutUser = async (req, res) => {
@@ -213,8 +214,8 @@ const updateUser = async (req, res) => {
                     if (user.friends.some(p => p.userId.toString() == friendId.toString()))
                         return res.status(400).json({ error: 'User already added' });
 
-                    await user.addFriend(friendId);
-                    await addedFriend.addFriend(user);
+                    await user.addFriend(friendId, true);
+                    await addedFriend.addFriend(user, false);
                     break;
                 case 'remove':
                     await user.removeFriend();

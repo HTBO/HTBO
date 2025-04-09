@@ -23,10 +23,13 @@ const io = new Server(server, {
 io.use(wsAuthMiddleware);
 
 const validateEnvironment = () => {
-  const requiredVars = ['MONGODB_URI', 'LOGS_MONGODB_URI', 'PORT', 'JWT_SECRET', 'JWT_EXPIRES_IN'];
+  const requiredVars = ['MONGODB_URI', 'LOGS_MONGODB_URI', 'PORT', 'JWT_SECRET', 'JWT_EXPIRES_IN', 'IGDB_CLIENT_ID', 'IGDB_ACCESS_TOKEN', 'XRL_WINDOW_MS', 'XRL_MAX_REQUESTS'];
   requiredVars.forEach(varName => {
-    if (!process.env[varName])
+    if (!process.env[varName]) {
+
       terminal.error(`Missing required environment variable: ${varName}`);
+      process.exit(1);
+    }
   });
 };
 
@@ -39,7 +42,7 @@ const setupChangeStreams = () => {
     io.emit('user-change', change);
     terminal.info(`User collection change detected: ${change.operationType}`);
     console.log(change);
-    
+
   });
 
   gameChangeStream.on('change', (change) => {
