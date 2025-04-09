@@ -3,10 +3,8 @@ const Game = require('../models/Game');
 
 const createGame = async (req, res) => {
     try {
-        const { name, description, publisher, releaseYear, stores } = req.body;
-
-        const mongoIdString = new mongoose.Types.ObjectId().toString();
-
+        const { id } = req.body;
+        
         const existingMongoGame = await Game.findOne({ name });
         if (existingMongoGame)
             return res.status(400).json({ error: "The game's name is already taken" });
@@ -36,31 +34,6 @@ const createGame = async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 };
-
-const searchGame = async (req, res) => {
-    const { name } = req.body;
-    if (!name) return res.status(400).json({ error: 'Name query parameter is required' });
-    if (name.length < 2) return res.status(400).json({ error: 'Name must be at least 3 characters long' });
-    if (name.length > 50) return res.status(400).json({ error: 'Name must be at most 50 characters long' });
-    if (!/^[a-zA-Z0-9\s]+$/.test(name)) return res.status(400).json({ error: 'Name can only contain alphanumeric characters' });
-    const resp = await fetch(
-        "https://api.igdb.com/v4/search",
-        {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Client-ID': process.env.IGDB_CLIENT_ID,
-                'Authorization': `Bearer ${process.env.IGDB_ACCESS_TOKEN}`,
-            },
-            body: `search \"${name}\"; fields name; limit 10;`
-        })
-        .catch(err => {
-            console.error(err);
-        });
-    const data = await resp.json();
-    res.status(200).json(data);
-    // Modelsekben a gameId-t numberre kell cserélni mongoId helyett
-}
 
 const getGameById = async (req, res) => {
     try {
@@ -159,7 +132,6 @@ const deleteGame = async (req, res) => {
 
 module.exports = {
     createGame,
-    searchGame,
     getGameById,
     getAllGames,
     updateGame,

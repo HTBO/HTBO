@@ -21,8 +21,7 @@ const sessionSchema = new mongoose.Schema({
         required: [true, 'Please provide a host ID']
     },
     gameId: {
-        type: mongoose.Types.ObjectId,
-        ref: 'Game',
+        type: Number,
         required: [true, 'Please provide an game']
     },
     scheduledAt: {

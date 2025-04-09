@@ -45,7 +45,6 @@ app.use(cors());
 
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/games', require('./routes/gameRoutes'));
-app.use('/api/stores', require('./routes/storeRoutes'));
 app.use('/api/sessions', require('./routes/sessionRoutes'));
 app.use('/api/groups', require('./routes/groupRoutes'));
 

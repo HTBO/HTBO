@@ -13,14 +13,6 @@ const friendSchema = new mongoose.Schema({
     },
 }, { _id: false });
 
-const gamesSchema = new mongoose.Schema({
-    gameId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Game',
-        required: true
-    }
-}, { _id: false });
-
 const sessionSchema = new mongoose.Schema({
     sessionId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -75,7 +67,12 @@ const userSchema = new mongoose.Schema({
         default: "https://static.vecteezy.com/system/resources/previews/002/318/271/non_2x/user-profile-icon-free-vector.jpg"
     },
     friends: [friendSchema],
-    games: [gamesSchema],
+    games: [{
+        gameId: {
+            type: Number,
+            required: true
+        }
+    }],
     sessions: [sessionSchema],
     groups: [groupSchema],
     createdAt: {
