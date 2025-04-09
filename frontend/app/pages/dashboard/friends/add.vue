@@ -11,7 +11,7 @@ const filteredUsers = ref<User[]>([]);
 const isLoading = ref(false);
 const searchValue = useState<string>('searchValue', () => '');
 
-onMounted(async () => {
+const refreshUserList = async () => {
     isLoading.value = true;
     try {
         const response = await useUserApi().getAllUsers();
@@ -24,15 +24,19 @@ onMounted(async () => {
     } finally {
         isLoading.value = false;
     }
+};
 
-    watch(searchValue, (newValue) => {
-        if (newValue) {
-            filteredUsers.value = users.value.filter(user => user.username.toLowerCase().includes(newValue.toLowerCase()));
-        } else {
-            filteredUsers.value = users.value;
-        }
-    }, { immediate: true });
+onMounted(refreshUserList);
+
+watch(searchValue, (newValue) => {
+    if (newValue) {
+        filteredUsers.value = users.value.filter(user => user.username.toLowerCase().includes(newValue.toLowerCase()));
+    } else {
+        filteredUsers.value = users.value;
+    }
 });
+
+provide('refreshUsers', refreshUserList);
 </script>
 
 <template>

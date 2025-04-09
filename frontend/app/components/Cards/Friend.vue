@@ -3,12 +3,28 @@ import type { User } from '~/types/User';
 
 const { getUserStatus } = useUserStatus();
 const authStore = useAuthStore();
+const toast = useToast();
+const refreshUsers = inject('refreshUsers') as (() => Promise<void>);
 
 const props = defineProps<{
     friend: User;
 }>();
 
 const userStatus = computed<UserStatus>(() => getUserStatus(props.friend, authStore.user))
+
+const addFriend = async () => {
+    const { addFriend } = useUserApi();
+    try {
+        await addFriend(props.friend._id);
+        toast.add({title: 'Friend request sent!', description: `You have sent a friend request to ${props.friend.username}`, color: 'success'});
+        await Promise.all([
+            authStore.refreshUser(),
+            refreshUsers?.()
+        ]);
+    } catch (error) {
+        toast.add({title: 'Error', description: 'An error occurred while sending the friend request', color: 'error'});
+    }
+}
 </script>
 
 <template>
@@ -26,7 +42,9 @@ const userStatus = computed<UserStatus>(() => getUserStatus(props.friend, authSt
                     <span v-if="userStatus === 'me'" class="text-sm text-primary-600 font-semibold">You</span>
                     <span v-else-if="userStatus === 'accepted'" class="text-sm text-green-500 font-semibold">Friend</span>
                     <span v-else-if="userStatus === 'pending'" class="text-sm text-yellow-500 font-semibold">Pending</span>
-                    <span v-else-if="userStatus === 'none'" class="text-sm text-red-500 font-semibold">Not Friend</span>
+                    <button v-else-if="userStatus === 'none'" @click="addFriend" class="flex items-center justify-center p-1.5 bg-green-600/50 hover:bg-green-600/80 rounded-lg duration-300">
+                        <Icon name="icons:add-friend" size="1.75rem"/>
+                    </button>
                 </div>
             </div>
         </div>

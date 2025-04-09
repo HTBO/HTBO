@@ -4,3 +4,8 @@ export const getAuthHeaders = () => {
         Authorization: `Bearer ${authStore.token}`,
     };
 };
+
+export const getUserId = () => {
+    const authStore = useAuthStore();
+    return authStore.user?._id;
+}

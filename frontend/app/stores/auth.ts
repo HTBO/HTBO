@@ -24,7 +24,18 @@ export const useAuthStore = defineStore('auth', {
             this.token = null
             this.user = null
             document.cookie = 'authToken=; path=/; max-age=0' // Clear the cookie
+        },
+        async refreshUser() {
+            try {
+                const { data: user } = await useUserApi().getMe();
+                if (user.value) {
+                    this.setUser(user.value);
+                }
+            } catch (error) {
+                console.error('Error refreshing user:', error);
+            }
         }
+
     },
     getters: {
         isAuthenticated: (state) => !!state.token,

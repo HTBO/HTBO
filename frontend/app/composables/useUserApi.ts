@@ -47,11 +47,31 @@ export const useUserApi = () => {
         });
     };
 
+    const addFriend = async (userId: string) => {
+        try {
+            const res = await $fetch(`${API_URL}/${getUserId()}`, {
+                method: "PATCH",
+                headers: getAuthHeaders(),
+                body: {
+                    friendAction: {
+                        action: "add",
+                        friendId: userId,
+                    }
+                }
+            });
+            return res;
+        }
+        catch (error) {
+            console.error("Add friend failed:", error);
+        }
+    };
+
     return {
         logout,
         getMe,
         getAllUsers,
         getUserById,
         getUserByUsername,
+        addFriend,
     };
 };
