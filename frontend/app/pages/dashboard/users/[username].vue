@@ -76,7 +76,7 @@ const activeTab = ref<Tab | null>(profileTabs[0] ?? null)
                 </div>
             </div>
             <TabNavigation :tabs="profileTabs" @update:active-tab="activeTab = $event" />
-            <component :is="activeTab?.component" :user="user" />
+            <component :is="activeTab?.component" v-bind="activeTab?.getProps?.(user)" />
             <div class="h-screen"></div>
         </div>
     </Transition>
