@@ -315,21 +315,7 @@ export default function CreateGroupScreen() {
         {/* Friends Selection */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Add Friends</Text>
-          <View style={styles.searchContainer}>
-            <Ionicons
-              name="search"
-              size={20}
-              color="#9CA3AF"
-              style={styles.searchIcon}
-            />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search friends"
-              placeholderTextColor="#9CA3AF"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </View>
+          
 
           {/* Selected Friends */}
           {selectedFriends.length > 0 && (
