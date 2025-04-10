@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SessionModel, defaultSession } from "@/models/SessionModel";
 import { authService } from "@/services/authService";
 import { Game } from "@/models/GameModel";
+import { UserModel } from "@/models/UserModel";
 
 export default function SessionDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -24,8 +25,10 @@ export default function SessionDetailScreen() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [gameDetails, setGameDetails] = useState<Game | null>(null);
+  const [users, setUsers] = useState<{ [key: string]: UserModel }>({});
 
   useEffect(() => {
+    fetchUsers();
     fetchCurrentUser();
     if (id) {
       fetchSessionDetails(id as string);
@@ -66,6 +69,33 @@ export default function SessionDetailScreen() {
     } catch (error) {
       console.error("Error fetching current user:", error);
       Alert.alert("User Profile Error", "Failed to load your user profile");
+    }
+  }
+
+  async function fetchUsers() {
+    try {
+      const token = await authService.getToken();
+      const response = await fetch(
+        "https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch users: ${response.status}`);
+      }
+
+      const userData = await response.json();
+      const usersMap = userData.reduce((acc: any, user: UserModel) => {
+        acc[user._id] = user;
+        return acc;
+      }, {});
+      setUsers(usersMap);
+    } catch (error) {
+      console.error("Error fetching users:", error);
     }
   }
 
@@ -113,7 +143,6 @@ export default function SessionDetailScreen() {
   async function fetchSessionDetails(sessionId: string) {
     try {
       setIsLoading(true);
-
       const token = await authService.getToken();
       if (!token) {
         setError("Authentication required");
@@ -130,13 +159,20 @@ export default function SessionDetailScreen() {
           },
         }
       );
-      console.log(response);
+
       if (!response.ok) {
         throw new Error(`Server error: ${response.status}`);
       }
 
       const data = await response.json();
-      // console.log("Session details:", data);
+      
+      // Transform participants array to include user details
+      if (data.participants && Array.isArray(data.participants)) {
+        data.participants = data.participants.map((participantId: string) => ({
+          _id: participantId,
+          sessionStatus: "pending", // default status
+        }));
+      }
 
       setSession(data);
     } catch (error) {
@@ -338,7 +374,7 @@ export default function SessionDetailScreen() {
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Host:</Text>
               <Text style={styles.detailValue}>
-                {session.hostName || "Unknown Host"}
+                {users[session.hostId]?.username || "Unknown Host"}
               </Text>
             </View>
 
@@ -363,11 +399,11 @@ export default function SessionDetailScreen() {
                   <View style={styles.participantInfo}>
                     <View style={styles.participantAvatar}>
                       <Text style={styles.avatarText}>
-                        {(participant.username?.[0] || "?").toUpperCase()}
+                        {(users[participant._id]?.username?.[0] || "?").toUpperCase()}
                       </Text>
                     </View>
                     <Text style={styles.participantName}>
-                      {participant.username || "Unknown User"}
+                      {users[participant._id]?.username || "Unknown User"}
                     </Text>
                   </View>
                   <View
