@@ -10,6 +10,7 @@ import {
   Modal,
   FlatList,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,6 +21,7 @@ import { authService } from "../services/authService";
 import { Friend } from "../models/FriendModel";
 import { Group } from "../models/GroupModel";
 import { UserModel } from "../models/UserModel";
+import { useDebounce } from "../scripts/useDebounce";
 
 // Add a Participant interface right after the imports
 interface Participant {
@@ -30,11 +32,12 @@ interface Participant {
 export default function CreateSessionScreen() {
   // Basic info
   const [title, setTitle] = useState("");
-  const [gameId, setGameId] = useState("");
+  const [gameId, setGameId] = useState(0);
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
-  const [games, setGames] = useState<Game[]>([]);
-  const [loadingGames, setLoadingGames] = useState(false);
   const [showGamePicker, setShowGamePicker] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [games, setGames] = useState<Game[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   // Date & Time
   const [date, setDate] = useState("");
@@ -65,7 +68,6 @@ export default function CreateSessionScreen() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    fetchGames();
     fetchCurrentUser();
     fetchFriends();
     fetchGroups();
@@ -206,41 +208,6 @@ export default function CreateSessionScreen() {
     }
   };
 
-  const fetchGames = async () => {
-    try {
-      setLoadingGames(true);
-      const response = await fetch(
-        "https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/games"
-      );
-
-      if (!response.ok) {
-        throw new Error(`Server responded with status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      // Map response data to ensure it follows our Game model structure
-      const formattedGames: Game[] = data.map((game: any) => ({
-        id: game._id || game.id || "",
-        name: game.title || game.name || "",
-        description: game.description || "",
-        shortDescription: game.shortDescription || "",
-        publisher: game.publisher || "",
-        releaseYear: game.releaseYear || new Date().getFullYear(),
-        stores: game.stores || [],
-        createdAt: game.createdAt || "",
-        updatedAt: game.updatedAt || "",
-      }));
-
-      setGames(formattedGames);
-    } catch (error) {
-      console.error("Error fetching games:", error);
-      Alert.alert("Error", "Failed to load games list");
-    } finally {
-      setLoadingGames(false);
-    }
-  };
-
   // Toggle friend selection
   const toggleFriend = (friendId: string) => {
     setSelectedFriends((prev) => {
@@ -311,6 +278,98 @@ export default function CreateSessionScreen() {
     });
     setTime(formattedTime);
     hideTimePicker();
+  };
+
+  // Setup debounced search
+  const [searchValue, setSearchValue] = useState("");
+  
+  // Debounced search function with 300ms delay
+  const debouncedSearch = useDebounce((value: string) => {
+    setSearchValue(value);
+    searchGames(value);
+  }, 300);
+
+  // Add a searchError state
+  const [searchError, setSearchError] = useState<string | null>(null);
+  
+  // Handle search input change
+  const handleSearchChange = (text: string) => {
+    setSearchQuery(text); // Update visible input text immediately
+    setSearchError(null); // Clear error state when user types
+    debouncedSearch(text); // Debounce the actual search operation
+  };
+  
+  // Search games implementation
+  const searchGames = async (query: string) => {
+    if (!query.trim()) {
+      setGames([]);
+      return;
+    }
+    
+    try {
+      setIsSearching(true);
+      setSearchError(null); // Clear any existing errors
+      
+      const token = await authService.getToken();
+      
+      const response = await fetch(
+        "https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/games/search",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+          body: JSON.stringify({ name: query }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Map response data to ensure it follows our Game model structure
+      const formattedGames: Game[] = data.map((game: any) => ({
+        id: game._id || game.id || "",
+        name: game.title || game.name || "",
+        description: game.description || "",
+        shortDescription: game.shortDescription || "",
+        publisher: game.publisher || "",
+        releaseYear: game.releaseYear || new Date().getFullYear(),
+        stores: game.stores || [],
+        createdAt: game.createdAt || "",
+        updatedAt: game.updatedAt || "",
+      }));
+
+      // Clear error and set games if we have results
+      setGames(formattedGames);
+      
+      // Only set error if no games were found
+      if (formattedGames.length === 0 && query.trim()) {
+        // Delayed empty result message
+        setTimeout(() => {
+          setSearchError("No games found matching your search");
+        }, 300);
+      } else {
+        // Ensure error is cleared if results are found
+        setSearchError(null);
+      }
+      
+    } catch (error) {
+      console.error("Error searching games:", error);
+      
+      // Delay error message to avoid flashing during typing
+      setTimeout(() => {
+        setSearchError("Failed to search games. Try again later.");
+      }, 300);
+      
+      // Clear any partial results
+      setGames([]);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -446,39 +505,74 @@ export default function CreateSessionScreen() {
             <View style={styles.modalContainer}>
               <View style={styles.modalContent}>
                 <Text style={styles.modalTitle}>Select a Game</Text>
+                
+                {/* Search Input */}
+                <View style={styles.searchContainer}>
+                  <TextInput
+                    style={styles.searchInput}
+                    value={searchQuery}
+                    onChangeText={handleSearchChange}
+                    placeholder="Search for games..."
+                    placeholderTextColor="#6B7280"
+                    returnKeyType="search"
+                  />
+                </View>
 
-                {loadingGames ? (
+                {isSearching ? (
                   <ActivityIndicator size="large" color="#7C3AED" />
                 ) : (
-                  <FlatList
-                    data={games}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => (
-                      <TouchableOpacity
-                        style={styles.gameItem}
-                        onPress={() => {
-                          setSelectedGame(item);
-                          setGameId(item.id);
-                          setShowGamePicker(false);
-                        }}
-                      >
-                        <Text style={styles.gameTitle}>{item.name}</Text>
-                        <Text style={styles.gamePublisher}>
-                          {item.publisher} • {item.releaseYear}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                    ListEmptyComponent={
-                      <Text style={styles.emptyListText}>
-                        No games available
-                      </Text>
-                    }
-                  />
+                  <>
+                    {searchError ? (
+                      <View style={styles.errorContainer}>
+                        <Text style={styles.errorText}>{searchError}</Text>
+                      </View>
+                    ) : null}
+                    
+                    <FlatList
+                      data={games}
+                      keyExtractor={(item) => item.id.toString()}
+                      renderItem={({ item }) => (
+                        <TouchableOpacity
+                          style={styles.gameItemWithImage}
+                          onPress={() => {
+                            setSelectedGame(item);
+                            setGameId(item.id);
+                            setShowGamePicker(false);
+                            setSearchQuery("");
+                          }}
+                        >
+                          <View style={styles.gameImageContainer}>
+                            <Image 
+                              source={{ uri: item.cover || 'https://via.placeholder.com/60' }}
+                              style={styles.gameImage}
+                              resizeMode="cover"
+                            />
+                          </View>
+                          <View style={styles.gameInfo}>
+                            <Text style={styles.gameTitle}>{item.name}</Text>
+                            <Text style={styles.gamePublisher}>
+                              • {item.rating} ({item.rating_count})
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      )}
+                      ListEmptyComponent={
+                        searchError ? null : (
+                          <Text style={styles.emptyListText}>
+                            {searchQuery ? "No matching games found" : "Start typing to search for games"}
+                          </Text>
+                        )
+                      }
+                    />
+                  </>
                 )}
 
                 <TouchableOpacity
                   style={styles.closeButton}
-                  onPress={() => setShowGamePicker(false)}
+                  onPress={() => {
+                    setShowGamePicker(false);
+                    setSearchQuery("");
+                  }}
                 >
                   <Text style={styles.closeButtonText}>Cancel</Text>
                 </TouchableOpacity>
@@ -865,5 +959,35 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     fontSize: 14,
     marginVertical: 10,
+  },
+  searchContainer: {
+    backgroundColor: "#374151",
+    borderRadius: 8,
+    marginBottom: 15,
+    paddingHorizontal: 10,
+  },
+  searchInput: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    padding: 10,
+  },
+  gameItemWithImage: {
+    flexDirection: 'row',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#374151",
+    alignItems: 'center',
+  },
+  gameImageContainer: {
+    marginRight: 12,
+  },
+  gameImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    backgroundColor: '#374151',
+  },
+  gameInfo: {
+    flex: 1,
   },
 });

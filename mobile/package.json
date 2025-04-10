@@ -25,6 +25,7 @@
     "@react-navigation/drawer": "^7.3.2",
     "@react-navigation/native": "^7.0.14",
     "@react-navigation/native-stack": "^7.3.3",
+    "ajv-keywords": "^5.1.0",
     "axios": "^1.8.3",
     "expo": "~52.0.38",
     "expo-blur": "~14.0.3",

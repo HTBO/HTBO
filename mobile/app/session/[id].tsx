@@ -14,6 +14,7 @@ import { router, Stack, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SessionModel, defaultSession } from "@/models/SessionModel";
 import { authService } from "@/services/authService";
+import { Game } from "@/models/GameModel";
 
 export default function SessionDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -22,6 +23,7 @@ export default function SessionDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [gameDetails, setGameDetails] = useState<Game | null>(null);
 
   useEffect(() => {
     fetchCurrentUser();
@@ -29,6 +31,12 @@ export default function SessionDetailScreen() {
       fetchSessionDetails(id as string);
     }
   }, [id]);
+
+  useEffect(() => {
+    if (session && session.gameId) {
+      fetchGameDetails(session.gameId.toString());
+    }
+  }, [session]);
 
   async function fetchCurrentUser() {
     try {
@@ -39,7 +47,7 @@ export default function SessionDetailScreen() {
       }
 
       const response = await fetch(
-        "https://htbo-production.up.railway.app/api/users/me",
+        "https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/me",
         {
           method: "GET",
           headers: {
@@ -52,13 +60,53 @@ export default function SessionDetailScreen() {
       if (!response.ok) {
         throw new Error(`Failed to fetch user profile: ${response.status}`);
       }
-
       const userData = await response.json();
-      console.log("Current user data:", userData);
+      // console.log("Current user data:", userData);
       setCurrentUser(userData);
     } catch (error) {
       console.error("Error fetching current user:", error);
       Alert.alert("User Profile Error", "Failed to load your user profile");
+    }
+  }
+
+  async function fetchGameDetails(gameId: string) {
+    try {
+      const token = await authService.getToken();
+
+      const response = await fetch(
+        "https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/games/search",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+          body: JSON.stringify({ id: gameId }),
+        }
+      );
+
+      if (!response.ok) {
+        console.error(`Error fetching game details: ${response.status}`);
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        const game: Game = {
+          id: data[0].id,
+          cover: data[0].cover || "",
+          involved_companies: data[0].involved_companies || [],
+          name: data[0].name || "Unknown Game",
+          rating: data[0].rating || 0,
+          rating_count: data[0].rating_count || 0,
+          summary: data[0].summary || "",
+        };
+
+        setGameDetails(game);
+      }
+    } catch (error) {
+      console.error("Error fetching game details:", error);
     }
   }
 
@@ -73,7 +121,7 @@ export default function SessionDetailScreen() {
       }
 
       const response = await fetch(
-        `https://htbo-production.up.railway.app/api/sessions/${sessionId}`,
+        `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/sessions/${sessionId}`,
         {
           method: "GET",
           headers: {
@@ -82,13 +130,13 @@ export default function SessionDetailScreen() {
           },
         }
       );
-
+      console.log(response);
       if (!response.ok) {
         throw new Error(`Server error: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log("Session details:", data);
+      // console.log("Session details:", data);
 
       setSession(data);
     } catch (error) {
@@ -103,7 +151,6 @@ export default function SessionDetailScreen() {
     }
   }
 
-  // Update the isHost function to compare IDs instead of usernames
   const isHost = () => {
     console.log("Checking isHost by ID comparison.");
     console.log("Current user ID:", currentUser?._id);
@@ -113,7 +160,6 @@ export default function SessionDetailScreen() {
       return false;
     }
 
-    // Compare IDs instead of usernames
     const isMatch = currentUser._id === session.hostId;
     console.log("ID match:", isMatch);
 
@@ -122,7 +168,6 @@ export default function SessionDetailScreen() {
 
   async function deleteSession() {
     try {
-      // Check if user is host before proceeding (using ID comparison)
       if (!isHost()) {
         Alert.alert("Error", "Only the host can delete this session");
         return;
@@ -174,7 +219,6 @@ export default function SessionDetailScreen() {
   }
 
   const confirmDelete = () => {
-    // Check using the updated isHost function
     if (!isHost()) {
       Alert.alert("Error", "Only the host can delete this session");
       return;
@@ -256,14 +300,19 @@ export default function SessionDetailScreen() {
           <View style={styles.gameCard}>
             <Image
               source={
-                session.gameImage || require("@/assets/images/games/fifa.png")
+                gameDetails?.cover
+                  ? {
+                      uri: `https:${gameDetails.cover}`,
+                    }
+                  : require("@/assets/images/games/fifa.png")
               }
               style={styles.gameImage}
               defaultSource={require("@/assets/images/games/fifa.png")}
+              resizeMode="cover"
             />
             <View style={styles.gameInfo}>
               <Text style={styles.gameTitle}>
-                {session.gameName || "Game Session"}
+                {gameDetails?.name || "Game Session"}
               </Text>
               <Text style={styles.sessionTitle}>{session.description}</Text>
               <View style={styles.dateTimeContainer}>
@@ -298,11 +347,6 @@ export default function SessionDetailScreen() {
               <Text style={styles.detailValue}>
                 {formatDate(session.createdAt)}
               </Text>
-            </View>
-
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Session ID:</Text>
-              <Text style={styles.detailValue}>{session._id}</Text>
             </View>
           </View>
 
@@ -426,9 +470,10 @@ const styles = StyleSheet.create({
   },
   gameImage: {
     width: 80,
-    height: 80,
+    height: 120, // Increased height for cover image aspect ratio
     borderRadius: 8,
     marginRight: 16,
+    backgroundColor: "#374151",
   },
   gameInfo: {
     flex: 1,

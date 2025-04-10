@@ -10,7 +10,7 @@ export interface SessionParticipant {
 export interface SessionModel {
   _id: string;
   description: string;
-  gameName: string;
+  gameId: number;
   gameImage?: string;
   hostId: string;
   hostName: string;
@@ -24,7 +24,7 @@ export interface SessionModel {
 export const defaultSession: SessionModel = {
   _id: "",
   description: "",
-  gameName: "",
+  gameId: 0,
   hostId: "",
   hostName: "",
   participants: [],
