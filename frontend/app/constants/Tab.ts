@@ -26,3 +26,18 @@ export const profileTabs: Tab[] = [
         component: markRaw(SectionsSessions)
     }
 ];
+
+export const groupTabs: Tab[] = [
+    {
+        name: 'All Groups',
+        component: null,
+    },
+    {
+        name: 'My Groups',
+        component: null,
+    },
+    {
+        name: 'Group Invites',
+        component: null,
+    }
+];
