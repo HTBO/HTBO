@@ -11,6 +11,10 @@ const filteredUsers = ref<User[]>([]);
 const isLoading = ref(false);
 const searchValue = useState<string>('searchValue', () => '');
 
+const emptyMessage = computed(() => {
+    return users.value.length === 0 ? 'No users found' : 'No users match your search';
+});
+
 const refreshUserList = async () => {
     isLoading.value = true;
     try {
@@ -41,16 +45,12 @@ provide('refreshUsers', refreshUserList);
 
 <template>
     <div>
-        <h2 class="text-2xl">Search Results</h2>
-        <Loading v-if="isLoading"/>
-        <Transition name="fade">
-            <div v-if="!isLoading" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
-                <CardsFriend v-for="user in filteredUsers" :key="user._id" :friend="user" />
-            </div>
-        </Transition>
+        <h2 class="text-2xl mb-4">Search Results</h2>
+        <SectionsFriends 
+            :friends="filteredUsers"
+            :is-loading="isLoading"
+            :empty-message="emptyMessage"
+            :show-add-friend-link="false"
+        />
     </div>
 </template>
-
-<style scoped>
-
-</style>
