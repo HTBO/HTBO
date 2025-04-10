@@ -7,6 +7,9 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  Modal,
+  TextInput,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -22,6 +25,9 @@ export default function ProfileScreen() {
   const [user, setUser] = useState(defaultUser);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isEditingUsername, setIsEditingUsername] = useState(false);
+  const [newUsername, setNewUsername] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     getUserInfo();
@@ -81,6 +87,48 @@ export default function ProfileScreen() {
     });
   }
 
+  const handleUpdateUsername = async () => {
+    if (!newUsername.trim() || newUsername.trim() === user.username) {
+      setIsEditingUsername(false);
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      const token = await authService.getToken();
+      if (!token) throw new Error("Authentication required");
+
+      // Use user ID in the URL path instead of /me
+      const response = await fetch(
+        `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/${user._id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            username: newUsername.trim(),
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update username");
+      }
+
+      // Update local state
+      setUser((prev) => ({ ...prev, username: newUsername.trim() }));
+      Alert.alert("Success", "Username updated successfully");
+    } catch (error) {
+      console.error("Error updating username:", error);
+      Alert.alert("Error", "Failed to update username. Please try again.");
+    } finally {
+      setIsUpdating(false);
+      setIsEditingUsername(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -124,7 +172,18 @@ export default function ProfileScreen() {
 
           {/* User Info */}
           <View style={styles.userInfo}>
-            <Text style={styles.username}>{user.username}</Text>
+            <View style={styles.usernameContainer}>
+              <Text style={styles.username}>{user.username}</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setNewUsername(user.username);
+                  setIsEditingUsername(true);
+                }}
+                style={styles.editButton}
+              >
+                <Ionicons name="pencil" size={18} color="#7C3AED" />
+              </TouchableOpacity>
+            </View>
             <Text style={styles.email}>{user.email}</Text>
             <Text style={styles.joinDate}>
               Joined {formatDate(user.createdAt)}
@@ -226,6 +285,42 @@ export default function ProfileScreen() {
         {/* Add padding at bottom to ensure content is visible above tab bar */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      <Modal
+        visible={isEditingUsername}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setIsEditingUsername(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Edit Username</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Enter new username"
+              value={newUsername}
+              onChangeText={setNewUsername}
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => setIsEditingUsername(false)}
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={handleUpdateUsername}
+                disabled={isUpdating}
+              >
+                <Text style={styles.modalButtonText}>
+                  {isUpdating ? "Updating..." : "Save"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -292,11 +387,20 @@ const styles = StyleSheet.create({
     marginLeft: 16,
     flex: 1,
   },
+  usernameContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
   username: {
     fontSize: 24,
     fontWeight: "bold",
     color: "white",
     marginBottom: 4,
+  },
+  editButton: {
+    marginLeft: 8,
+    padding: 2,
   },
   email: {
     fontSize: 14,
@@ -400,5 +504,49 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 24,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    width: "80%",
+    backgroundColor: "#1F2937",
+    borderRadius: 16,
+    padding: 20,
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "white",
+    marginBottom: 16,
+  },
+  modalInput: {
+    width: "100%",
+    backgroundColor: "#374151",
+    borderRadius: 8,
+    padding: 10,
+    color: "white",
+    marginBottom: 16,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  modalButton: {
+    flex: 1,
+    alignItems: "center",
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: "#7C3AED",
+    marginHorizontal: 5,
+  },
+  modalButtonText: {
+    color: "white",
+    fontWeight: "bold",
   },
 });
