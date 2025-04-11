@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Group = require('../models/Group');
 const User = require('../models/User');
+const { getGroupMembersById } = require('../components/infoComponent');
 
 const createGroup = async (req, res) => {
     try {
@@ -161,6 +162,19 @@ const getGroupById = async (req, res) => {
     }
 }
 
+const getGroupInfoById = async (req, res) => {
+    try {
+        console.log(req.params.id);
+        
+        const groups = await getGroupMembersById(req.params.id);
+        res.status(200).json(groups);
+
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).json({ error: 'Server error' });
+    }
+}
+
 const updateGroup = async (req, res) => {
     try {
         const group = await Group.findById(req.params.id);
@@ -311,6 +325,7 @@ const deleteGroup = async (req, res) => {
 module.exports = {
     createGroup,
     getAllGroups,
+    getGroupInfoById,
     confirmGroup,
     rejectGroup,
     getGroupById,

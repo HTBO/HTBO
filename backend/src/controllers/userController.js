@@ -7,6 +7,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
 const { generateToken, invalidateToken, refreshToken } = require('../auth/tokenService');
+const {getGroups, getSessions} = require('../components/infoComponent');
 
 
 const registerUser = async (req, res) => {
@@ -109,9 +110,7 @@ const getMySessions = async (req, res) => {
     try {
         const token = req.header('Authorization').replace('Bearer ', '');
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findById(decoded.id);
-        let sessions = await Session.find({ hostId: user._id });
-        sessions.push(...await Session.find({ 'participants.user': user._id }));
+        const sessions = await getSessions(decoded.id);
         res.status(200).json(sessions);
     } catch (err) {
         console.error(err.message);
@@ -123,9 +122,7 @@ const getMyGroups = async (req, res) => {
     try {
         const token = req.header('Authorization').replace('Bearer ', '');
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findById(decoded.id);
-        let groups = await Group.find({ ownerId: user._id });
-        groups.push(...await Group.find({ 'members.memberId': user._id }));
+        const groups = await getGroups(decoded.id);
         res.status(200).json(groups);
     } catch (err) {
         console.error(err.message);
@@ -158,6 +155,7 @@ const getMyGames = async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 }
+
 
 const getAllUsers = async (req, res) => {
     try {

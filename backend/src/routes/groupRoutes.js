@@ -7,6 +7,7 @@ router.post('/', verifyToken, groupController.createGroup);
 router.post('/confirm', verifyToken, groupController.confirmGroup);
 router.post('/reject', verifyToken, groupController.rejectGroup);
 router.get('/', verifyToken ,groupController.getAllGroups);
+router.get('/:id/members', verifyToken, groupController.getGroupInfoById);
 router.get('/:id', verifyToken, groupController.getGroupById);
 router.patch('/:id', verifyToken, checkGroupPermission, groupController.updateGroup);
 router.delete('/:id', verifyToken, checkGroupPermission, groupController.deleteGroup);
