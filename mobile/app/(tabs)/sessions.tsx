@@ -58,7 +58,6 @@ export default function SessionsScreen() {
       }
       
       const token = tokenObj;
-      console.log(tokenObj);
       if (!token) {
         console.error("No token found in auth data");
         setError("Authentication error");
@@ -181,7 +180,7 @@ export default function SessionsScreen() {
   const PendingSessionsSection = () => {
     const pendingSessions = sessions.filter(session => {
       const userStatus = session.participants?.find(participant => 
-        participant._id === currentUserId || participant._id === currentUserId
+        participant.user === currentUserId
       );
       return userStatus?.sessionStatus === "pending";
     });
@@ -279,7 +278,7 @@ export default function SessionsScreen() {
           {sessions
             .filter(session => {
               const userStatus = session.participants?.find(participant => 
-                participant._id === currentUserId || participant._id === currentUserId
+                participant.user === currentUserId
               );
               return userStatus?.sessionStatus !== "pending";
             })
