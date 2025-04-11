@@ -5,6 +5,8 @@ export type GroupMembershipStatus = 'owner' | 'member' | 'pending' | 'none'
 
 export const useGroupMembershipStatus = (targetGroup: Group | null, currentUser: User | null) => {
     const getGroupMembershipStatus = (): GroupMembershipStatus => {
+        console.log('targetGroup', targetGroup)
+        console.log('currentUser', currentUser)
         if (!targetGroup || !currentUser) return 'none'
 
         if (targetGroup.ownerId === currentUser._id) return 'owner'

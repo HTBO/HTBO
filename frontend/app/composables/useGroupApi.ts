@@ -116,11 +116,12 @@ export const useGroupApi = () => {
         }
     };
 
-    const joinGroup = async (groupId: string) => {
+    const joinGroup = async (groupId: string, userId: string) => {
         try {
-            const response = await $fetch(`${API_URL}/${groupId}/join`, {
-                method: 'PATCH',
-                headers: getAuthHeaders()
+            const response = await $fetch(`${API_URL}/confirm`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: { groupId, userId }
             });
             
             if (response) {

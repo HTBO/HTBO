@@ -18,7 +18,13 @@ const isLoading = ref(true);
 const group = ref<Group | null>(null);
 const members = ref<User[]>([]);
 
-const { isOwner, isMember, isPending, isNone } = useGroupMembershipStatus(group.value, authStore.user);
+const membershipStatus = computed(() => 
+  useGroupMembershipStatus(group.value, authStore.user)
+);
+
+const isOwner = () => membershipStatus.value.isOwner();
+const isMember = () => membershipStatus.value.isMember();
+const isPending = () => membershipStatus.value.isPending();
 
 const loadGroup = async () => {
     isLoading.value = true;
@@ -58,7 +64,8 @@ const loadMembers = async () => {
 
 const handleJoinGroup = async () => {
     try {
-        const success = await joinGroup(id as string);
+        if (!group.value || !authStore.user) return;
+        const success = await joinGroup(group.value?.id, authStore.user?._id);
         if (success) {
             await loadGroup();
             toast.add({
@@ -177,7 +184,7 @@ onMounted(loadGroup);
                 </button>
                 
                 <button 
-                    v-if="!isOwner() && isNone()"
+                    v-if="isPending()"
                     @click="handleJoinGroup"
                     class="flex items-center gap-2 bg-green-600 hover:bg-green-700 font-semibold py-2 px-4 rounded-lg duration-300"
                 >
@@ -186,16 +193,7 @@ onMounted(loadGroup);
                 </button>
                 
                 <button 
-                    v-if="!isOwner() && isPending()"
-                    class="flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700 font-semibold py-2 px-4 rounded-lg duration-300"
-                    disabled
-                >
-                    <Icon name="material-symbols:pending" size="1.25rem" />
-                    <span>Request Pending</span>
-                </button>
-                
-                <button 
-                    v-if="!isOwner() && isMember()"
+                    v-if="isMember()"
                     @click="handleLeaveGroup"
                     class="flex items-center gap-2 bg-red-600 hover:bg-red-700 font-semibold py-2 px-4 rounded-lg duration-300"
                 >
