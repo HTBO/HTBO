@@ -181,7 +181,7 @@ export default function SessionsScreen() {
   const PendingSessionsSection = () => {
     const pendingSessions = sessions.filter(session => {
       const userStatus = session.participants?.find(participant => 
-        participant.user === currentUserId || participant.user._id === currentUserId
+        participant._id === currentUserId || participant._id === currentUserId
       );
       return userStatus?.sessionStatus === "pending";
     });
@@ -279,7 +279,7 @@ export default function SessionsScreen() {
           {sessions
             .filter(session => {
               const userStatus = session.participants?.find(participant => 
-                participant.user === currentUserId || participant.user._id === currentUserId
+                participant._id === currentUserId || participant._id === currentUserId
               );
               return userStatus?.sessionStatus !== "pending";
             })
