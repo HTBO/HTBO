@@ -1,53 +1,13 @@
 const User = require('../models/User');
 const Session = require('../models/Session');
 const Group = require('../models/Group');
-const BlacklistToken = require('../models/BlacklistToken');
+const Game = require('../models/Game');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
-const crypto = require('crypto');
+const { generateToken, invalidateToken, refreshToken } = require('../auth/tokenService');
 
-const generateToken = (user) => {
-    const secret = process.env.JWT_SECRET
-    return jwt.sign(
-        { id: user._id },
-        secret,
-        { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
-    )
-}
-
-const invalidateToken = async (token) => {
-    const decoded = jwt.decode(token);
-    const expiresAt = new Date(decoded.exp * 1000);
-    await BlacklistToken.create({ token, expiresAt });
-  };
-
-const refreshToken = async (req, res) => {
-    try {
-        const token = req.header('Authorization')?.replace('Bearer ', '');
-        if (!token) return res.status(401).json({ error: 'Authorization required | ERRC: 010' });
-
-        // Verify and decode the old token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findById(decoded.id);
-        if (!user) return res.status(404).json({ error: 'User not found | ERRC: 031' });
-
-        // Invalidate the old token
-        await invalidateToken(token);
-
-        // Generate new token
-        const newToken = generateToken(user);
-        
-        res.status(200).json({ token: newToken });
-    } catch (err) {
-        console.error(err.message);
-        const errorMessage = err.name === 'TokenExpiredError' 
-            ? 'Login again | ERRC: 032' 
-            : 'Invalid token | ERRC: 033';
-        res.status(401).json({ error: errorMessage });
-    }
-};
 
 const registerUser = async (req, res) => {
     const errors = validationResult(req)
@@ -57,8 +17,8 @@ const registerUser = async (req, res) => {
 
         const existingUser = await User.findOne({ $or: [{ username }, { email }] })
         if (existingUser) return res.status(400).json({
-                error: existingUser.username === username ? 'Username already exists' : 'Email already registered'
-            })
+            error: existingUser.username === username ? 'Username already exists' : 'Email already registered'
+        })
 
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
@@ -80,45 +40,50 @@ const registerUser = async (req, res) => {
             token
         });
     } catch (err) {
-        console.log(`${err.message} reg err`);
+        console.error(`${err.message} reg err`);
         res.status(500).json({ error: 'Server error' });
-
     }
 };
 
 const loginUser = async (req, res) => {
     try {
         const { username, email, password } = req.body;
+        const oldToken = req.header('Authorization')?.replace('Bearer ', '');
+        if (oldToken)
+            await invalidateToken(oldToken);
         let user;
-        if(username) {
+        if (username) {
             user = await User.findOne({ username });
             if (!user) return res.status(401).json({ error: 'Username or password does not match | ERRC: 200' });
             login("Username")
-        } else if(email){
+        } else if (email) {
             user = await User.findOne({ email });
             if (!user) return res.status(401).json({ error: 'Email or password does not match | ERRC: 210' });
             login("Email")
         } else {
-            return res.status(401).json({error: "Please provide an email or username | ERRC: 220"})
+            return res.status(401).json({ error: "Please provide an email or username | ERRC: 220" })
         }
-        async function login (method) {
-            if(!password) return res.status(401).json({error: "Please provide the password | ERRC: 230"})
+        async function login(method) {
+            if (!password) return res.status(401).json({ error: "Please provide the password | ERRC: 230" });
             const passwordMatch = await bcrypt.compare(password, user.passwordHash);
             if (!passwordMatch) return res.status(401).json({ error: `${method} or password does not match | ERRC: 240` });
-            token = generateToken(user);
+            const expiresIn = req.body.stayLoggedIn ? '30d' : '1h';
+            const token = generateToken(user, expiresIn);
             res.status(200).json({ token })
         }
     } catch (err) {
-        console.log(`${err.message} login error.`);
+        console.error(`${err.message} login error.`);
         res.status(500).json({ error: 'Login failed' });
     }
 }
+
+
 
 const logoutUser = async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) return res.status(401).json({ error: 'Not authorized | ERRC: 010' });
-    
+
         await invalidateToken(token);
         res.status(200).json({ message: 'Logged out successfully' });
     } catch (err) {
@@ -131,8 +96,8 @@ const getMyInfo = async (req, res) => {
         const token = req.header('Authorization').replace('Bearer ', '');
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(decoded.id)
-        .select('-passwordHash')
-        .populate('friends.userId', 'username avatarUrl');
+            .select('-passwordHash')
+            .populate('friends.userId', 'username avatarUrl');
         res.status(200).json(user);
     } catch (err) {
         console.error(err.message);
@@ -141,13 +106,9 @@ const getMyInfo = async (req, res) => {
 }
 
 const getMySessions = async (req, res) => {
-    console.log('s');
     try {
-        
         const token = req.header('Authorization').replace('Bearer ', '');
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        console.log(decoded.id);
-        
         const user = await User.findById(decoded.id);
         let sessions = await Session.find({ hostId: user._id });
         sessions.push(...await Session.find({ 'participants.user': user._id }));
@@ -225,7 +186,7 @@ const getUserByUsername = async (req, res) => {
         const { username } = req.params;
         const user = await User.findOne({ username })
         if (!user) return res.status(404).json({ error: "User not found" });
-        res.status(200).json({ user })
+        res.status(200).json(user)
     } catch (error) {
         console.error(error.message);
         if (error.name === 'CastError') return res.status(400).json({ error: 'Invalid user ID format' });
@@ -240,7 +201,7 @@ const updateUser = async (req, res) => {
 
         if (req.body.friendAction) {
             const friendActions = ['pending', 'accepted', 'rejected']
-            const { action, friendId, status } = req.body.friendAction;
+            const { action, friendId, friendStatus } = req.body.friendAction;
 
             if (!mongoose.Types.ObjectId.isValid(friendId))
                 return res.status(400).json({ error: 'Invalid friend ID format' });
@@ -254,30 +215,29 @@ const updateUser = async (req, res) => {
                     if (user.friends.some(p => p.userId.toString() == friendId.toString()))
                         return res.status(400).json({ error: 'User already added' });
 
-                    await user.addFriend(friendId);
-                    await addedFriend.addFriend(user);
+                    await user.addFriend(friendId, true);
+                    await addedFriend.addFriend(user, false);
                     break;
                 case 'remove':
-                    // user.friends = user.friends.filter(friend => !friend.userId.equals(friendId));
-                    // addedFriend.friends = addedFriend.friends.filter(friend => !friend.userId.equals(user));
                     await user.removeFriend();
                     await addedFriend.removeFriend();
-                    // await user.save();
                     break;
                 case 'update-status':
                     const friend = user.friends.find(friend => friend.userId.equals(friendId));
-                    // console.log(req.params.id);
+
                     const addUser = addedFriend.friends.find(friend => friend.userId.equals(req.params.id))
+
                     if (!friend) return res.status(404).json({ error: 'Friend not found' });
-                    if (!friendActions.includes(status)) return res.status(400).json({ error: 'Invalid status' });
-                    if (status == "rejected") {
+                    if (!friendActions.includes(friendStatus)) return res.status(400).json({ error: 'Invalid status' });
+
+                    if (friendStatus == "rejected") {
                         await user.removeFriend();
                         await addedFriend.removeFriend();
                     } else {
-                        friend.status = status;
-                        addUser.status = status;
-                        await user.statusUpdate();
-                        await addedFriend.statusUpdate();
+                        friend.friendStatus = friendStatus;
+                        addUser.friendStatus = friendStatus;
+                        await user.statusUpdate(user.id, "accepted");
+                        await addedFriend.statusUpdate(friendId, "accepted");
                     }
                     break;
 
@@ -290,23 +250,14 @@ const updateUser = async (req, res) => {
                 return res.status(400).json({ error: 'Invalid game ID' });
             switch (action) {
                 case "add":
-                    // Check if user already has the game (using ObjectId)
-                    if (user.games.some(g => g.gameId.equals(gameObjectId))) {
+                    if (user.games.some(g => g.gameId.equals(gameObjectId)))
                         return res.status(400).json({ error: 'Game already in collection' });
-                    }
                     await user.editUserGames(gameObjectId, "add");
                     break;
 
                 case "remove":
-                    // Check if user has the game (using ObjectId)
-                    if (!user.games.some(g => g.gameId.equals(gameObjectId))) {
-                        console.log(user.games);
-                        console.log(gameObjectId);
-
-
+                    if (!user.games.some(g => g.gameId.equals(gameObjectId)))
                         return res.status(400).json({ error: 'Game not in collection' });
-                    }
-                    // await user.removeGame(gameObjectId);
                     await user.editUserGames(gameObjectId, "remove");
                     break;
 
@@ -314,23 +265,34 @@ const updateUser = async (req, res) => {
                     return res.status(400).json({ error: 'Invalid game action' });
             }
         } else if (req.body.sessionAction) {
-
             const { sessionId, action } = req.body.sessionAction;
             if (!mongoose.Types.ObjectId.isValid(sessionId))
                 return res.status(400).json({ error: 'Invalid session ID' });
             switch (action) {
                 case "add":
-                    console.log("adding: " + sessionId);
                     await user.addSession(sessionId);
                     break;
                 case "remove":
-                    console.log("removing: " + sessionId);
-
                     await user.removeSession(sessionId);
                     break;
                 default:
-                    break;
+                    return res.status(400).json({ error: 'Invalid session action' });
             }
+        } else if (req.body.groupAction) {
+            const { groupId, action } = req.body.groupAction;
+            if (!mongoose.Types.ObjectId.isValid(groupId))
+                return res.status(400).json({ error: 'Invalid group ID' });
+            switch (action) {
+                case "accept": {
+                    await user.addGroup(groupId);
+                    break;
+                }
+                case "remove":
+                    await user.removeGroup(groupId);
+                    break;
+                default:
+                    return res.status(400).json({ error: 'Invalid group action' });
+            };
         } else {
             const updates = Object.keys(req.body);
             const allowedUpdates = ['username', 'email'];
@@ -338,9 +300,7 @@ const updateUser = async (req, res) => {
                 allowedUpdates.includes(update)
             );
 
-            if (!isValidOperation) {
-                return res.status(400).json({ error: 'Invalid updates!' });
-            }
+            if (!isValidOperation) return res.status(400).json({ error: 'Invalid updates!' });
 
             updates.forEach(update => user[update] = req.body[update]);
             await user.save();
@@ -354,13 +314,11 @@ const updateUser = async (req, res) => {
     } catch (error) {
         console.error(error.message);
 
-        if (error.name === 'CastError') {
+        if (error.name === 'CastError')
             return res.status(400).json({ error: 'Invalid user ID format' });
-        }
 
-        if (error.name === 'ValidationError') {
+        if (error.name === 'ValidationError')
             return res.status(400).json({ error: error.message });
-        }
 
         if (error.code === 11000) {
             const field = Object.keys(error.keyPattern)[0];
@@ -373,7 +331,7 @@ const updateUser = async (req, res) => {
 
 const deleteUser = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id);        
+        const user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ error: 'User not found' });
 
         let stats = {
@@ -384,19 +342,19 @@ const deleteUser = async (req, res) => {
             usersUpdated: 0
         };
         const hostSessions = await Session.find({ hostId: user._id });
-        const groupsOwned = await Group.find({ownerId: user._id})
+        const groupsOwned = await Group.find({ ownerId: user._id })
         if (hostSessions.length > 0) {
             const sessionIds = hostSessions.map(session => session._id);
 
             const allParticipants = [...new Set(
-                hostSessions.flatMap(session => 
+                hostSessions.flatMap(session =>
                     session.participants.map(p => p.user)
                 )
             )];
 
             const userUpdateResult = await User.updateMany(
                 { _id: { $in: allParticipants } },
-                { $pull: { sessions: { sessionId: { $in: sessionIds } } }  }
+                { $pull: { sessions: { sessionId: { $in: sessionIds } } } }
             );
             stats.usersUpdated += userUpdateResult.modifiedCount;
 
@@ -427,7 +385,6 @@ const deleteUser = async (req, res) => {
             { $pull: { participants: { user: user._id } } }
         );
         stats.participantSessionsCleaned += sessionUpdateResult.modifiedCount;
-        // User.findByIdAndDelete(req.params.id);
         await User.findByIdAndDelete(req.params.id);
         res.status(200).json({
             message: 'User deleted successfully',
@@ -437,8 +394,8 @@ const deleteUser = async (req, res) => {
     } catch (error) {
         console.error('Deletion error:', error);
         res.status(error.name === 'CastError' ? 400 : 500).json({
-            error: error.name === 'CastError' 
-                ? 'Invalid user ID format' 
+            error: error.name === 'CastError'
+                ? 'Invalid user ID format'
                 : 'Server error'
         });
     }

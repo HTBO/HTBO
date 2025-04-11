@@ -35,7 +35,7 @@ beforeEach(async () => {
         passwordHash: 'password123'
     });
     hostId = host._id;
-    gameId = new mongoose.Types.ObjectId();
+    gameId = 302;
     session = await Session.create({
         hostId: hostId,
         gameId: gameId,
