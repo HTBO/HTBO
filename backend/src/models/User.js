@@ -96,12 +96,6 @@ const userSchema = new mongoose.Schema({
     }
 }, {_id: false });
 
-userSchema.pre('save', function (next) {
-    if (this.isModified('username')) {
-        this.username = this.username.toLowerCase();
-    }
-    next();
-});
 
 userSchema.methods.addFriend = function (userId, initiator) {
     if (!this.friends.some(f => f.userId.equals(userId)))

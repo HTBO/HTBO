@@ -236,8 +236,8 @@ const updateUser = async (req, res) => {
                     } else {
                         friend.friendStatus = friendStatus;
                         addUser.friendStatus = friendStatus;
-                        await user.statusUpdate(user.id, "accepted");
-                        await addedFriend.statusUpdate(friendId, "accepted");
+                        await user.statusUpdate(friendId, "accepted");
+                        await addedFriend.statusUpdate(user._id, "accepted");
                     }
                     break;
 
