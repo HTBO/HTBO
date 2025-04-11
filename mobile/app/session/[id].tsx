@@ -216,7 +216,7 @@ export default function SessionDetailScreen() {
         setError("Authentication required");
         return;
       }
-
+      console.log("Deleting session with ID:", id);
       const response = await fetch(
         `https://htbo-production.up.railway.app/api/sessions/${id}`,
         {

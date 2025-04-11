@@ -19,12 +19,12 @@ import {
 } from "@/models/SessionModel";
 
 export default function SessionsScreen() {
-  // Update type to use SessionList
   const [sessions, setSessions] = useState<SessionList>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [processingSessions, setProcessingSessions] = useState<{[key: string]: boolean}>({});
+  const [currentUserId, setCurrentUserId] = useState<string>("");
 
-  // Change from accepting just sessionId to accepting the full session object
   const handleCardPress = (session: SessionModel) => {
     router.push({
       pathname: "/session/[id]",
@@ -36,12 +36,21 @@ export default function SessionsScreen() {
     getUserSessionInfo();
   }, []);
 
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const userData = await authService.getUserData();
+      if (userData) {
+        setCurrentUserId(userData._id || userData.id);
+      }
+    };
+    getCurrentUser();
+  }, []);
+
   async function getUserSessionInfo() {
     try {
       setIsLoading(true);
 
       const tokenObj = await authService.getToken();
-      // console.log("Token object:", tokenObj);
       if (!tokenObj) {
         console.error("No auth data found");
         setError("Authentication required");
@@ -74,9 +83,7 @@ export default function SessionsScreen() {
       }
 
       const sessionsData = await response.json();
-      // console.log("Sessions data:", sessionsData);
 
-      // Format the API response using our helper function
       const formattedSessions = sessionsData.map((session: any) =>
         formatSession(session)
       );
@@ -88,6 +95,149 @@ export default function SessionsScreen() {
       setIsLoading(false);
     }
   }
+
+  const acceptSessionInvite = async (sessionId: string): Promise<boolean> => {
+    if (processingSessions[sessionId]) return false;
+    
+    setProcessingSessions(prev => ({ ...prev, [sessionId]: true }));
+    
+    try {
+      const token = await authService.getToken();
+      
+      if (!token || !currentUserId) {
+        throw new Error("Authentication required");
+      }
+
+      const response = await fetch(
+        `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/sessions/confirm`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: currentUserId,
+            sessionId: sessionId
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to accept session invite");
+      }
+
+      await getUserSessionInfo();
+      return true;
+    } catch (error) {
+      console.error("Error accepting session invite:", error);
+      return false;
+    } finally {
+      setProcessingSessions(prev => ({ ...prev, [sessionId]: false }));
+    }
+  };
+
+  const declineSessionInvite = async (sessionId: string): Promise<boolean> => {
+    if (processingSessions[sessionId]) return false;
+    
+    setProcessingSessions(prev => ({ ...prev, [sessionId]: true }));
+    
+    try {
+      const token = await authService.getToken();
+      
+      if (!token || !currentUserId) {
+        throw new Error("Authentication required");
+      }
+
+      const response = await fetch(
+        `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/sessions/reject`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: currentUserId,
+            sessionId: sessionId
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to decline session invite");
+      }
+
+      await getUserSessionInfo();
+      return true;
+    } catch (error) {
+      console.error("Error declining session invite:", error);
+      return false;
+    } finally {
+      setProcessingSessions(prev => ({ ...prev, [sessionId]: false }));
+    }
+  };
+
+  const PendingSessionsSection = () => {
+    const pendingSessions = sessions.filter(session => {
+      const userStatus = session.participants?.find(participant => 
+        participant.user === currentUserId || participant.user._id === currentUserId
+      );
+      return userStatus?.sessionStatus === "pending";
+    });
+
+    if (!currentUserId || pendingSessions.length === 0) return null;
+
+    return (
+      <View style={styles.pendingSection}>
+        <Text style={styles.sectionHeader}>Pending Session Invites</Text>
+        {pendingSessions.map((session) => (
+          <View key={`pending-${session._id}`} style={styles.pendingCard}>
+            <View style={styles.pendingCardContent}>
+              <Image 
+                source={session.gameImage || require("@/assets/images/games/fifa.png")} 
+                style={styles.pendingGameImage} 
+              />
+              <View style={styles.pendingTextContent}>
+                <Text style={styles.pendingGameTitle}>{session.gameName}</Text>
+                <Text style={styles.pendingDescription} numberOfLines={1}>
+                  {session.description || "Untitled Session"}
+                </Text>
+                <Text style={styles.pendingDate}>
+                  {formatDate(session.scheduledAt)}
+                </Text>
+              </View>
+            </View>
+            
+            <View style={styles.pendingActions}>
+              <TouchableOpacity
+                style={styles.declineButton}
+                onPress={() => declineSessionInvite(session._id)}
+                disabled={processingSessions[session._id]}
+              >
+                {processingSessions[session._id] ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.declineButtonText}>Decline</Text>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.acceptButton}
+                onPress={() => acceptSessionInvite(session._id)}
+                disabled={processingSessions[session._id]}
+              >
+                {processingSessions[session._id] ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.acceptButtonText}>Accept</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))}
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -125,28 +275,35 @@ export default function SessionsScreen() {
         </View>
       ) : (
         <ScrollView style={styles.scrollView}>
-          {sessions.map((session) => (
-            <SessionCard
-              key={session._id}
-              gameImage={
-                session.gameImage || require("@/assets/images/games/fifa.png")
-              }
-              gameTitle={session.gameName || "Game Session"}
-              title={session.description || "Untitled Session"}
-              date={formatDate(session.scheduledAt) || "No date set"}
-              participants={session.participants?.length || 0}
-              onPress={() => handleCardPress(session)} // Pass the entire session object
-            />
-          ))}
+          <PendingSessionsSection />
+          {sessions
+            .filter(session => {
+              const userStatus = session.participants?.find(participant => 
+                participant.user === currentUserId || participant.user._id === currentUserId
+              );
+              return userStatus?.sessionStatus !== "pending";
+            })
+            .map((session) => (
+              <SessionCard
+                key={session._id}
+                gameImage={
+                  session.gameImage || require("@/assets/images/games/fifa.png")
+                }
+                gameTitle={session.gameName || "Game Session"}
+                title={session.description || "Untitled Session"}
+                date={formatDate(session.scheduledAt) || "No date set"}
+                participants={session.participants?.length || 0}
+                onPress={() => handleCardPress(session)}
+              />
+            ))}
         </ScrollView>
       )}
     </SafeAreaView>
   );
 }
 
-// Update SessionCardProps to use proper types
 interface SessionCardProps {
-  gameImage: any; // Keep as any for now since it could be various types
+  gameImage: any;
   gameTitle: string;
   title: string;
   date: string;
@@ -154,7 +311,6 @@ interface SessionCardProps {
   onPress: () => void;
 }
 
-// Modified Session Card Component with image
 const SessionCard = ({
   gameImage,
   gameTitle,
@@ -166,32 +322,21 @@ const SessionCard = ({
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.cardContent}>
-        {/* Game Image */}
         <Image source={gameImage} style={styles.gameImage} />
-
-        {/* Content */}
         <View style={styles.textContent}>
-          {/* Game Title */}
           <Text style={styles.gameTitle}>{gameTitle}</Text>
-
-          {/* Session Title */}
           <Text style={styles.cardTitle}>{title}</Text>
-
-          {/* Session Details */}
           <View style={styles.cardInfo}>
             <View style={styles.infoItem}>
               <Ionicons name="calendar-outline" size={16} color="#9CA3AF" />
               <Text style={styles.infoText}>{date}</Text>
             </View>
-
             <View style={styles.infoItem}>
               <Ionicons name="people-outline" size={16} color="#9CA3AF" />
               <Text style={styles.infoText}>{participants} participants</Text>
             </View>
           </View>
         </View>
-
-        {/* Arrow Icon */}
         <Ionicons
           name="chevron-forward"
           size={20}
@@ -203,7 +348,6 @@ const SessionCard = ({
   );
 };
 
-// Format date for better display
 function formatDate(dateString: string | undefined) {
   if (!dateString) return "";
   const date = new Date(dateString);
@@ -354,5 +498,91 @@ const styles = StyleSheet.create({
   createButtonText: {
     color: "white",
     fontSize: 16,
+  },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  acceptButton: {
+    backgroundColor: '#22C55E',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 6,
+    minWidth: 70,
+    alignItems: 'center',
+  },
+  acceptButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  declineButton: {
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 6,
+    minWidth: 70,
+    alignItems: 'center',
+  },
+  declineButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  pendingSection: {
+    marginBottom: 24,
+  },
+  pendingCard: {
+    backgroundColor: "#1F2937",
+    borderRadius: 12,
+    padding: 12, // Slightly reduced padding
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#374151",
+  },
+  pendingCardContent: {
+    flexDirection: "row",
+    alignItems: "center", // Center items vertically
+    marginBottom: 12,
+  },
+  pendingGameImage: {
+    width: 54,
+    height: 54,
+    borderRadius: 8,
+    marginRight: 12,
+    backgroundColor: "#374151", // Add a background color for empty images
+  },
+  pendingTextContent: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  pendingGameTitle: {
+    fontSize: 14,
+    color: "#7C3AED",
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  pendingDescription: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "white",
+    marginBottom: 4,
+  },
+  pendingDate: {
+    fontSize: 14,
+    color: "#9CA3AF",
+  },
+  pendingActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 8,
+  },
+  sectionHeader: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#9CA3AF",
+    marginBottom: 12,
+    marginHorizontal: 4,
   },
 });
