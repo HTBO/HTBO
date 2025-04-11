@@ -6,10 +6,8 @@ export const useUserStatus = () => {
   const getUserStatus = (targetUser: any, currentUser: any): UserStatus => {
     if (!targetUser || !currentUser) return 'none'
     
-    // Check if the target user is the current user
     if (targetUser._id === currentUser._id) return 'me'
 
-    // Check friend status
     const friend = currentUser.friends?.find((friend: Friend) => {
       const id = typeof friend.userId === 'string' ? friend.userId : friend.userId._id
       return id === targetUser._id

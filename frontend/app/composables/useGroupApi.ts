@@ -16,7 +16,7 @@ export const useGroupApi = () => {
     };
 
     const getMyGroups = () => {
-        return useLazyFetch<Group[]>(`${USER_API_URL}/mygroups`, {
+        return $fetch<Group[]>(`${USER_API_URL}/mygroups`, {
             headers: getAuthHeaders(),
         });
     };
@@ -26,6 +26,15 @@ export const useGroupApi = () => {
             headers: getAuthHeaders(),
         });
     };
+
+    const getGroupMembers = async (members: Array<string>) => {
+        return await Promise.all(members.map(async (memberId) => {
+            const member = await $fetch(`${USER_API_URL}/${memberId}`, {
+                headers: getAuthHeaders(),
+            });
+            return member;
+        }));
+    }
 
     const createGroup = async (groupData: Partial<Group>) => {
         try {
@@ -191,6 +200,7 @@ export const useGroupApi = () => {
     return {
         getAllGroups,
         getMyGroups,
+        getGroupMembers,
         getGroupById,
         createGroup,
         updateGroup,

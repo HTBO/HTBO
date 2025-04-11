@@ -29,7 +29,7 @@ const emptyMessage = computed(() => {
                          hasSearch && !hasFilteredGroups ? `No groups match "${searchValue.value}"` : 
                          'No groups to display';
             
-        case 'My Groups':
+        case 'Owned Groups':
             return hasSearch && !hasFilteredGroups ? `No owned groups match "${searchValue.value}"` : 
                          'You haven\'t created any groups yet';
             
@@ -55,7 +55,7 @@ const displayedGroups = computed(() => {
                 )
             );
             
-        case 'My Groups':
+        case 'Owned Groups':
             return filteredGroups.value.filter(group => group.ownerId === userId);
             
         case 'Group Invites':
@@ -73,8 +73,13 @@ const displayedGroups = computed(() => {
 const loadGroups = async () => {
     isLoading.value = true;
     try {
-        const groupResponse = await useGroupApi().getAllGroups();
-        groups.value = groupResponse || [];
+        if (!authStore.user) return;
+        const groupResponses = await Promise.all(authStore.user?.groups
+            .map(async group => {
+                return useGroupApi().getGroupById(group.groupId);
+            })
+        )
+        groups.value = groupResponses || [];
         filteredGroups.value = groups.value;
     } catch (error) {
         console.error('Error loading groups:', error);

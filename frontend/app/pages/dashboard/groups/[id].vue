@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Group } from '~/types/Group';
+import type { User } from '~/types/User';
 
 definePageMeta({
     layout: 'dashboard',
@@ -11,33 +12,20 @@ const router = useRouter();
 const { id } = route.params;
 const authStore = useAuthStore();
 const toast = useToast();
-const { getGroupById, joinGroup, leaveGroup, updateGroup, deleteGroup } = useGroupApi();
+const { getGroupById, getGroupMembers, joinGroup, leaveGroup, updateGroup, deleteGroup } = useGroupApi();
 
 const isLoading = ref(true);
 const group = ref<Group | null>(null);
-const isOwner = ref(false);
-const membershipStatus = ref('none');
+const members = ref<User[]>([]);
+
+const { isOwner, isMember, isPending, isNone } = useGroupMembershipStatus(group.value, authStore.user);
 
 const loadGroup = async () => {
     isLoading.value = true;
     try {
         const groupResponse = await getGroupById(id as string);
-        
         group.value = groupResponse || [];
-        
-        // Check if current user is the owner
-        if (group.value && authStore.user) {
-            isOwner.value = group.value.ownerId === authStore.user._id;
-            
-            // Check user's membership status
-            const membership = group.value.members.find(member => 
-                typeof member.memberId === 'string' 
-                    ? member.memberId === authStore.user?._id 
-                    : member.memberId._id === authStore.user?._id
-            );
-            
-            membershipStatus.value = membership ? membership.groupStatus : 'none';
-        }
+        loadMembers();
     } catch (error) {
         console.error('Error loading group:', error);
         toast.add({
@@ -48,6 +36,23 @@ const loadGroup = async () => {
         router.push('/dashboard/groups');
     } finally {
         isLoading.value = false;
+    }
+};
+
+const loadMembers = async () => {
+    try {
+        const memberIds = group.value?.members.map(member => 
+            typeof member.memberId === 'string' ? member.memberId : member.memberId._id
+        ) || [];
+        const membersResponse = await getGroupMembers(memberIds);
+        members.value = membersResponse || [];
+    } catch (error) {
+        console.error('Error loading group members:', error);
+        toast.add({
+            title: 'Error',
+            description: 'Failed to load group members',
+            color: 'error'
+        });
     }
 };
 
@@ -155,7 +160,7 @@ onMounted(loadGroup);
             
             <div class="flex gap-3">
                 <button 
-                    v-if="isOwner"
+                    v-if="isOwner()"
                     @click="handleDeleteGroup"
                     class="flex items-center gap-2 bg-red-600 hover:bg-red-700 font-semibold py-2 px-4 rounded-lg duration-300"
                 >
@@ -164,7 +169,7 @@ onMounted(loadGroup);
                 </button>
                 
                 <button 
-                    v-if="isOwner"
+                    v-if="isOwner()"
                     class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 font-semibold py-2 px-4 rounded-lg duration-300"
                 >
                     <Icon name="material-symbols:edit" size="1.25rem" />
@@ -172,7 +177,7 @@ onMounted(loadGroup);
                 </button>
                 
                 <button 
-                    v-if="!isOwner && membershipStatus === 'none'"
+                    v-if="!isOwner() && isNone()"
                     @click="handleJoinGroup"
                     class="flex items-center gap-2 bg-green-600 hover:bg-green-700 font-semibold py-2 px-4 rounded-lg duration-300"
                 >
@@ -181,7 +186,7 @@ onMounted(loadGroup);
                 </button>
                 
                 <button 
-                    v-if="!isOwner && membershipStatus === 'pending'"
+                    v-if="!isOwner() && isPending()"
                     class="flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700 font-semibold py-2 px-4 rounded-lg duration-300"
                     disabled
                 >
@@ -190,7 +195,7 @@ onMounted(loadGroup);
                 </button>
                 
                 <button 
-                    v-if="!isOwner && membershipStatus === 'accepted'"
+                    v-if="!isOwner() && isMember()"
                     @click="handleLeaveGroup"
                     class="flex items-center gap-2 bg-red-600 hover:bg-red-700 font-semibold py-2 px-4 rounded-lg duration-300"
                 >
@@ -224,15 +229,12 @@ onMounted(loadGroup);
                         <div>
                             <h3 class="text-gray-400 text-sm">Status</h3>
                             <div class="flex items-center mt-1">
-                                <span v-if="isOwner" class="text-primary-500 font-medium">Owner</span>
-                                <span v-else-if="membershipStatus === 'accepted'" class="text-green-500 font-medium">
+                                <span v-if="isOwner()" class="text-primary-500 font-medium">Owner</span>
+                                <span v-else-if="isMember()" class="text-green-500 font-medium">
                                     Member
                                 </span>
-                                <span v-else-if="membershipStatus === 'pending'" class="text-yellow-500 font-medium">
+                                <span v-else-if="isPending()" class="text-yellow-500 font-medium">
                                     Request Pending
-                                </span>
-                                <span v-else-if="membershipStatus === 'rejected'" class="text-red-500 font-medium">
-                                    Rejected
                                 </span>
                                 <span v-else class="text-gray-400 font-medium">Not a Member</span>
                             </div>
@@ -271,7 +273,7 @@ onMounted(loadGroup);
                     </div>
                 </div>
                 
-                <div v-if="isOwner && group.members.some(m => m.groupStatus === 'pending')" class="bg-surface-800/70 p-6 rounded-2xl">
+                <div v-if="isOwner() && group.members.some(m => m.groupStatus === 'pending')" class="bg-surface-800/70 p-6 rounded-2xl">
                     <h2 class="text-xl font-semibold mb-4">Pending Requests</h2>
                     <div class="space-y-2">
                         <div v-for="member in group.members.filter(m => m.groupStatus === 'pending')" :key="typeof member.memberId === 'string' ? member.memberId : member.memberId._id" class="flex justify-between items-center p-2 bg-surface-700/50 rounded-lg">

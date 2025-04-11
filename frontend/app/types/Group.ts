@@ -5,9 +5,11 @@ export interface Group {
     name: string
     description: string
     ownerId: string
-    members: Array<{
-        memberId: string | User
-        groupStatus: 'pending' | 'accepted' | 'rejected' | 'owner'
-    }>
+    members: Array<GroupMember>
     createdAt: Date
+}
+
+export interface GroupMember {
+    memberId: string | User
+    groupStatus: 'pending' | 'accepted' | 'rejected' | 'owner'
 }

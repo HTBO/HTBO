@@ -33,11 +33,22 @@ export const groupTabs: Tab[] = [
         component: null,
     },
     {
-        name: 'My Groups',
+        name: 'Owned Groups',
         component: null,
     },
     {
         name: 'Group Invites',
+        component: null,
+    }
+];
+
+export const friendsTabs: Tab[] = [
+    {
+        name: 'Friends',
+        component: null,
+    },
+    {
+        name: 'Friend Requests',
         component: null,
     }
 ];
