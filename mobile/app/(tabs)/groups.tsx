@@ -33,6 +33,7 @@ export default function SocialScreen() {
   const [isLoadingGroups, setIsLoadingGroups] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [processingFriends, setProcessingFriends] = useState<{[key: string]: boolean}>({});
+  const [processingGroups, setProcessingGroups] = useState<{[key: string]: boolean}>({});
 
   const friendsInitialized = useRef(false);
   const groupsInitialized = useRef(false);
@@ -518,6 +519,90 @@ export default function SocialScreen() {
     }
   };
 
+  const acceptGroupInvite = async (groupId: string): Promise<boolean> => {
+    if (processingGroups[groupId]) return false;
+    
+    setProcessingGroups(prev => ({ ...prev, [groupId]: true }));
+    
+    try {
+      const token = await authService.getToken();
+      const userData = await authService.getUserData();
+      
+      if (!token || !userData) {
+        throw new Error("Authentication required");
+      }
+
+      const response = await fetch(
+        `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/groups/confirm`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: userData._id,
+            groupId: groupId
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to accept group invite");
+      }
+
+      await fetchGroups();
+      return true;
+    } catch (error) {
+      console.error("Error accepting group invite:", error);
+      return false;
+    } finally {
+      setProcessingGroups(prev => ({ ...prev, [groupId]: false }));
+    }
+  };
+
+  const declineGroupInvite = async (groupId: string): Promise<boolean> => {
+    if (processingGroups[groupId]) return false;
+    
+    setProcessingGroups(prev => ({ ...prev, [groupId]: true }));
+    
+    try {
+      const token = await authService.getToken();
+      const userData = await authService.getUserData();
+      
+      if (!token || !userData) {
+        throw new Error("Authentication required");
+      }
+
+      const response = await fetch(
+        `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/groups/reject`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: userData._id,
+            groupId: groupId
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to decline group invite");
+      }
+
+      await fetchGroups();
+      return true;
+    } catch (error) {
+      console.error("Error declining group invite:", error);
+      return false;
+    } finally {
+      setProcessingGroups(prev => ({ ...prev, [groupId]: false }));
+    }
+  };
+
   const handleRetryFriends = () => {
     setFriends([]);
     setDetailedFriends([]);
@@ -781,6 +866,79 @@ export default function SocialScreen() {
     );
   };
 
+  const PendingGroupsSection = () => {
+    const [currentUserId, setCurrentUserId] = useState<string>("");
+
+    useEffect(() => {
+      const getUserId = async () => {
+        const userData = await authService.getUserData();
+        if (userData) {
+          setCurrentUserId(userData._id || userData.id); // Handle both _id and id
+        }
+      };
+      getUserId();
+    }, []);
+
+    // Debug logs
+    console.log('Current user ID:', currentUserId);
+    console.log('All groups:', groups);
+
+    const pendingGroups = groups.filter(group => {
+      const memberStatus = group.members.find(member => 
+        member.memberId === currentUserId
+      );
+      console.log(`Group ${group.id} member status:`, memberStatus);
+      return memberStatus?.groupStatus === "pending";
+    });
+
+    console.log('Pending groups:', pendingGroups);
+
+    if (!currentUserId || pendingGroups.length === 0) return null;
+
+    return (
+      <>
+        <Text style={styles.sectionHeader}>Pending Group Invites</Text>
+        {pendingGroups.map((group) => (
+          <View key={`pending-group-${group.id}`} style={styles.listItem}>
+            <Image style={styles.avatar} />
+            <View style={styles.itemInfo}>
+              <View style={styles.itemHeader}>
+                <Text style={styles.itemName}>{group.name}</Text>
+              </View>
+              <Text style={styles.lastMessage} numberOfLines={1}>
+                {group.description || "No description"}
+              </Text>
+            </View>
+            <View style={styles.actionButtonsContainer}>
+              <TouchableOpacity
+                style={styles.declineButton}
+                onPress={() => declineGroupInvite(group.id)}
+                disabled={processingGroups[group.id]}
+              >
+                {processingGroups[group.id] ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.declineButtonText}>Decline</Text>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.acceptButton}
+                onPress={() => acceptGroupInvite(group.id)}
+                disabled={processingGroups[group.id]}
+              >
+                {processingGroups[group.id] ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.acceptButtonText}>Accept</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))}
+      </>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -932,22 +1090,28 @@ export default function SocialScreen() {
               </TouchableOpacity>
             </View>
           ) : (
-            <FlatList
-              data={filteredGroups}
-              keyExtractor={(item) => item.id}
-              renderItem={renderGroupItem}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.listContent}
-              ListEmptyComponent={
-                <View style={styles.emptyContainer}>
-                  <Text style={styles.emptyText}>
-                    {searchQuery
-                      ? "No groups found"
-                      : "No groups yet. Create a group to get started!"}
-                  </Text>
-                </View>
-              }
-            />
+            <>
+              <PendingGroupsSection />
+              <Text style={[styles.sectionHeader, { marginTop: 10 }]}>
+                My Groups ({filteredGroups.length})
+              </Text>
+              <FlatList
+                data={filteredGroups}
+                keyExtractor={(item) => item.id}
+                renderItem={renderGroupItem}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.listContent}
+                ListEmptyComponent={
+                  <View style={styles.emptyContainer}>
+                    <Text style={styles.emptyText}>
+                      {searchQuery
+                        ? "No groups found"
+                        : "No groups yet. Create a group to get started!"}
+                    </Text>
+                  </View>
+                }
+              />
+            </>
           )}
         </>
       )}
