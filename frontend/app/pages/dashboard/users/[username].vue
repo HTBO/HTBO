@@ -87,6 +87,9 @@ const activeTab = ref<Tab | null>(profileTabs[0] ?? null)
                             <button v-else-if="userStatus === 'pending'" @click="cancelFriend" class="w-28 flex justify-center items-center gap-2 border border-yellow-500 text-yellow-500 hover:border-transparent hover:text-white hover:bg-red-600/70 font-semibold py-2 px-4 rounded-lg duration-300 group">
                                 <span><span class="group-hover:hidden">Pending</span><span class="hidden group-hover:inline">Cancel</span></span>
                             </button>
+                            <button v-else-if="userStatus === 'accepted'" @click="cancelFriend" class="flex items-center gap-2 border border-green-500 text-green-500 hover:border-transparent hover:text-white hover:bg-red-600 font-semibold py-2 px-4 rounded-lg duration-300 group">
+                                <span><span class="group-hover:hidden">Friend</span><span class="hidden group-hover:inline">Remove</span></span>
+                            </button>
                         </ClientOnly>
                     </div>
                 </div>
