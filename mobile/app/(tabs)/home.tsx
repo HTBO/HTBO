@@ -1,49 +1,51 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function HomeScreen() {
-  const handleLogout = () => {
-    router.replace('/login');
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>HTBO App</Text>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Ionicons name="log-out-outline" size={24} color="white" />
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.headerTitle}>HTBO App</Text>
 
         <View style={styles.welcomeSection}>
-          <Text style={styles.welcomeTitle}>Welcome Back!</Text>
-          <Text style={styles.welcomeSubtitle}>What would you like to do today?</Text>
+          <Text style={styles.welcomeTitle}>Welcome to HTBO!</Text>
+          <Text style={styles.welcomeSubtitle}>Your Gaming Social Hub</Text>
         </View>
 
-        <View style={styles.cardsContainer}>
-          {/* Feature Card 1 */}
-          <TouchableOpacity style={styles.card}>
-            <View style={[styles.cardIcon, { backgroundColor: '#4F46E5' }]}>
-              <Ionicons name="calendar-outline" size={28} color="white" />
-            </View>
-            <Text style={styles.cardTitle}>My Schedule</Text>
-            <Text style={styles.cardDescription}>View upcoming appointments and events</Text>
-          </TouchableOpacity>
+        <View style={styles.featuresContainer}>
+          <View style={styles.featureCard}>
+            <Ionicons name="people-outline" size={32} color="#4F46E5" />
+            <Text style={styles.featureTitle}>Connect with Friends</Text>
+            <Text style={styles.featureDescription}>
+              Add friends, create gaming groups, and build your gaming community
+            </Text>
+          </View>
 
-          {/* Feature Card 2 */}
-          <TouchableOpacity style={styles.card}>
-            <View style={[styles.cardIcon, { backgroundColor: '#10B981' }]}>
-              <Ionicons name="document-text-outline" size={28} color="white" />
-            </View>
-            <Text style={styles.cardTitle}>Documents</Text>
-            <Text style={styles.cardDescription}>Access important files and records</Text>
-          </TouchableOpacity>
+          <View style={styles.featureCard}>
+            <Ionicons name="game-controller-outline" size={32} color="#10B981" />
+            <Text style={styles.featureTitle}>Extensive Game Library</Text>
+            <Text style={styles.featureDescription}>
+              Browse and discover games from our vast collection of titles
+            </Text>
+          </View>
 
-          
+          <View style={styles.featureCard}>
+            <Ionicons name="calendar-outline" size={32} color="#F59E0B" />
+            <Text style={styles.featureTitle}>Gaming Sessions</Text>
+            <Text style={styles.featureDescription}>
+              Schedule and organize gaming sessions with your friends and groups
+            </Text>
+          </View>
+
+          <View style={styles.featureCard}>
+            <Ionicons name="search-outline" size={32} color="#EC4899" />
+            <Text style={styles.featureTitle}>Find Players</Text>
+            <Text style={styles.featureDescription}>
+              Search for players with similar interests and gaming preferences
+            </Text>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -58,22 +60,15 @@ const styles = StyleSheet.create({
   scrollContainer: {
     padding: 16,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
     color: 'white',
-  },
-  logoutButton: {
-    padding: 8,
+    marginBottom: 24,
   },
   welcomeSection: {
     marginBottom: 32,
+    alignItems: 'center',
   },
   welcomeTitle: {
     fontSize: 26,
@@ -82,37 +77,29 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   welcomeSubtitle: {
-    fontSize: 16,
+    fontSize: 18,
     color: '#9CA3AF',
   },
-  cardsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+  featuresContainer: {
+    gap: 16,
   },
-  card: {
+  featureCard: {
     backgroundColor: '#1F2937',
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    width: '48%',
-  },
-  cardIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 12,
-    justifyContent: 'center',
+    padding: 20,
     alignItems: 'center',
-    marginBottom: 12,
   },
-  cardTitle: {
-    fontSize: 16,
+  featureTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: 'white',
+    marginTop: 12,
     marginBottom: 8,
   },
-  cardDescription: {
-    fontSize: 14,
+  featureDescription: {
+    fontSize: 16,
     color: '#9CA3AF',
+    textAlign: 'center',
+    lineHeight: 24,
   },
 });
