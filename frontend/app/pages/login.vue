@@ -1,6 +1,5 @@
 <script setup lang="ts">
 const runtimeConfig = useRuntimeConfig();
-const API_BASE_URL = runtimeConfig.public.apiBaseUrl;
 const ENV = runtimeConfig.public.env;
 
 definePageMeta({
@@ -9,6 +8,7 @@ definePageMeta({
 
 const authStore = useAuthStore();
 const router = useRouter();
+const { loginUser } = useUserApi();
 
 const emailOrUsername = ref('');
 const password = ref('');
@@ -29,43 +29,26 @@ async function signIn() {
         return;
     }
 
+    errorMessage.value = '';
+    
     const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailOrUsername.value);
-    const payload = isEmail
+    const credentials = isEmail
         ? { email: emailOrUsername.value, password: password.value }
         : { username: emailOrUsername.value, password: password.value };
 
     try {
-        const response = await fetch(`${API_BASE_URL}/users/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            errorMessage.value = data.error;
-            throw new Error('Login failed');
+        const response = await loginUser(credentials);
+        
+        if (response) {
+            const user = await useUserApi().getMe();
+            authStore.setUser(user);
+            router.push('/dashboard');
+        } else {
+            errorMessage.value = 'Login failed. Please check your credentials.';
         }
-
-        if (data.token) {
-            authStore.setToken(data.token);
-            const { data: user, error, status} = await useUserApi().getMe();
-            if (error.value) {
-                errorMessage.value = error.value.message;
-                throw new Error('Failed to fetch user data');
-            }
-            if(!user.value) {
-                throw new Error('User not found');
-            }
-            authStore.setUser(user.value);
-        }
-
-        router.push('/dashboard');
     } catch (error) {
         console.error('Error during login:', error);
+        errorMessage.value = 'An unexpected error occurred';
     }
 };
 </script>

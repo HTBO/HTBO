@@ -1,12 +1,10 @@
 import type { Group, GroupMember } from "~/types/Group"
 import type { User } from "~/types/User"
 
-export type GroupMembershipStatus = 'owner' | 'member' | 'pending' | 'none'
+export type GroupMembershipStatus = 'owner' | 'accepted' | 'pending' | 'none'
 
 export const useGroupMembershipStatus = (targetGroup: Group | null, currentUser: User | null) => {
     const getGroupMembershipStatus = (): GroupMembershipStatus => {
-        console.log('targetGroup', targetGroup)
-        console.log('currentUser', currentUser)
         if (!targetGroup || !currentUser) return 'none'
 
         if (targetGroup.ownerId === currentUser._id) return 'owner'
@@ -25,7 +23,7 @@ export const useGroupMembershipStatus = (targetGroup: Group | null, currentUser:
     }
 
     const isMember = (): boolean => {
-        return getGroupMembershipStatus() === 'member'
+        return getGroupMembershipStatus() === 'accepted'
     }
 
     const isPending = (): boolean => {

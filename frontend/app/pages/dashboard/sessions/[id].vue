@@ -25,11 +25,9 @@ const loadSession = async () => {
         
         session.value = sessionResponse;
         
-        // Check if current user is the host
         if (session.value && authStore.user) {
             isOwner.value = session.value.hostId === authStore.user._id;
             
-            // Check user's participation status
             const participation = session.value.participants.find(
                 p => typeof p.user === 'string' 
                     ? p.user === authStore.user?._id 

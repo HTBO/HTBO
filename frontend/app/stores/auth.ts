@@ -43,9 +43,9 @@ export const useAuthStore = defineStore('auth', {
 
         async refreshToken() {
             try {
-                const { data } = await useUserApi().refreshToken();
-                if (data.value?.token) {
-                    this.setToken(data.value.token);
+                const data = await useUserApi().refreshToken();
+                if (data?.token) {
+                    this.setToken(data.token);
                 }
             } catch (error) {
                 console.error('Error refreshing token:', error);
@@ -56,9 +56,9 @@ export const useAuthStore = defineStore('auth', {
 
         async refreshUser() {
             try {
-                const { data: user } = await useUserApi().getMe();
-                if (user.value) {
-                    this.setUser(user.value);
+                const user = await useUserApi().getMe();
+                if (user) {
+                    this.setUser(user);
                 }
             } catch (error) {
                 console.error('Error refreshing user:', error);

@@ -52,3 +52,9 @@ export const friendsTabs: Tab[] = [
         component: null,
     }
 ];
+
+export const membersTabs: Tab[] = [
+    { name: 'All Members', component: null },
+    { name: 'Active', component: null },
+    { name: 'Pending', component: null }
+  ];

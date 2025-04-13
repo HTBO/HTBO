@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { profileTabs } from '~/constants/Tab'
 import type { Tab } from '~/types/Tab'
+import type { User } from '~/types/User'
 
 definePageMeta({
     layout: 'dashboard',
@@ -10,10 +11,25 @@ definePageMeta({
 const route = useRoute()
 const authStore = useAuthStore()
 const { getUserStatus } = useUserStatus()
-const { getUserByUsername, cancelFriendRequest } = useUserApi()
+const { getUserByUsername, removeFriend } = useUserApi()
 const { username } = route.params as { username: string }
 
-const { data: user, error, status, refresh } = getUserByUsername(username);
+const loading = ref(true)
+const error = ref(null)
+const user = ref<User | null>(null)
+
+const fetchUser = async () => {
+  loading.value = true
+  try {
+    user.value = await getUserByUsername(username)
+  } catch (err) {
+    user.value = null
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(fetchUser)
 
 const userStatus = computed<UserStatus>(() => getUserStatus(user.value, authStore.user))
 
@@ -22,11 +38,11 @@ const addFriend = () => { };
 const cancelFriend = async () => {
     try {
         if (!user.value) return;
-        const success = await cancelFriendRequest(user.value._id);
+        const success = await removeFriend(user.value._id);
         if (success) {
             await Promise.all([
                 authStore.refreshUser(),
-                refresh()
+                fetchUser()
             ]);
         }
     } catch (error) {
@@ -38,9 +54,9 @@ const activeTab = ref<Tab | null>(profileTabs[0] ?? null)
 </script>
 
 <template>
-    <Loading v-if="status === 'pending'"/>
+    <Loading v-if="loading"/>
     <Transition name="fade">
-        <div v-if="status === 'success'" class="flex flex-col gap-5">
+        <div v-if="!loading && user" class="flex flex-col gap-5">
             <div>
                 <div class="h-80 mx-5 bg-gray-700 rounded-2xl">
                     <img src="/banner.jpg" width="5376" height="3072" alt="Banner" class="h-full w-full object-cover rounded-2xl" />

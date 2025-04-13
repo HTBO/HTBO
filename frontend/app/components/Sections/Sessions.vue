@@ -9,12 +9,12 @@ const props = defineProps<{
 const sessions = ref<Session[]>([]);
 
 onMounted(async () => {
-    sessions.value = (await Promise.all(props.user.sessions.map(async session => {
-        if(typeof session.sessionId === 'string') {
-            return useSessionApi().getSessionById(session.sessionId);
-        }
-        return;
-    }))).filter((session): session is Session => session !== undefined);
+    // sessions.value = (await Promise.all(props.user.sessions.map(async session => {
+    //     if(typeof session.sessionId === 'string') {
+    //         return useSessionApi().getSessionById(session.sessionId);
+    //     }
+    //     return;
+    // }))).filter((session): session is Session => session !== undefined);
 });
 </script>
 

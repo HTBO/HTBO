@@ -1,48 +1,22 @@
 import type { TokenResponse } from "~/types/Response";
 import type { User } from "~/types/User"
-import { getAuthHeaders } from "~/utils/authUtils";
 
 export const useUserApi = () => {
     const runtimeConfig = useRuntimeConfig();
     const API_URL = `${runtimeConfig.public.apiBaseUrl}/users`;
 
+    const { getAuthHeaders, getUserId } = useUserUtils();
+
     const authStore = useAuthStore();
     const router = useRouter();
     const toast = useToast();
 
-    const logout = async () => {
-        try {
-            const res = await $fetch(`${API_URL}/logout`, {
-                method: "POST",
-                headers: getAuthHeaders(),
-            });
-            if (res) {
-                authStore.clearAuth();
-                router.push("/login");
-            }
-        } catch (error) {
-            console.error("Logout failed:", error);
-        }
-    };
-
-    const refreshToken = async () => {
-        return useFetch<TokenResponse>(`${API_URL}/refresh`, {
-            method: 'POST',
-            headers: getAuthHeaders()
-        });
-    };
-
-    const getMe = () => {
-        return useLazyFetch<User>(`${API_URL}/me`, {
-            headers: getAuthHeaders(),
-        });
-    };
-
+    // GET methods
     const getAllUsers = () => {
         return $fetch<User[]>(`${API_URL}`, {
             headers: getAuthHeaders(),
         });
-    }
+    };
 
     const getUserById = (id: string) => {
         return $fetch<User>(`${API_URL}/${id}`, {
@@ -51,67 +25,439 @@ export const useUserApi = () => {
     };
 
     const getUserByUsername = (username: string) => {
-        return useLazyFetch<User>(`${API_URL}/username/${username}`, {
+        return $fetch<User>(`${API_URL}/username/${username}`, {
             headers: getAuthHeaders(),
         });
     };
 
-    const addFriend = async (userId: string) => {
+    const getMe = () => {
+        return $fetch<User>(`${API_URL}/me`, {
+            headers: getAuthHeaders(),
+        });
+    };
+
+    const getMySessions = () => {
+        return $fetch<any[]>(`${API_URL}/mysessions`, {
+            headers: getAuthHeaders(),
+        });
+    };
+
+    const getMyGroups = () => {
+        return $fetch<any[]>(`${API_URL}/mygroups`, {
+            headers: getAuthHeaders(),
+        });
+    };
+
+    const getMyGames = () => {
+        return $fetch<any[]>(`${API_URL}/mygames`, {
+            headers: getAuthHeaders(),
+        });
+    };
+
+    // POST methods
+    const registerUser = async (userData: { username: string, email: string, password: string }) => {
         try {
-            const res = await $fetch(`${API_URL}/${getUserId()}`, {
-                method: "PATCH",
-                headers: getAuthHeaders(),
-                body: {
-                    friendAction: {
-                        action: "add",
-                        friendId: userId,
-                    }
-                }
+            const response = await $fetch<TokenResponse>(`${API_URL}/register`, {
+                method: 'POST',
+                body: userData
             });
-            if (res) {
-                toast.add({title: 'Success', description: 'Friend added successfully', color: 'success'});
+            
+            if (response) {
+                toast.add({
+                    title: 'Success',
+                    description: 'Registration successful',
+                    color: 'success'
+                });
+                return response;
+            }
+            return null;
+        } catch (error) {
+            toast.add({
+                title: 'Error',
+                description: 'Registration failed',
+                color: 'error'
+            });
+            return null;
+        }
+    };
+
+    const loginUser = async (credentials: { username?: string, email?: string, password: string }) => {
+        try {
+            const response = await $fetch<TokenResponse>(`${API_URL}/login`, {
+                method: 'POST',
+                body: credentials
+            });
+            
+            if (response) {
+                authStore.setToken(response.token);
+                toast.add({
+                    title: 'Success',
+                    description: 'Login successful',
+                    color: 'success'
+                });
+                return response;
+            }
+            return null;
+        } catch (error) {
+            toast.add({
+                title: 'Error',
+                description: 'Login failed',
+                color: 'error'
+            });
+            return null;
+        }
+    };
+
+    const logout = async () => {
+        try {
+            const response = await $fetch(`${API_URL}/logout`, {
+                method: 'POST',
+                headers: getAuthHeaders()
+            });
+            
+            if (response) {
+                authStore.clearAuth();
+                router.push('/login');
+                toast.add({
+                    title: 'Success',
+                    description: 'Logout successful',
+                    color: 'success'
+                });
                 return true;
             }
             return false;
-        }
-        catch (error) {
-            toast.add({title: 'Error', description: 'An error occurred while sending the friend request', color: 'error'});
+        } catch (error) {
+            console.error('Logout failed:', error);
             return false;
         }
     };
 
-    const cancelFriendRequest = async (userId: string) => {
+    const refreshToken = async () => {
         try {
-            const res = await $fetch(`${API_URL}/${getUserId()}`, {
-                method: "PATCH",
+            const response = await $fetch<TokenResponse>(`${API_URL}/refresh`, {
+                method: 'POST',
+                headers: getAuthHeaders()
+            });
+            
+            if (response) {
+                return response;
+            }
+            return null;
+        } catch (error) {
+            console.error('Token refresh failed:', error);
+            return null;
+        }
+    };
+
+    // PATCH methods
+    const updateUser = async (id: string, userData: Partial<User>) => {
+        try {
+            const response = await $fetch<User>(`${API_URL}/${id}`, {
+                method: 'PATCH',
+                headers: getAuthHeaders(),
+                body: userData
+            });
+            
+            if (response) {
+                toast.add({
+                    title: 'Success',
+                    description: 'User updated successfully',
+                    color: 'success'
+                });
+                return response;
+            }
+            return null;
+        } catch (error) {
+            toast.add({
+                title: 'Error',
+                description: 'Failed to update user',
+                color: 'error'
+            });
+            return null;
+        }
+    };
+
+    const addFriend = async (friendId: string) => {
+        try {
+            const response = await $fetch<User>(`${API_URL}/${getUserId()}`, {
+                method: 'PATCH',
                 headers: getAuthHeaders(),
                 body: {
                     friendAction: {
-                        action: "remove",
-                        friendId: userId,
+                        action: 'add',
+                        friendId
                     }
                 }
             });
-            if (res) {
-                toast.add({title: 'Success', description: 'Friend request cancelled successfully', color: 'success'});
+            
+            if (response) {
+                toast.add({
+                    title: 'Success',
+                    description: 'Friend request sent successfully',
+                    color: 'success'
+                });
+                return response;
+            }
+            return null;
+        } catch (error) {
+            toast.add({
+                title: 'Error',
+                description: 'Failed to send friend request',
+                color: 'error'
+            });
+            return null;
+        }
+    };
+
+    const updateFriendStatus = async (friendId: string, status: string) => {
+        try {
+            const response = await $fetch<User>(`${API_URL}/${getUserId()}`, {
+                method: 'PATCH',
+                headers: getAuthHeaders(),
+                body: {
+                    friendAction: {
+                        action: 'update-status',
+                        friendId,
+                        status
+                    }
+                }
+            });
+            
+            if (response) {
+                toast.add({
+                    title: 'Success',
+                    description: 'Friend status updated successfully',
+                    color: 'success'
+                });
+                return response;
+            }
+            return null;
+        } catch (error) {
+            toast.add({
+                title: 'Error',
+                description: 'Failed to update friend status',
+                color: 'error'
+            });
+            return null;
+        }
+    };
+
+    const removeFriend = async (friendId: string) => {
+        try {
+            const response = await $fetch<User>(`${API_URL}/${getUserId()}`, {
+                method: 'PATCH',
+                headers: getAuthHeaders(),
+                body: {
+                    friendAction: {
+                        action: 'remove',
+                        friendId
+                    }
+                }
+            });
+            
+            if (response) {
+                toast.add({
+                    title: 'Success',
+                    description: 'Friend removed successfully',
+                    color: 'success'
+                });
+                return response;
+            }
+            return null;
+        } catch (error) {
+            toast.add({
+                title: 'Error',
+                description: 'Failed to remove friend',
+                color: 'error'
+            });
+            return null;
+        }
+    };
+
+    const addGame = async (gameId: string) => {
+        try {
+            const response = await $fetch<User>(`${API_URL}/${getUserId()}`, {
+                method: 'PATCH',
+                headers: getAuthHeaders(),
+                body: {
+                    gameAction: {
+                        action: 'add',
+                        gameId
+                    }
+                }
+            });
+            
+            if (response) {
+                toast.add({
+                    title: 'Success',
+                    description: 'Game added successfully',
+                    color: 'success'
+                });
+                return response;
+            }
+            return null;
+        } catch (error) {
+            toast.add({
+                title: 'Error',
+                description: 'Failed to add game',
+                color: 'error'
+            });
+            return null;
+        }
+    };
+
+    const removeGame = async (gameId: string) => {
+        try {
+            const response = await $fetch<User>(`${API_URL}/${getUserId()}`, {
+                method: 'PATCH',
+                headers: getAuthHeaders(),
+                body: {
+                    gameAction: {
+                        action: 'remove',
+                        gameId
+                    }
+                }
+            });
+            
+            if (response) {
+                toast.add({
+                    title: 'Success',
+                    description: 'Game removed successfully',
+                    color: 'success'
+                });
+                return response;
+            }
+            return null;
+        } catch (error) {
+            toast.add({
+                title: 'Error',
+                description: 'Failed to remove game',
+                color: 'error'
+            });
+            return null;
+        }
+    };
+
+    const addSession = async (sessionId: string) => {
+        try {
+            const response = await $fetch<User>(`${API_URL}/${getUserId()}`, {
+                method: 'PATCH',
+                headers: getAuthHeaders(),
+                body: {
+                    sessionAction: {
+                        action: 'add',
+                        sessionId
+                    }
+                }
+            });
+            
+            if (response) {
+                toast.add({
+                    title: 'Success',
+                    description: 'Session added successfully',
+                    color: 'success'
+                });
+                return response;
+            }
+            return null;
+        } catch (error) {
+            toast.add({
+                title: 'Error',
+                description: 'Failed to add session',
+                color: 'error'
+            });
+            return null;
+        }
+    };
+
+    const removeSession = async (sessionId: string) => {
+        try {
+            const response = await $fetch<User>(`${API_URL}/${getUserId()}`, {
+                method: 'PATCH',
+                headers: getAuthHeaders(),
+                body: {
+                    sessionAction: {
+                        action: 'remove',
+                        sessionId
+                    }
+                }
+            });
+            
+            if (response) {
+                toast.add({
+                    title: 'Success',
+                    description: 'Session removed successfully',
+                    color: 'success'
+                });
+                return response;
+            }
+            return null;
+        } catch (error) {
+            toast.add({
+                title: 'Error',
+                description: 'Failed to remove session',
+                color: 'error'
+            });
+            return null;
+        }
+    };
+
+    // DELETE methods
+    const deleteUser = async (id: string) => {
+        try {
+            const response = await $fetch(`${API_URL}/${id}`, {
+                method: 'DELETE',
+                headers: getAuthHeaders()
+            });
+            
+            if (response) {
+                authStore.clearAuth();
+                router.push('/login');
+                toast.add({
+                    title: 'Success',
+                    description: 'User deleted successfully',
+                    color: 'success'
+                });
                 return true;
             }
             return false;
-        }
-        catch (error) {
-            toast.add({title: 'Error', description: 'An error occurred while cancelling the friend request', color: 'error'});
+        } catch (error) {
+            toast.add({
+                title: 'Error',
+                description: 'Failed to delete user',
+                color: 'error'
+            });
             return false;
         }
     };
 
     return {
-        logout,
-        refreshToken,
-        getMe,
+        // GET
         getAllUsers,
         getUserById,
         getUserByUsername,
+        getMe,
+        getMySessions,
+        getMyGroups,
+        getMyGames,
+        
+        // POST
+        registerUser,
+        loginUser,
+        logout,
+        refreshToken,
+        
+        // PATCH
+        updateUser,
         addFriend,
-        cancelFriendRequest,
+        updateFriendStatus,
+        removeFriend,
+        addGame,
+        removeGame,
+        addSession,
+        removeSession,
+        
+        // DELETE
+        deleteUser
     };
 };

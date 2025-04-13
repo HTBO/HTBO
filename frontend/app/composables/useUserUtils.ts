@@ -2,6 +2,25 @@ import type { Friend } from '~/types/Friend'
 
 export type UserStatus = 'me' | 'none' | 'pending' | 'accepted' | 'blocked'
 
+export const useUserUtils = () => {
+  const getAuthHeaders = () => {
+    const authStore = useAuthStore()
+    return {
+      Authorization: `Bearer ${authStore.token}`,
+    }
+  }
+
+  const getUserId = () => {
+    const authStore = useAuthStore()
+    return authStore.user?._id
+  }
+
+  return {
+    getAuthHeaders,
+    getUserId,
+  }
+}
+
 export const useUserStatus = () => {
   const getUserStatus = (targetUser: any, currentUser: any): UserStatus => {
     if (!targetUser || !currentUser) return 'none'
