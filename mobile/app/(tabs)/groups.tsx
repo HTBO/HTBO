@@ -622,7 +622,9 @@ export default function SocialScreen() {
       onPress={() => handleGroupPress(item.id)}
       activeOpacity={0.7}
     >
-      <Image style={styles.avatar} />
+      <View style={styles.groupIconContainer}>
+        <Ionicons name="people-outline" size={24} color="#7C3AED" />
+      </View>
 
       <View style={styles.itemInfo}>
         <View style={styles.itemHeader}>
@@ -813,10 +815,9 @@ export default function SocialScreen() {
 
           return (
             <View key={uniqueKey} style={styles.listItem}>
-              <Image
-                style={styles.avatar}
-                source={avatarUrl ? { uri: avatarUrl } : undefined}
-              />
+              <View style={styles.pendingIconContainer}>
+                <Ionicons name="time-outline" size={32} color="#F59E0B" />
+              </View>
 
               <View style={styles.itemInfo}>
                 <View style={styles.itemHeader}>
@@ -900,7 +901,9 @@ export default function SocialScreen() {
         <Text style={styles.sectionHeader}>Pending Group Invites</Text>
         {pendingGroups.map((group) => (
           <View key={`pending-group-${group.id}`} style={styles.listItem}>
-            <Image style={styles.avatar} />
+            <View style={styles.groupIconContainer}>
+              <Ionicons name="time-outline" size={24} color="#F59E0B" />
+            </View>
             <View style={styles.itemInfo}>
               <View style={styles.itemHeader}>
                 <Text style={styles.itemName}>{group.name}</Text>
@@ -1172,8 +1175,9 @@ const styles = StyleSheet.create({
   },
   listItem: {
     flexDirection: "row",
-    alignItems: "center", // Ensure vertical centering
+    alignItems: "center",
     paddingVertical: 14,
+    paddingLeft: 16,  // Add left padding to the list item
     borderBottomWidth: 1,
     borderBottomColor: "#1F2937",
   },
@@ -1342,5 +1346,23 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 12,
     fontWeight: "600",
+  },
+  pendingIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#1F2937',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12, // Add right margin to create space between icon and content
+  },
+  groupIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#1F2937',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
 });
