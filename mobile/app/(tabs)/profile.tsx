@@ -36,41 +36,18 @@ export default function ProfileScreen() {
   async function getUserInfo() {
     try {
       setIsLoading(true);
-
-      const tokenObj = await authService.getToken();
-      if (!tokenObj) {
-        console.error("No auth data found");
-        return;
-      }
-
-      const token = tokenObj;
-      if (!token) {
-        console.error("No token found in auth data");
-        return;
-      }
-
-      const response = await fetch(
-        "https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/me",
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        console.error(`API error: ${response.status}`);
-        return;
-      }
-
-      const userData = await response.json();
-      console.log(userData.avatarUrl);
-      setUser(userData as UserModel);
+      const userData = await authService.getUserData();
+      
+      // Filter out pending relationships
+      const filteredUser = {
+        ...userData,
+        friends: userData.friends.filter((friend: any) => friend.friendStatus !== 'pending'),
+        groups: userData.groups.filter((group: any) => group.groupStatus !== 'pending')
+      };
+      
+      setUser(filteredUser as UserModel);
     } catch (error) {
       console.error("Error in getUserInfo:", error);
-      // setError("Failed to load profile data");
     } finally {
       setIsLoading(false);
     }
