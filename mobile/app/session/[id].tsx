@@ -440,10 +440,7 @@ export default function SessionDetailScreen() {
           </View>
 
           <View style={styles.actionContainer}>
-            <TouchableOpacity style={styles.joinButton}>
-              <Ionicons name="log-in-outline" size={20} color="#FFFFFF" />
-              <Text style={styles.joinButtonText}>Join Session</Text>
-            </TouchableOpacity>
+            
 
             {currentUser && session && currentUser._id === session.hostId ? (
               <TouchableOpacity

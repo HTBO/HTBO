@@ -308,7 +308,7 @@ export default function CreateSessionScreen() {
     
     try {
       setIsSearching(true);
-      setSearchError(null); // Clear any existing errors
+      setSearchError(null);
       
       const token = await authService.getToken();
       
@@ -329,31 +329,23 @@ export default function CreateSessionScreen() {
       }
 
       const data = await response.json();
-
-      // Map response data to ensure it follows our Game model structure
+      
+      // Map response data to include cover URL
       const formattedGames: Game[] = data.map((game: any) => ({
-        id: game._id || game.id || "",
-        name: game.title || game.name || "",
-        description: game.description || "",
-        shortDescription: game.shortDescription || "",
-        publisher: game.publisher || "",
-        releaseYear: game.releaseYear || new Date().getFullYear(),
-        stores: game.stores || [],
-        createdAt: game.createdAt || "",
-        updatedAt: game.updatedAt || "",
+        id: game.id || "",
+        name: game.name || "",
+        cover: game.cover ? `https:${game.cover}` : null, // Format cover URL correctly
+        rating: game.rating || 0,
+        rating_count: game.rating_count || 0,
       }));
 
-      // Clear error and set games if we have results
       setGames(formattedGames);
       
-      // Only set error if no games were found
       if (formattedGames.length === 0 && query.trim()) {
-        // Delayed empty result message
         setTimeout(() => {
           setSearchError("No games found matching your search");
         }, 300);
       } else {
-        // Ensure error is cleared if results are found
         setSearchError(null);
       }
       
@@ -543,16 +535,19 @@ export default function CreateSessionScreen() {
                         >
                           <View style={styles.gameImageContainer}>
                             <Image 
-                              source={{ uri: item.cover || 'https://via.placeholder.com/60' }}
+                              source={item.cover ? { uri: item.cover } : require("@/assets/images/games/fifa.png")}
                               style={styles.gameImage}
+                              defaultSource={require("@/assets/images/games/fifa.png")}
                               resizeMode="cover"
                             />
                           </View>
                           <View style={styles.gameInfo}>
                             <Text style={styles.gameTitle}>{item.name}</Text>
-                            <Text style={styles.gamePublisher}>
-                              • {item.rating} ({item.rating_count})
-                            </Text>
+                            {item.rating > 0 && (
+                              <Text style={styles.gamePublisher}>
+                                • {item.rating.toFixed(1)} ({item.rating_count})
+                              </Text>
+                            )}
                           </View>
                         </TouchableOpacity>
                       )}
