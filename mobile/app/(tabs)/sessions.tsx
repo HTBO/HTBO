@@ -17,6 +17,7 @@ import {
   SessionList,
   formatSession,
 } from "@/models/SessionModel";
+import { Game } from "@/models/GameModel";
 
 export default function SessionsScreen() {
   const [sessions, setSessions] = useState<SessionList>([]);
@@ -24,6 +25,7 @@ export default function SessionsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [processingSessions, setProcessingSessions] = useState<{[key: string]: boolean}>({});
   const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [gameDetails, setGameDetails] = useState<{ [key: string]: Game }>({});
 
   const handleCardPress = (session: SessionModel) => {
     router.push({
@@ -45,6 +47,15 @@ export default function SessionsScreen() {
     };
     getCurrentUser();
   }, []);
+
+  useEffect(() => {
+    // Fetch game details for all sessions
+    sessions.forEach((session) => {
+      if (session.gameId && !gameDetails[session.gameId]) {
+        fetchGameDetails(session.gameId.toString());
+      }
+    });
+  }, [sessions]);
 
   async function getUserSessionInfo() {
     try {
@@ -92,6 +103,50 @@ export default function SessionsScreen() {
       setError("Failed to load sessions data");
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function fetchGameDetails(gameId: string) {
+    try {
+      const token = await authService.getToken();
+
+      const response = await fetch(
+        "https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/games/search",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+          body: JSON.stringify({ id: gameId }),
+        }
+      );
+
+      if (!response.ok) {
+        console.error(`Error fetching game details: ${response.status}`);
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        const game: Game = {
+          id: data[0].id,
+          cover: data[0].cover || "",
+          involved_companies: data[0].involved_companies || [],
+          name: data[0].name || "Unknown Game",
+          rating: data[0].rating || 0,
+          rating_count: data[0].rating_count || 0,
+          summary: data[0].summary || "",
+        };
+
+        setGameDetails(prev => ({
+          ...prev,
+          [gameId]: game
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching game details:", error);
     }
   }
 
@@ -286,9 +341,11 @@ export default function SessionsScreen() {
               <SessionCard
                 key={session._id}
                 gameImage={
-                  session.gameImage || require("@/assets/images/games/fifa.png")
+                  session.gameId && gameDetails[session.gameId]?.cover
+                    ? { uri: `https:${gameDetails[session.gameId].cover}` }
+                    : require("@/assets/images/games/fifa.png")
                 }
-                gameTitle={session.gameName || "Game Session"}
+                gameTitle={session.gameId && gameDetails[session.gameId]?.name || "Game Session"}
                 title={session.description || "Untitled Session"}
                 date={formatDate(session.scheduledAt) || "No date set"}
                 participants={session.participants?.length || 0}

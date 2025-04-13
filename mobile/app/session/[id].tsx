@@ -89,10 +89,16 @@ export default function SessionDetailScreen() {
       }
 
       const userData = await response.json();
-      const usersMap = userData.reduce((acc: any, user: UserModel) => {
-        acc[user._id] = user;
-        return acc;
-      }, {});
+
+      // Create a map of user IDs to user objects
+      const usersMap = userData.reduce(
+        (acc: { [key: string]: UserModel }, user: UserModel) => {
+          acc[user._id] = user;
+          return acc;
+        },
+        {}
+      );
+
       setUsers(usersMap);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -165,16 +171,16 @@ export default function SessionDetailScreen() {
       }
 
       const data = await response.json();
-      
-      // Transform participants array to include user details
-      if (data.participants && Array.isArray(data.participants)) {
-        data.participants = data.participants.map((participantId: string) => ({
-          _id: participantId,
-          sessionStatus: "pending", // default status
-        }));
-      }
+      console.log("Raw session data:", data);
+
+      // Transform participants to use correct field names
+      data.participants = data.participants.map((p: any) => ({
+        userId: p.user, // 'user' field contains the ID directly
+        sessionStatus: p.sessionStatus,
+      }));
 
       setSession(data);
+      await fetchUsers();
     } catch (error) {
       console.error("Error fetching session details:", error);
       setError(
@@ -188,16 +194,11 @@ export default function SessionDetailScreen() {
   }
 
   const isHost = () => {
-    console.log("Checking isHost by ID comparison.");
-    console.log("Current user ID:", currentUser?._id);
-    console.log("Session host ID:", session?.hostId);
-
     if (!currentUser || !session) {
       return false;
     }
 
     const isMatch = currentUser._id === session.hostId;
-    console.log("ID match:", isMatch);
 
     return isMatch;
   };
@@ -216,7 +217,6 @@ export default function SessionDetailScreen() {
         setError("Authentication required");
         return;
       }
-      console.log("Deleting session with ID:", id);
       const response = await fetch(
         `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/sessions/${id}`,
         {
@@ -394,34 +394,48 @@ export default function SessionDetailScreen() {
             {session.participants.length === 0 ? (
               <Text style={styles.emptyText}>No participants yet</Text>
             ) : (
-              session.participants.map((participant, index) => (
-                <View key={index} style={styles.participantRow}>
-                  <View style={styles.participantInfo}>
-                    <View style={styles.participantAvatar}>
-                      <Text style={styles.avatarText}>
-                        {(users[participant._id]?.username?.[0] || "?").toUpperCase()}
+              session.participants.map((participant, index) => {
+                const user = users[participant.userId] || {
+                  username: "Unknown User",
+                };
+                return (
+                  <View key={index} style={styles.participantRow}>
+                    <View style={styles.participantInfo}>
+                      <View style={styles.participantAvatar}>
+                        <Text style={styles.avatarText}>
+                          {(user.username[0] || "?").toUpperCase()}
+                        </Text>
+                      </View>
+                      <Text style={styles.participantName}>
+                        {user.username}
                       </Text>
                     </View>
-                    <Text style={styles.participantName}>
-                      {users[participant._id]?.username || "Unknown User"}
-                    </Text>
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        participant.sessionStatus === "accepted"
+                          ? styles.acceptedStatus
+                          : participant.sessionStatus === "pending"
+                          ? styles.pendingStatus
+                          : styles.declinedStatus,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.statusText,
+                          participant.sessionStatus === "accepted"
+                            ? { color: "#10B981" }
+                            : participant.sessionStatus === "pending"
+                            ? { color: "#FCD34D" }
+                            : { color: "#EF4444" },
+                        ]}
+                      >
+                        {participant.sessionStatus}
+                      </Text>
+                    </View>
                   </View>
-                  <View
-                    style={[
-                      styles.statusBadge,
-                      participant.sessionStatus === "accepted"
-                        ? styles.acceptedStatus
-                        : participant.sessionStatus === "pending"
-                        ? styles.pendingStatus
-                        : styles.declinedStatus,
-                    ]}
-                  >
-                    <Text style={styles.statusText}>
-                      {participant.sessionStatus}
-                    </Text>
-                  </View>
-                </View>
-              ))
+                );
+              })
             )}
           </View>
 
