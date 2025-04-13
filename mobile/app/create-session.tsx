@@ -46,8 +46,6 @@ export default function CreateSessionScreen() {
   const [isDatePickerVisible, setDatePickerVisible] = useState(false);
   const [isTimePickerVisible, setTimePickerVisible] = useState(false);
 
-  const [description, setDescription] = useState("");
-
   // Friends & Groups data
   const [friends, setFriends] = useState<Friend[]>([]);
   const [detailedFriends, setDetailedFriends] = useState<UserModel[]>([]);
@@ -408,7 +406,7 @@ export default function CreateSessionScreen() {
         hostId: currentUser._id,
         gameId: selectedGame.id,
         scheduledAt: scheduledAt,
-        description: description,
+        description: title, // Changed from description to title
         participants: participants,
       };
 
@@ -473,6 +471,18 @@ export default function CreateSessionScreen() {
 
       <ScrollView style={styles.scrollView}>
         <View style={styles.formContainer}>
+          {/* Title */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Title</Text>
+            <TextInput
+              style={styles.input}
+              value={title}
+              onChangeText={setTitle}
+              placeholder="Give your session a title..."
+              placeholderTextColor="#6B7280"
+            />
+          </View>
+
           {/* Game Selection */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Game</Text>
@@ -733,20 +743,6 @@ export default function CreateSessionScreen() {
                 )}
               </View>
             )}
-          </View>
-
-          {/* Description */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Description</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={description}
-              onChangeText={setDescription}
-              placeholder="Describe your gaming session..."
-              placeholderTextColor="#6B7280"
-              multiline
-              numberOfLines={4}
-            />
           </View>
 
           {/* Create Button */}
