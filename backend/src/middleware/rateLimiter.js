@@ -86,9 +86,13 @@ class RateLimiter {
       } catch (err) {
           console.error('Final rate limiter error:', err);
           next();
-        }
-      };
-    }
+      } catch (err) {
+        console.error('Rate limiter error:', err);
+        next();
+      }
+    };
+  }
+
 
   formatDuration(seconds) {
     if (seconds <= 0) return 'a short while';
