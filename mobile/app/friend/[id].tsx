@@ -53,7 +53,7 @@ function FriendDetailContent() {
 
       // First get the friend relationship to get friendStatus
       const friendsResponse = await fetch(
-        "https://htbo-production.up.railway.app/api/users/myfriends",
+        "https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/myfriends",
         {
           method: "GET",
           headers: {
@@ -81,7 +81,7 @@ function FriendDetailContent() {
 
       // Then get the user details
       const response = await fetch(
-        `https://htbo-production.up.railway.app/api/users/${id}`,
+        `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/${id}`,
         {
           method: "GET",
           headers: {
