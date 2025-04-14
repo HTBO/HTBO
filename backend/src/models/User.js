@@ -91,7 +91,6 @@ const userSchema = new mongoose.Schema({
         transform: function (doc, ret) {
             ret.id = ret._id;
             delete ret.passwordHash; //Password excluding from response
-            delete ret._id;
             return ret;
         }
     }
@@ -112,6 +111,9 @@ userSchema.methods.removeFriend = function (userId) {
 }
 
 userSchema.methods.statusUpdate = function (userId, status) {
+    console.log(userId);
+    console.log(this.friends);
+    
     const friend = this.friends.find(f => f.userId.equals(userId));
     if (!friend)
         throw new Error(`Friend with ID ${userId} not found`);
@@ -142,9 +144,6 @@ userSchema.methods.removeGroup = function (groupId) {
 }
 
 userSchema.methods.updateGroupStatus = function (groupId, status) {
-    console.log(groupId, status);
-    console.log(this.groups.some(g => g.groupId.equals(groupId)));
-
     this.groups.some(g => g.groupId.equals(groupId)).groupStatus = status;
     return this.save();
 }
