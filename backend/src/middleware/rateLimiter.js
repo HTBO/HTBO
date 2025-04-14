@@ -73,9 +73,6 @@ class RateLimiter {
           }
   
           next();
-        } catch (err) {
-          console.error('Rate limiter error:', err);
-          next();
       } catch (err) {
         console.error('Rate limiter error:', err);
         next();
