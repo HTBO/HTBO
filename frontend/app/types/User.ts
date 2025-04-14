@@ -8,6 +8,7 @@ export interface User {
     friends: Array<{
         userId: string | User,
         friendStatus: 'pending' | 'accepted' | 'rejected'
+        initiator: boolean
     }>
     games: any[]
     sessions: Array<{

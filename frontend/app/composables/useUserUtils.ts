@@ -1,6 +1,7 @@
 import type { Friend } from '~/types/Friend'
+import type { User } from '~/types/User'
 
-export type UserStatus = 'me' | 'none' | 'pending' | 'accepted' | 'blocked'
+export type UserStatus = 'me' | 'none' | 'pending' | 'accepted' | 'initiator' 
 
 export const useUserUtils = () => {
   const getAuthHeaders = () => {
@@ -21,36 +22,52 @@ export const useUserUtils = () => {
   }
 }
 
-export const useUserStatus = () => {
-  const getUserStatus = (targetUser: any, currentUser: any): UserStatus => {
+export const useUserStatus = (targetUser: User | null, currentUser: User | null) => {
+  const getUserStatus = (): UserStatus => {
     if (!targetUser || !currentUser) return 'none'
     
     if (targetUser._id === currentUser._id) return 'me'
 
-    const friend = currentUser.friends?.find((friend: Friend) => {
+    const friend = currentUser.friends?.find((friend) => {
       const id = typeof friend.userId === 'string' ? friend.userId : friend.userId._id
       return id === targetUser._id
     })
 
+    if (!friend) return 'none'
+
+    if (friend.friendStatus === 'pending' && friend.initiator) {
+      return 'initiator'
+    }
+
     return friend?.friendStatus as UserStatus || 'none'
   }
 
-  const isMe = (targetUser: any, currentUser: any): boolean => {
-    return getUserStatus(targetUser, currentUser) === 'me'
+  const isMe = (): boolean => {
+    return getUserStatus() === 'me'
   }
 
-  const isFriend = (targetUser: any, currentUser: any): boolean => {
-    return getUserStatus(targetUser, currentUser) === 'accepted'
+  const isFriend = (): boolean => {
+    return getUserStatus() === 'accepted'
   }
 
-  const isPending = (targetUser: any, currentUser: any): boolean => {
-    return getUserStatus(targetUser, currentUser) === 'pending'
+  const isPending = (): boolean => {
+    return getUserStatus() === 'pending'
+  }
+
+  const isInitiator = (): boolean => {
+    return getUserStatus() === 'initiator'
+  }
+
+  const isNone = (): boolean => {
+    return getUserStatus() === 'none'
   }
 
   return {
     getUserStatus,
     isMe,
     isFriend,
-    isPending
+    isPending,
+    isInitiator,
+    isNone,
   }
 }

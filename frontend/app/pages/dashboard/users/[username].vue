@@ -10,12 +10,10 @@ definePageMeta({
 
 const route = useRoute()
 const authStore = useAuthStore()
-const { getUserStatus } = useUserStatus()
 const { getUserByUsername, removeFriend } = useUserApi()
 const { username } = route.params as { username: string }
 
 const loading = ref(true)
-const error = ref(null)
 const user = ref<User | null>(null)
 
 const fetchUser = async () => {
@@ -31,7 +29,10 @@ const fetchUser = async () => {
 
 onMounted(fetchUser)
 
-const userStatus = computed<UserStatus>(() => getUserStatus(user.value, authStore.user))
+const userStatus = computed<UserStatus>(() => {
+  if (!user.value || !authStore.user) return 'none'
+  return useUserStatus(user.value, authStore.user).getUserStatus()
+})
 
 const addFriend = () => { };
 

@@ -209,7 +209,7 @@ export const useUserApi = () => {
         }
     };
 
-    const updateFriendStatus = async (friendId: string, status: string) => {
+    const updateFriendStatus = async (friendId: string, status: 'accepted' | 'rejected') => {
         try {
             const response = await $fetch<User>(`${API_URL}/${getUserId()}`, {
                 method: 'PATCH',
@@ -224,9 +224,10 @@ export const useUserApi = () => {
             });
             
             if (response) {
+                const action = status === 'accepted' ? 'accepted' : 'rejected';
                 toast.add({
                     title: 'Success',
-                    description: 'Friend status updated successfully',
+                    description: `Friend request ${action} successfully`,
                     color: 'success'
                 });
                 return response;
@@ -235,7 +236,7 @@ export const useUserApi = () => {
         } catch (error) {
             toast.add({
                 title: 'Error',
-                description: 'Failed to update friend status',
+                description: 'Failed to update friend request',
                 color: 'error'
             });
             return null;
@@ -268,70 +269,6 @@ export const useUserApi = () => {
             toast.add({
                 title: 'Error',
                 description: 'Failed to remove friend',
-                color: 'error'
-            });
-            return null;
-        }
-    };
-
-    const addGame = async (gameId: string) => {
-        try {
-            const response = await $fetch<User>(`${API_URL}/${getUserId()}`, {
-                method: 'PATCH',
-                headers: getAuthHeaders(),
-                body: {
-                    gameAction: {
-                        action: 'add',
-                        gameId
-                    }
-                }
-            });
-            
-            if (response) {
-                toast.add({
-                    title: 'Success',
-                    description: 'Game added successfully',
-                    color: 'success'
-                });
-                return response;
-            }
-            return null;
-        } catch (error) {
-            toast.add({
-                title: 'Error',
-                description: 'Failed to add game',
-                color: 'error'
-            });
-            return null;
-        }
-    };
-
-    const removeGame = async (gameId: string) => {
-        try {
-            const response = await $fetch<User>(`${API_URL}/${getUserId()}`, {
-                method: 'PATCH',
-                headers: getAuthHeaders(),
-                body: {
-                    gameAction: {
-                        action: 'remove',
-                        gameId
-                    }
-                }
-            });
-            
-            if (response) {
-                toast.add({
-                    title: 'Success',
-                    description: 'Game removed successfully',
-                    color: 'success'
-                });
-                return response;
-            }
-            return null;
-        } catch (error) {
-            toast.add({
-                title: 'Error',
-                description: 'Failed to remove game',
                 color: 'error'
             });
             return null;
@@ -452,8 +389,6 @@ export const useUserApi = () => {
         addFriend,
         updateFriendStatus,
         removeFriend,
-        addGame,
-        removeGame,
         addSession,
         removeSession,
         

@@ -1,16 +1,20 @@
 <script setup lang="ts">
 import type { User } from '~/types/User';
 
-const { getUserStatus } = useUserStatus();
 const authStore = useAuthStore();
-const toast = useToast();
 const refreshUsers = inject('refreshUsers') as (() => Promise<void>);
 
 const props = defineProps<{
     friend: User;
 }>();
 
-const userStatus = computed<UserStatus>(() => getUserStatus(props.friend, authStore.user))
+const userStatus = computed(() => useUserStatus(props.friend, authStore.user));
+
+const isMe = () => userStatus.value.isMe();
+const isFriend = () => userStatus.value.isFriend();
+const isPending = () => userStatus.value.isPending();
+const isInitiator = () => userStatus.value.isInitiator();
+const isNone = () => userStatus.value.isNone();
 
 const addFriend = async () => {
     const { addFriend } = useUserApi();
@@ -26,6 +30,51 @@ const addFriend = async () => {
         throw error;
     }
 }
+
+const acceptFriendRequest = async () => {
+    const { updateFriendStatus } = useUserApi();
+    try {
+        const success = await updateFriendStatus(props.friend._id, 'accepted');
+        if (success) {
+            await Promise.all([
+                authStore.refreshUser(),
+                refreshUsers?.()
+            ]);
+        }
+    } catch (error) {
+        throw error;
+    }
+};
+
+const rejectFriendRequest = async () => {
+    const { updateFriendStatus } = useUserApi();
+    try {
+        const success = await updateFriendStatus(props.friend._id, 'rejected');
+        if (success) {
+            await Promise.all([
+                authStore.refreshUser(),
+                refreshUsers?.()
+            ]);
+        }
+    } catch (error) {
+        throw error;
+    }
+};
+
+const removeFriend = async () => {
+    const { removeFriend } = useUserApi();
+    try {
+        const success = await removeFriend(props.friend._id);
+        if (success) {
+            await Promise.all([
+                authStore.refreshUser(),
+                refreshUsers?.()
+            ]);
+        }
+    } catch (error) {
+        throw error;
+    }
+};
 </script>
 
 <template>
@@ -40,10 +89,32 @@ const addFriend = async () => {
             </div>
             <div class="grow">
                 <div class="flex justify-end">
-                    <span v-if="userStatus === 'me'" class="text-sm text-primary-600 font-semibold">You</span>
-                    <span v-else-if="userStatus === 'accepted'" class="text-sm text-green-500 font-semibold">Friend</span>
-                    <span v-else-if="userStatus === 'pending'" class="text-sm text-yellow-500 font-semibold">Pending</span>
-                    <button v-else-if="userStatus === 'none'" @click="addFriend" class="flex items-center justify-center p-1.5 bg-green-600/50 hover:bg-green-600/80 rounded-lg duration-300">
+                    <span v-if="isMe()" class="text-sm text-primary-600 font-semibold">You</span>
+                    
+                    <div v-else-if="isFriend()" class="flex items-center gap-2">
+                        <span class="text-sm text-green-500 font-semibold">Friend</span>
+                        <button @click="removeFriend" class="flex items-center justify-center p-1.5 bg-red-600/50 hover:bg-red-600/80 rounded-lg duration-300">
+                            <Icon name="icons:remove-friend" size="1.5rem" />
+                        </button>
+                    </div>
+                    
+                    <div v-else-if="isInitiator()" class="flex items-center gap-2">
+                        <span class="text-sm text-yellow-500 font-semibold">Pending</span>
+                        <button @click="removeFriend" class="flex items-center justify-center p-1.5 bg-red-600/50 hover:bg-red-600/80 rounded-lg duration-300">
+                            <Icon name="icons:close" size="1.5rem" />
+                        </button>
+                    </div>
+                    
+                    <div v-else-if="isPending()" class="flex items-center gap-2">
+                        <button @click="acceptFriendRequest" class="flex items-center justify-center p-1.5 bg-green-600/50 hover:bg-green-600/80 rounded-lg duration-300">
+                            <Icon name="icons:check" size="1.5rem" />
+                        </button>
+                        <button @click="rejectFriendRequest" class="flex items-center justify-center p-1.5 bg-red-600/50 hover:bg-red-600/80 rounded-lg duration-300">
+                            <Icon name="icons:close" size="1.5rem" />
+                        </button>
+                    </div>
+                    
+                    <button v-else-if="isNone()" @click="addFriend" class="flex items-center justify-center p-1.5 bg-green-600/50 hover:bg-green-600/80 rounded-lg duration-300">
                         <Icon name="icons:add-friend" size="1.75rem" />
                     </button>
                 </div>

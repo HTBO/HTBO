@@ -50,6 +50,10 @@ export const friendsTabs: Tab[] = [
     {
         name: 'Friend Requests',
         component: null,
+    },
+    {
+        name: 'Pending Requests',
+        component: null,
     }
 ];
 

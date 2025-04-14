@@ -19,9 +19,13 @@ const refreshUserList = async () => {
     isLoading.value = true;
     try {
         const response = await useUserApi().getAllUsers();
-        const { isMe, isFriend } = useUserStatus();
         const currentUser = useAuthStore().user;
-        users.value = response.filter(user => !isMe(user, currentUser) && !isFriend(user, currentUser));
+        if (!currentUser) return;
+        
+        users.value = response.filter(user => {
+            const { isNone } = useUserStatus(user, currentUser);
+            return isNone();
+        });
         filteredUsers.value = users.value;
     } catch (error) {
         console.error('Error fetching users:', error);

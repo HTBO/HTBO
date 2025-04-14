@@ -29,7 +29,7 @@ const handleMemberStatus = async (groupId: string, status: 'accepted' | 'rejecte
 <template>
     <div class="flex flex-col p-5 bg-surface-800/70 rounded-2xl">
         <div class="flex items-center gap-2">
-            <NuxtLink :to="`/dashboard/groups/${group.id}`" class="group flex items-center justify-center size-12 border-2 border-primary-600 rounded-full">
+            <NuxtLink :to="`/dashboard/groups/${group._id}`" class="group flex items-center justify-center size-12 border-2 border-primary-600 rounded-full">
                 <Icon name="icons:group" class="group-hover:opacity-75 text-primary-600 duration-300" size="1.75rem" />
             </NuxtLink>
             <div class="flex flex-col">
@@ -47,18 +47,18 @@ const handleMemberStatus = async (groupId: string, status: 'accepted' | 'rejecte
         <p class="text-sm text-gray-400 mt-3 line-clamp-2">{{ group.description }}</p>
         
         <div v-if="isPending()" class="flex justify-center gap-3 mt-4">
-            <button @click="handleMemberStatus(group.id, 'accepted')" 
+            <button @click="handleMemberStatus(group._id, 'accepted')" 
                     class="px-3 py-1 text-sm bg-green-600 hover:bg-green-700 rounded-md duration-300">
                 Accept
             </button>
-            <button @click="handleMemberStatus(group.id, 'rejected')" 
+            <button @click="handleMemberStatus(group._id, 'rejected')" 
                     class="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 rounded-md duration-300">
                 Decline
             </button>
         </div>
         
         <div class="flex justify-end mt-4">
-            <NuxtLink :to="`/dashboard/groups/${group.id}`" class="text-sm text-primary-500 hover:text-primary-400 duration-300">
+            <NuxtLink :to="`/dashboard/groups/${group._id}`" class="text-sm text-primary-500 hover:text-primary-400 duration-300">
                 View Details
             </NuxtLink>
         </div>

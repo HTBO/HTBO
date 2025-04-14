@@ -93,7 +93,7 @@ const loadMembers = async () => {
 const handleJoinGroup = async () => {
     try {
         if (!group.value || !authStore.user) return;
-        return await joinGroup(group.value?.id, authStore.user?._id);
+        return await joinGroup(group.value?._id, authStore.user?._id);
     } catch (error) {
         console.error('Error joining group:', error);
     }
@@ -103,7 +103,7 @@ const handleLeaveGroup = async () => {
     try {
         if (!group.value || !authStore.user) return;
         if (confirm('Are you sure you want to leave this group?')) {
-            return await rejectGroup(group.value?.id, authStore.user?._id);
+            return await rejectGroup(group.value?._id, authStore.user?._id);
         }
     } catch (error) {
         console.error('Error leaving group:', error);
