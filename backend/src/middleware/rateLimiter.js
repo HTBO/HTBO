@@ -35,46 +35,56 @@ class RateLimiter {
   
         try {
 
-          const result = await this.collection.findOneAndUpdate(
-            { 
-              _id: `${ip}_${windowStart}`, // Unique ID per window
-              windowEnd: { $gt: now } // Only count current window
-            },
-            {
-              $setOnInsert: {
-                _id: `${ip}_${windowStart}`,
-                ip: ip,
-                windowStart: windowStart,
-                windowEnd: windowEnd
+        while (retries < MAX_RETRIES) {
+          try {
+            const result = await this.collection.findOneAndUpdate(
+              { _id: `${ip}_${windowStart}` },
+              {
+                $setOnInsert: {
+                  ip,
+                  windowStart,
+                  windowEnd: Number(windowEnd) // Force numeric type
+                },
+                $inc: { count: 1 }
               },
-              $inc: { count: 1 }
-            },
-            { 
-              upsert: true,
-              returnDocument: 'after'
-            }
-          );
-          
-          const entry = result;
-          const count = entry.count || 1;
-          
-  
-          res.set({
-            'X-RateLimit-Limit': this.maxRequests,
-            'X-RateLimit-Remaining': Math.max(this.maxRequests - count, 0),
-            'X-RateLimit-Reset': Math.floor(windowEnd / 1000)
-          });
-  
-          if (count > this.maxRequests) {
-            const remainingTime = Math.ceil((windowEnd - now) / 1000);
-            return res.status(429).json({
-              message: `Too many requests. Please try again in ${this.formatDuration(remainingTime)}`
+              {
+                upsert: true,
+                returnDocument: 'after',
+                projection: { _id: 0, count: 1 } // Optimize response
+              }
+            );
+
+            const count = result.value ? result.value.count : 1;
+
+            // Debug: Check MongoDB directly
+            const dbDoc = await this.collection.findOne({ _id: `${ip}_${windowStart}` });
+            console.log('Actual DB Count:', dbDoc?.count);
+
+            res.set({
+              'X-RateLimit-Limit': this.maxRequests,
+              'X-RateLimit-Remaining': Math.max(this.maxRequests - dbDoc?.count, 0),
+              'X-RateLimit-Reset': Math.floor(windowEnd / 1000)
             });
+
+            if (dbDoc?.count > this.maxRequests) {
+              return res.status(429).json({
+                message: `Retry in ${this.formatDuration(Math.ceil((windowEnd - now) / 1000))}`
+              });
+            }
+            return next();
           }
-  
-          next();
-        } catch (err) {
-          console.error('Rate limiter error:', err);
+          catch (err) {
+            if (err.code === 11000 && retries < MAX_RETRIES) {
+              retries++;
+              await new Promise(resolve => setTimeout(resolve, 50 * retries));
+              continue;
+            }
+            throw err;
+          }
+        }
+          
+      } catch (err) {
+          console.error('Final rate limiter error:', err);
           next();
         }
       };
