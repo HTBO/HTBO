@@ -235,8 +235,8 @@ const updateUser = async (req, res) => {
                         await user.removeFriend(friendId);
                         await addedFriend.removeFriend(user._id);
                     } else {
-                        await user.statusUpdate(user.id, "accepted");
-                        await addedFriend.statusUpdate(friendId, "accepted");
+                        await user.statusUpdate(friendId, "accepted");
+                        await addedFriend.statusUpdate(user._id, "accepted");
                     }
                     break;
 
