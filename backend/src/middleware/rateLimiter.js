@@ -3,9 +3,10 @@ const { MongoClient } = require('mongodb');
 class RateLimiter {
   constructor() {
     this.collection = null;
-    this.windowMs = parseInt(process.env.XRL_WINDOW_MS, 10);
-    this.maxRequests = parseInt(process.env.XRL_MAX_REQUESTS, 10);
+    this.windowMs = process.env.XRL_WINDOW_MS; // 15 minutes
+    this.maxRequests = process.env.XRL_MAX_REQUESTS;
     this.initialize().catch(console.error);
+    
   }
 
   async initialize() {
@@ -24,62 +25,60 @@ class RateLimiter {
 
   middleware() {
     return async (req, res, next) => {
-      if (!this.collection) return next();
-      if (req.clientIP == "127.0.0.1") return next();
-      if (req.originalUrl.includes('favicon.ico')) return next();
-      const ip = req.clientIP || this.normalizeIp(req.ip);
-      const now = Date.now();
-      const windowStart = Math.floor(now / this.windowMs) * this.windowMs;
-      const windowEnd = windowStart + this.windowMs;
+        if (!this.collection) return next();
+        if (req.clientIP == "127.0.0.1") return next();
+        if (req.originalUrl.includes('favicon.ico')) return next();
+        const ip = req.clientIP ? req.clientIP : req.ip.replace('::ffff:', '');
+        const now = Date.now();
+        const windowStart = Math.floor(now / this.windowMs) * this.windowMs;
+        const windowEnd = windowStart + this.windowMs;
   
-      try {
-        await this.collection.updateOne(
-          { _id: `${ip}_${windowStart}` },
-          {
-            $setOnInsert: {
-              ip: ip,
-              windowStart: windowStart,
-              windowEnd: windowEnd
-            },
-            $inc: { count: 1 }
-          },
-          { upsert: true }
-        );
+        try {
 
-        const entry = await this.collection.findOne({ 
-          _id: `${ip}_${windowStart}` 
-        });
-        
-        const count = entry?.count || 1;
+          const result = await this.collection.findOneAndUpdate(
+            { 
+              _id: `${ip}_${windowStart}`, // Unique ID per window
+              windowEnd: { $gt: now } // Only count current window
+            },
+            {
+              $setOnInsert: {
+                _id: `${ip}_${windowStart}`,
+                ip: ip,
+                windowStart: windowStart,
+                windowEnd: windowEnd
+              },
+              $inc: { count: 1 }
+            },
+            { 
+              upsert: true,
+              returnDocument: 'after'
+            }
+          );
+          
+          const entry = result;
+          const count = entry.count || 1;
+          
   
-        res.set({
-          'X-RateLimit-Limit': this.maxRequests,
-          'X-RateLimit-Remaining': Math.max(this.maxRequests - count, 0),
-          'X-RateLimit-Reset': Math.floor(windowEnd / 1000)
-        });
-  
-        if (count > this.maxRequests) {
-          const remainingTime = Math.ceil((windowEnd - now) / 1000);
-          return res.status(429).json({
-            message: `Too many requests. Please try again in ${this.formatDuration(remainingTime)}`
+          res.set({
+            'X-RateLimit-Limit': this.maxRequests,
+            'X-RateLimit-Remaining': Math.max(this.maxRequests - count, 0),
+            'X-RateLimit-Reset': Math.floor(windowEnd / 1000)
           });
+  
+          if (count > this.maxRequests) {
+            const remainingTime = Math.ceil((windowEnd - now) / 1000);
+            return res.status(429).json({
+              message: `Too many requests. Please try again in ${this.formatDuration(remainingTime)}`
+            });
+          }
+  
+          next();
+        } catch (err) {
+          console.error('Rate limiter error:', err);
+          next();
         }
-        next();
-      } catch (err) {
-        console.error('Rate limiter error:', err);
-        next();
-      }
-    };
-  }
-  normalizeIp(ip) {
-    if (ip.startsWith('::ffff:')) {
-      return ip.slice(7);
+      };
     }
-    if (ip === '::1') {
-      return '127.0.0.1';
-    }
-    return ip;
-  }
 
   formatDuration(seconds) {
     if (seconds <= 0) return 'a short while';
