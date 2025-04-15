@@ -21,7 +21,6 @@ const emptyMessage = computed(() => {
     if (isLoading.value) return 'Loading friends...';
     
     const hasSearch = !!searchValue.value;
-    const hasFriends = friends.value.length > 0;
     const hasFilteredFriends = filteredFriends.value.length > 0;
     
     switch (activeTab.value?.name) {
@@ -54,12 +53,12 @@ const displayedFriends = computed(() => {
             
         case 'Friend Requests':
             return filteredFriends.value.filter(friend => 
-                friend.friends?.some(f => f.userId === userId && f.friendStatus === 'pending')
+                friend.friends?.some(f => f.userId === userId && f.friendStatus === 'pending' && f.initiator)
             );
             
         case 'Pending Requests':
             return filteredFriends.value.filter(friend => 
-                friend.friends?.some(f => f.userId === userId && !f.initiator)
+                friend.friends?.some(f => f.userId === userId && f.friendStatus === 'pending' && !f.initiator)
             );
         default:
             return filteredFriends.value;

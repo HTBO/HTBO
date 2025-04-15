@@ -209,7 +209,7 @@ export const useUserApi = () => {
         }
     };
 
-    const updateFriendStatus = async (friendId: string, status: 'accepted' | 'rejected') => {
+    const updateFriendStatus = async (friendId: string, friendStatus: 'accepted' | 'rejected') => {
         try {
             const response = await $fetch<User>(`${API_URL}/${getUserId()}`, {
                 method: 'PATCH',
@@ -218,13 +218,13 @@ export const useUserApi = () => {
                     friendAction: {
                         action: 'update-status',
                         friendId,
-                        status
+                        friendStatus
                     }
                 }
             });
             
             if (response) {
-                const action = status === 'accepted' ? 'accepted' : 'rejected';
+                const action = friendStatus === 'accepted' ? 'accepted' : 'rejected';
                 toast.add({
                     title: 'Success',
                     description: `Friend request ${action} successfully`,

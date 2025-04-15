@@ -10,33 +10,65 @@ definePageMeta({
 
 const route = useRoute()
 const authStore = useAuthStore()
-const { getUserByUsername, removeFriend } = useUserApi()
 const { username } = route.params as { username: string }
 
 const loading = ref(true)
 const user = ref<User | null>(null)
 
+const userStatus = computed(() => useUserStatus(user.value, authStore.user));
+
+const isMe = () => userStatus.value.isMe();
+const isFriend = () => userStatus.value.isFriend();
+const isPending = () => userStatus.value.isPending();
+const isInitiator = () => userStatus.value.isInitiator();
+const isNone = () => userStatus.value.isNone();
+
 const fetchUser = async () => {
-  loading.value = true
-  try {
-    user.value = await getUserByUsername(username)
-  } catch (err) {
-    user.value = null
-  } finally {
-    loading.value = false
-  }
+    const { getUserByUsername } = useUserApi()
+    loading.value = true
+    try {
+        user.value = await getUserByUsername(username)
+    } catch (err) {
+        user.value = null
+    } finally {
+        loading.value = false
+    }
 }
 
-onMounted(fetchUser)
+const addFriend = async () => {
+    const { addFriend } = useUserApi()
+    try {
+        if (!user.value) return
+        const success = await addFriend(user.value._id)
+        if (success) {
+            await Promise.all([
+                authStore.refreshUser(),
+                fetchUser()
+            ])
+        }
+    } catch (error) {
+        throw error
+    }
+};
 
-const userStatus = computed<UserStatus>(() => {
-  if (!user.value || !authStore.user) return 'none'
-  return useUserStatus(user.value, authStore.user).getUserStatus()
-})
-
-const addFriend = () => { };
+const acceptFriend = async () => {
+    const { updateFriendStatus } = useUserApi()
+    try {
+        if (!user.value) return
+        const success = await updateFriendStatus(user.value._id, 'accepted')
+        if (success) {
+            await Promise.all([
+                authStore.refreshUser(),
+                fetchUser()
+            ])
+        }
+    } catch (error) {
+        throw error
+    }
+};
 
 const cancelFriend = async () => {
+    const { removeFriend } = useUserApi()
     try {
         if (!user.value) return;
         const success = await removeFriend(user.value._id);
@@ -52,10 +84,12 @@ const cancelFriend = async () => {
 }
 
 const activeTab = ref<Tab | null>(profileTabs[0] ?? null)
+
+onMounted(fetchUser)
 </script>
 
 <template>
-    <Loading v-if="loading"/>
+    <Loading v-if="loading" />
     <Transition name="fade">
         <div v-if="!loading && user" class="flex flex-col gap-5">
             <div>
@@ -65,7 +99,7 @@ const activeTab = ref<Tab | null>(profileTabs[0] ?? null)
                 <div class="-mt-12 h-24 flex justify-center p-5 px-10 bg-gray-800/50 drop-shadow-xl inset-shadow-sm inset-shadow-gray-700/50 backdrop-blur-md rounded-xl">
                     <div class="flex-1 flex">
                         <div class="flex flex-col items-center">
-                            <p class="text-lg font-semibold">{{ user?.friends.filter(friend => friend.friendStatus === 'accepted').length }}</p>
+                            <p class="text-lg font-semibold">{{user?.friends.filter(friend => friend.friendStatus === 'accepted').length}}</p>
                             <p class="font-lg font-semibold">Friends</p>
                         </div>
                     </div>
@@ -77,18 +111,28 @@ const activeTab = ref<Tab | null>(profileTabs[0] ?? null)
                     </div>
                     <div class="flex-1 flex justify-end items-center">
                         <ClientOnly>
-                            <NuxtLink v-if="userStatus === 'me'" to="/dashboard" class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 font-semibold py-2 px-4 rounded-lg duration-300">
+                            <NuxtLink v-if="isMe()" to="/dashboard" class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 font-semibold py-2 px-4 rounded-lg duration-300">
                                 <Icon name="icons:edit" size="1.25rem" />
                                 <p>Edit Profile</p>
                             </NuxtLink>
-                            <button v-else-if="userStatus === 'none'" @click="addFriend" class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 font-semibold py-2 px-4 rounded-lg duration-300">
+                            <button v-else-if="isNone()" @click="addFriend" class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 font-semibold py-2 px-4 rounded-lg duration-300">
                                 <Icon name="icons:add" size="1.25rem" />
                                 <span>Add Friend</span>
                             </button>
-                            <button v-else-if="userStatus === 'pending'" @click="cancelFriend" class="w-28 flex justify-center items-center gap-2 border border-yellow-500 text-yellow-500 hover:border-transparent hover:text-white hover:bg-red-600/70 font-semibold py-2 px-4 rounded-lg duration-300 group">
+                            <button v-else-if="isInitiator()" @click="cancelFriend" class="w-28 flex justify-center items-center gap-2 border border-yellow-500 text-yellow-500 hover:border-transparent hover:text-white hover:bg-red-600/70 font-semibold py-2 px-4 rounded-lg duration-300 group">
                                 <span><span class="group-hover:hidden">Pending</span><span class="hidden group-hover:inline">Cancel</span></span>
                             </button>
-                            <button v-else-if="userStatus === 'accepted'" @click="cancelFriend" class="flex items-center gap-2 border border-green-500 text-green-500 hover:border-transparent hover:text-white hover:bg-red-600 font-semibold py-2 px-4 rounded-lg duration-300 group">
+                            <div v-else-if="isPending()" class="flex gap-2">
+                                <button @click="acceptFriend" class="flex items-center gap-1 bg-green-600 hover:bg-green-700 font-semibold py-2 px-4 rounded-lg duration-300">
+                                    <Icon name="icons:check" size="1.25rem" />
+                                    <span>Accept</span>
+                                </button>
+                                <button @click="cancelFriend" class="flex items-center gap-1 bg-red-600 hover:bg-red-700 font-semibold py-2 px-4 rounded-lg duration-300">
+                                    <Icon name="icons:close" size="1.25rem" />
+                                    <span>Reject</span>
+                                </button>
+                            </div>
+                            <button v-else-if="isFriend()" @click="cancelFriend" class="flex items-center gap-2 border border-green-500 text-green-500 hover:border-transparent hover:text-white hover:bg-red-600 font-semibold py-2 px-4 rounded-lg duration-300 group">
                                 <span><span class="group-hover:hidden">Friend</span><span class="hidden group-hover:inline">Remove</span></span>
                             </button>
                         </ClientOnly>

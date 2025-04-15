@@ -44,7 +44,6 @@ watch(searchValue, (newValue) => {
     }
 });
 
-provide('refreshUsers', refreshUserList);
 </script>
 
 <template>
