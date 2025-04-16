@@ -45,8 +45,6 @@ export const useFriendsStore = defineStore('friends', {
             
           const friendResponses = await Promise.all(acceptedFriends);
 
-          console.log('Fetched friends:', friendResponses);
-
           this.friendsByUser[user._id]!.friends = friendResponses.filter((friend): friend is User => friend !== null);
         } catch (error) {
           console.error('Error fetching friends:', error);

@@ -1,7 +1,7 @@
 import type { User } from "./User"
 
 export interface Group {
-    _id: string
+    id: string
     name: string
     description: string
     ownerId: string
