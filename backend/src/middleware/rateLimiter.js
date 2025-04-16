@@ -3,8 +3,9 @@ const { MongoClient } = require('mongodb');
 class RateLimiter {
   constructor() {
     this.collection = null;
-    this.windowMs = parseInt(process.env.XRL_WINDOW_MS, 10);
-    this.maxRequests = parseInt(process.env.XRL_MAX_REQUESTS, 10);
+    // Convert environment variables to numbers
+    this.windowMs = parseInt(process.env.XRL_WINDOW_MS, 10) || 900000; // 15min default
+    this.maxRequests = parseInt(process.env.XRL_MAX_REQUESTS, 10) || 100;
     this.initialize().catch(console.error);
   }
 
@@ -27,73 +28,84 @@ class RateLimiter {
       if (!this.collection) return next();
       if (req.clientIP == "127.0.0.1") return next();
       if (req.originalUrl.includes('favicon.ico')) return next();
-      const ip = req.clientIP || this.normalizeIp(req.ip);
+
+      const ip = req.clientIP || req.ip.replace('::ffff:', '');
       const now = Date.now();
       const windowStart = Math.floor(now / this.windowMs) * this.windowMs;
       const windowEnd = windowStart + this.windowMs;
-  
+
       try {
-        await this.collection.updateOne(
-          { _id: `${ip}_${windowStart}` },
-          {
-            $setOnInsert: {
-              ip: ip,
-              windowStart: windowStart,
-              windowEnd: windowEnd
-            },
-            $inc: { count: 1 }
-          },
-          { upsert: true }
-        );
+        let retries = 0;
+        const MAX_RETRIES = 3;
 
-        const entry = await this.collection.findOne({ 
-          _id: `${ip}_${windowStart}` 
-        });
-        
-        const count = entry?.count || 1;
-  
-        res.set({
-          'X-RateLimit-Limit': this.maxRequests,
-          'X-RateLimit-Remaining': Math.max(this.maxRequests - count, 0),
-          'X-RateLimit-Reset': Math.floor(windowEnd / 1000)
-        });
-  
-        if (count > this.maxRequests) {
-          const remainingTime = Math.ceil((windowEnd - now) / 1000);
-          return res.status(429).json({
-            message: `Too many requests. Please try again in ${this.formatDuration(remainingTime)}`
-          });
+        while (retries < MAX_RETRIES) {
+          try {
+            const result = await this.collection.findOneAndUpdate(
+              { _id: `${ip}_${windowStart}` },
+              {
+                $setOnInsert: {
+                  ip,
+                  windowStart,
+                  windowEnd: Number(windowEnd) // Force numeric type
+                },
+                $inc: { count: 1 }
+              },
+              {
+                upsert: true,
+                returnDocument: 'after',
+                projection: { _id: 0, count: 1 } // Optimize response
+              }
+            );
+
+            const count = result.value ? result.value.count : 1;
+
+            // Debug: Check MongoDB directly
+            const dbDoc = await this.collection.findOne({ _id: `${ip}_${windowStart}` });
+            console.log('Actual DB Count:', dbDoc?.count);
+
+            res.set({
+              'X-RateLimit-Limit': this.maxRequests,
+              'X-RateLimit-Remaining': Math.max(this.maxRequests - dbDoc?.count, 0),
+              'X-RateLimit-Reset': Math.floor(windowEnd / 1000)
+            });
+
+            if (count > this.maxRequests) {
+              return res.status(429).json({
+                message: `Retry in ${this.formatDuration(Math.ceil((windowEnd - now) / 1000))}`
+              });
+            }
+            return next();
+          }
+          catch (err) {
+            if (err.code === 11000 && retries < MAX_RETRIES) {
+              retries++;
+              await new Promise(resolve => setTimeout(resolve, 50 * retries));
+              continue;
+            }
+            throw err;
+          }
         }
-        next();
+          
       } catch (err) {
-        console.error('Rate limiter error:', err);
-        next();
-      }
-    };
-  }
-  normalizeIp(ip) {
-    if (ip.startsWith('::ffff:')) {
-      return ip.slice(7);
+          console.error('Final rate limiter error:', err);
+          next();
+        }
+      };
     }
-    if (ip === '::1') {
-      return '127.0.0.1';
+
+    formatDuration(seconds) {
+      if (seconds <= 0) return 'a short while';
+
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const remainingSeconds = seconds % 60;
+
+      return [
+        hours > 0 && `${hours}h`,
+        minutes > 0 && `${minutes}m`,
+        remainingSeconds > 0 && `${remainingSeconds}s`
+      ].filter(Boolean).join(' ') || 'a few seconds';
     }
-    return ip;
   }
-
-  formatDuration(seconds) {
-    if (seconds <= 0) return 'a short while';
-    
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = seconds % 60;
-
-    return [
-      hours > 0 && `${hours}h`,
-      minutes > 0 && `${minutes}m`,
-      remainingSeconds > 0 && `${remainingSeconds}s`
-    ].filter(Boolean).join(' ') || 'a few seconds';
-  }
-}
 
 module.exports = new RateLimiter().middleware();

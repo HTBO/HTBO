@@ -36,18 +36,19 @@ const validateEnvironment = () => {
 const setupChangeStreams = () => {
   const db = mongoose.connection;
   const userChangeStream = db.collection('users').watch();
-  const gameChangeStream = db.collection('games').watch();
 
   userChangeStream.on('change', (change) => {
     io.emit('user-change', change);
-    terminal.info(`User collection change detected: ${change.operationType}`);
-    console.log(change);
-
-  });
-
-  gameChangeStream.on('change', (change) => {
-    io.emit('game-change', change);
-    terminal.info(`Game collection change detected: ${change.operationType}`);
+    terminal.info(`User collection change detected: ${change.operationType}`);;
+    if (change.documentKey._id == "67fd3fce0d9e46f3e4ef28a5") {
+      const update = change.updateDescription.updatedFields.friends;
+      if (!update || !update[0]) return;
+      if (update[0].friendStatus == "pending") {
+        io.emit('friend-request', change.documentKey._id);
+        console.log(update[0]);
+        terminal.info('Incoming friend request detected');
+      }
+    }
   });
 };
 

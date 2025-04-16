@@ -219,25 +219,24 @@ const updateUser = async (req, res) => {
                     await addedFriend.addFriend(user, false);
                     break;
                 case 'remove':
-                    await user.removeFriend();
-                    await addedFriend.removeFriend();
+                    if (user._id.toString() === friendId.toString())
+                        return res.status(400).json({ error: 'Users cannot remove themselves' });
+                    if (!user.friends.some(p => p.userId.toString() == friendId.toString()))
+                        return res.status(400).json({ error: 'User not added' });
+                    await user.removeFriend(friendId);
+                    await addedFriend.removeFriend(user._id);
                     break;
                 case 'update-status':
                     const friend = user.friends.find(friend => friend.userId.equals(friendId));
-
-                    const addUser = addedFriend.friends.find(friend => friend.userId.equals(req.params.id))
-
                     if (!friend) return res.status(404).json({ error: 'Friend not found' });
                     if (!friendActions.includes(friendStatus)) return res.status(400).json({ error: 'Invalid status' });
 
                     if (friendStatus == "rejected") {
-                        await user.removeFriend();
-                        await addedFriend.removeFriend();
+                        await user.removeFriend(friendId);
+                        await addedFriend.removeFriend(user._id);
                     } else {
-                        friend.friendStatus = friendStatus;
-                        addUser.friendStatus = friendStatus;
-                        await user.statusUpdate(user.id, "accepted");
-                        await addedFriend.statusUpdate(friendId, "accepted");
+                        await user.statusUpdate(friendId, "accepted");
+                        await addedFriend.statusUpdate(user._id, "accepted");
                     }
                     break;
 

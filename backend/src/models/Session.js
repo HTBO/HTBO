@@ -49,6 +49,8 @@ const sessionSchema = new mongoose.Schema({
         virtuals: true,
         transform: function(doc, ret){
             delete ret.passwordHash; //Password excluding from response
+            ret.id = ret._id;
+            delete ret._id;
             return ret;
         }
     }

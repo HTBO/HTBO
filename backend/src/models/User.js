@@ -89,19 +89,13 @@ const userSchema = new mongoose.Schema({
     toJSON: {
         virtuals: true,
         transform: function (doc, ret) {
+            ret.id = ret._id;
             delete ret.passwordHash; //Password excluding from response
-            // delete ret._id; //Id excluding from response
             return ret;
         }
     }
 }, {_id: false });
 
-userSchema.pre('save', function (next) {
-    if (this.isModified('username')) {
-        this.username = this.username.toLowerCase();
-    }
-    next();
-});
 
 userSchema.methods.addFriend = function (userId, initiator) {
     if (!this.friends.some(f => f.userId.equals(userId)))
@@ -110,16 +104,19 @@ userSchema.methods.addFriend = function (userId, initiator) {
 };
 
 userSchema.methods.removeFriend = function (userId) {
-    if (!this.friends.some(f => f.userId.equals(userId)))
-        this.friends.splice(userId, 1);
+    const friendIndex = this.friends.findIndex(f => f.userId.equals(userId));
+    if (friendIndex !== -1)
+        this.friends.splice(friendIndex, 1);
     return this.save();
 }
 
 userSchema.methods.statusUpdate = function (userId, status) {
+    console.log(userId);
+    console.log(this.friends);
+    
     const friend = this.friends.find(f => f.userId.equals(userId));
-    if (!friend) {
+    if (!friend)
         throw new Error(`Friend with ID ${userId} not found`);
-    }
     friend.friendStatus = status;
     return this.save();
 }
@@ -147,9 +144,6 @@ userSchema.methods.removeGroup = function (groupId) {
 }
 
 userSchema.methods.updateGroupStatus = function (groupId, status) {
-    console.log(groupId, status);
-    console.log(this.groups.some(g => g.groupId.equals(groupId)));
-
     this.groups.some(g => g.groupId.equals(groupId)).groupStatus = status;
     return this.save();
 }
