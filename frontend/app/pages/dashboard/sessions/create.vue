@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { Game } from '~/types/Game';
 import type { User } from '~/types/User';
 
 definePageMeta({
@@ -8,20 +9,28 @@ definePageMeta({
 
 const router = useRouter();
 const authStore = useAuthStore();
+const { searchGame } = useGameApi();
 
 const description = ref('');
-const selectedMembers = ref<string[]>([]);
 const isLoading = ref(false);
+
+const selectedMembers = ref<string[]>([]);
 const availableFriends = ref<User[]>([]);
+
 const scheduledTime = ref<Date | null>(null);
 const minutes = ref(30);
 const customDateTime = ref('');
+
+const gameQuery = ref('');
+const isSearching = ref(false);
+const searchResults = ref<Game[]>([]);
+const selectedGame = ref<Game | null>(null);
 
 const updateScheduledTime = (selectedMins: number) => {
     minutes.value = selectedMins;
     const now = new Date();
     scheduledTime.value = new Date(now.getTime() + selectedMins * 60000);
-    
+
     const year = scheduledTime.value.getFullYear();
     const month = String(scheduledTime.value.getMonth() + 1).padStart(2, '0');
     const day = String(scheduledTime.value.getDate()).padStart(2, '0');
@@ -33,11 +42,42 @@ const updateScheduledTime = (selectedMins: number) => {
 const handleCustomDateTimeChange = () => {
     if (customDateTime.value) {
         scheduledTime.value = new Date(customDateTime.value);
-        
+
         const now = new Date();
         const diffMs = scheduledTime.value.getTime() - now.getTime();
         minutes.value = Math.round(diffMs / 60000);
     }
+};
+
+const searchGames = async (query: string) => {
+    if (!query.trim()) {
+        searchResults.value = [];
+        return;
+    }
+
+    try {
+        isSearching.value = true;
+        const response = await searchGame(query);
+
+        searchResults.value = response || [];
+    } catch (error) {
+        console.error('Error searching games:', error);
+    } finally {
+        isSearching.value = false;
+    }
+};
+
+const debouncedSearch = useDebounce<string>(searchGames, 500);
+
+const selectGame = (game: Game) => {
+    selectedGame.value = game;
+    gameQuery.value = game.name || '';
+    searchResults.value = [];
+};
+
+const clearSelectedGame = () => {
+    selectedGame.value = null;
+    gameQuery.value = '';
 };
 
 onMounted(() => {
@@ -68,51 +108,65 @@ const createNewSession = async () => {
                     </div>
 
                     <div>
+                        <label for="game-search" class="block text-sm font-medium text-gray-300 mb-1">Select Game</label>
+                        <div class="relative">
+                            <div class="flex items-center bg-surface-950 border-2 border-transparent rounded-xl focus-within:border-primary-500 transition-colors">
+                                <Icon name="material-symbols:search" size="1.25rem" class="text-gray-400 ml-3" />
+                                <input type="text" id="game-search" v-model="gameQuery" @input="debouncedSearch(gameQuery)" placeholder="Search for a game..." class="w-full p-3 bg-transparent outline-none text-white" />
+                                <div v-if="isSearching" class="mr-3">
+                                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-500"></div>
+                                </div>
+                            </div>
+
+                            <div v-if="searchResults.length > 0" class="absolute z-50 mt-1 w-full bg-surface-900 rounded-xl shadow-lg max-h-80 overflow-y-auto">
+                                <ul>
+                                    <li v-for="game in searchResults" :key="game.id" @click="selectGame(game)" class="p-3 hover:bg-surface-800 cursor-pointer flex items-center gap-3 border-b border-surface-700 last:border-0 duration-300">
+                                        <img v-if="game.cover" :src="game.cover" :alt="game.name" class="h-12 object-cover rounded" />
+                                        <div v-else class="h-12 w-12 bg-surface-950 rounded flex items-center justify-center">
+                                            <Icon name="material-symbols:videogame-asset" size="1.5rem" class="text-gray-400" />
+                                        </div>
+                                        <div>
+                                            <div class="font-medium text-white">{{ game.name }}</div>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div v-if="selectedGame" class="mt-3 p-3 bg-surface-950 rounded-xl border border-primary-500 flex items-center gap-3">
+                            <img v-if="selectedGame.cover" :src="selectedGame.cover" :alt="selectedGame.name" class="h-16 object-cover rounded" />
+                            <div v-else class="h-16 w-16 bg-surface-950 rounded flex items-center justify-center">
+                                <Icon name="material-symbols:videogame-asset" size="1.5rem" class="text-gray-400" />
+                            </div>
+                            <div>
+                                <div class="font-medium text-white">{{ selectedGame.name }}</div>
+                            </div>
+                            <button @click="clearSelectedGame" class="ml-auto flex p-1.5 rounded-full hover:bg-surface-700 text-gray-400 duration-300">
+                                <Icon name="material-symbols:close" size="1.25rem" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
                         <label class="block text-sm font-medium text-gray-300 mb-1">When to play</label>
                         <div class="space-y-3">
                             <div class="flex items-center gap-2">
                                 <span class="text-gray-400">Playing in</span>
                                 <div class="flex gap-2">
-                                    <button 
-                                        v-for="time in [5, 15, 30, 45, 60]" 
-                                        :key="time"
-                                        type="button"
-                                        @click="updateScheduledTime(time)"
-                                        class="px-3 py-1.5 rounded-lg transition-colors text-sm" 
-                                        :class="minutes === time ? 'bg-primary-600 text-white' : 'bg-surface-800 text-gray-300 hover:bg-surface-700'"
-                                    >
+                                    <button v-for="time in [5, 15, 30, 45, 60]" :key="time" type="button" @click="updateScheduledTime(time)" class="px-3 py-1.5 rounded-lg transition-colors text-sm" :class="minutes === time ? 'bg-primary-600 text-white' : 'bg-surface-800 text-gray-300 hover:bg-surface-700'">
                                         {{ time }} min
                                     </button>
                                 </div>
                             </div>
-                            
+
                             <div>
                                 <label for="custom-datetime" class="block text-sm font-medium text-gray-300 mb-1">Or select specific date and time:</label>
-                                <input 
-                                    type="datetime-local" 
-                                    id="custom-datetime" 
-                                    v-model="customDateTime" 
-                                    @change="handleCustomDateTimeChange"
-                                    class="bg-surface-950 border-2 border-transparent rounded-xl p-2 focus:border-primary-500 outline-none transition-colors text-white"
-                                />
-                            </div>
-                            
-                            <div class="bg-surface-950 p-3 rounded-xl border-2 border-transparent focus-within:border-primary-500">
-                                <div class="flex items-center">
-                                    <Icon name="material-symbols:schedule" size="1.25rem" class="text-gray-400 mr-2" />
-                                    <span v-if="scheduledTime" class="text-white">
-                                        {{ scheduledTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }} 
-                                        on {{ scheduledTime.toLocaleDateString() }}
-                                        <span v-if="minutes > 0">({{ minutes }} minutes from now)</span>
-                                        <span v-else-if="minutes < 0">({{ Math.abs(minutes) }} minutes in the past)</span>
-                                        <span v-else>(now)</span>
-                                    </span>
-                                </div>
+                                <input type="datetime-local" id="custom-datetime" v-model="customDateTime" @change="handleCustomDateTimeChange" class="bg-surface-950 border-2 border-transparent rounded-xl p-2 focus:border-primary-500 outline-none transition-colors text-white" />
                             </div>
                         </div>
                     </div>
 
-                    <MemberSelector v-model:selectedMembers="selectedMembers" :available-friends="availableFriends" :is-loading="isLoading" label="Members" :show-label="true"/>
+                    <MemberSelector v-model:selectedMembers="selectedMembers" :available-friends="availableFriends" :is-loading="isLoading" label="Members" placeholder="Add members to session" :show-label="true" />
 
                     <div class="flex justify-end gap-4 pt-2">
                         <button type="button" @click="router.push('/dashboard/sessions')" class="px-5 py-2 border border-primary-700 rounded-xl hover:bg-surface-700 transition-colors">
