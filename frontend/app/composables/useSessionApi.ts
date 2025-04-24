@@ -6,7 +6,6 @@ export const useSessionApi = () => {
 
     const { getAuthHeaders } = useUserUtils();
 
-
     // GET
     const getSessionById = (id: string) => {
         return $fetch<Session>(`${API_URL}/${id}`, {
@@ -17,8 +16,8 @@ export const useSessionApi = () => {
     // POST 
     const createSession = (sessionData: {
         hostId: string;
-        gameId: string;
-        scheduledAt: string;
+        gameId: number;
+        scheduledAt: Date;
         description: string;
         participants: Array<{ user?: string; group?: string; }>;
     }) => {

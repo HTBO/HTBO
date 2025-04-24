@@ -8,11 +8,11 @@ export const profileTabs: Tab[] = [
         component: markRaw(SectionsFriends),
         getProps: (user: User) => {
             const store = useFriendsStore();
-            
+
             if (!store.friendsByUser[user._id] || !store.friendsByUser[user._id]!.friends) {
                 store.fetchFriends(user);
             }
-            
+
             return {
                 friends: store.friendsByUser[user._id]?.friends || [],
                 isLoading: store.friendsByUser[user._id]?.isLoading ?? true,
@@ -61,4 +61,19 @@ export const membersTabs: Tab[] = [
     { name: 'All Members', component: null },
     { name: 'Active', component: null },
     { name: 'Pending', component: null }
-  ];
+];
+
+export const sessionsTabs: Tab[] = [
+    {
+        name: 'All Sessions',
+        component: null,
+    },
+    {
+        name: 'Hosting',
+        component: null,
+    },
+    {
+        name: 'Session Invites',
+        component: null,
+    }
+];

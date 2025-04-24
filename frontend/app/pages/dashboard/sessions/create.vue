@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Game } from '~/types/Game';
+import type { Group } from '~/types/Group';
 import type { User } from '~/types/User';
 
 definePageMeta({
@@ -10,12 +11,17 @@ definePageMeta({
 const router = useRouter();
 const authStore = useAuthStore();
 const { searchGame } = useGameApi();
+const { createSession } = useSessionApi();
+const toast = useToast();
 
 const description = ref('');
 const isLoading = ref(false);
 
 const selectedMembers = ref<string[]>([]);
 const availableFriends = ref<User[]>([]);
+
+const selectedGroups = ref<string[]>([]);
+const availableGroups = ref<Group[]>([]);
 
 const scheduledTime = ref<Date | null>(null);
 const minutes = ref(30);
@@ -25,6 +31,50 @@ const gameQuery = ref('');
 const isSearching = ref(false);
 const searchResults = ref<Game[]>([]);
 const selectedGame = ref<Game | null>(null);
+
+const loadUsers = async () => {
+    try {
+        isLoading.value = true;
+
+        if (!authStore.user?._id) return;
+
+        const friendsStore = useFriendsStore();
+        await friendsStore.fetchFriends(authStore.user);
+
+        availableFriends.value = friendsStore.friendsByUser[authStore.user._id]?.friends || [];
+    } catch (error) {
+        console.error('Error loading friends:', error);
+        toast.add({
+            title: 'Error',
+            description: 'Failed to load friends',
+            color: 'error'
+        });
+    } finally {
+        isLoading.value = false;
+    }
+};
+
+const loadGroups = async () => {
+    try {
+        isLoading.value = true;
+
+        if (!authStore.user?._id) return;
+
+        const groupsStore = useGroupsStore();
+        await groupsStore.fetchGroups(authStore.user);
+
+        availableGroups.value = groupsStore.groupsByUser[authStore.user._id]?.groups || [];
+    } catch (error) {
+        console.error('Error loading groups:', error);
+        toast.add({
+            title: 'Error',
+            description: 'Failed to load groups',
+            color: 'error'
+        });
+    } finally {
+        isLoading.value = false;
+    }
+};
 
 const updateScheduledTime = (selectedMins: number) => {
     minutes.value = selectedMins;
@@ -81,11 +131,82 @@ const clearSelectedGame = () => {
 };
 
 onMounted(() => {
+    loadUsers();
+    loadGroups();
     updateScheduledTime(minutes.value);
 });
 
 const createNewSession = async () => {
-    // Implementation will go here
+    try {
+        if (!description.value.trim()) {
+            toast.add({
+                title: 'Error',
+                description: 'Description is required',
+                color: 'error'
+            });
+            return;
+        }
+
+        if (!selectedGame.value) {
+            toast.add({
+                title: 'Error',
+                description: 'Game is required',
+                color: 'error'
+            });
+            return;
+        }
+
+        if (!authStore.user?._id) {
+            toast.add({
+                title: 'Error',
+                description: 'You must be logged in to create a session',
+                color: 'error'
+            });
+            return;
+        }
+
+        if (!scheduledTime.value) {
+            toast.add({
+                title: 'Error',
+                description: 'Please select a valid date and time',
+                color: 'error'
+            });
+            return;
+        }
+
+        isLoading.value = true;
+
+        const sessionData = {
+            hostId: authStore.user._id,
+            gameId: selectedGame.value.id,
+            scheduledAt: scheduledTime.value,
+            description: description.value.trim(),
+            participants: [
+                ...selectedMembers.value.map(userId => ({ user: userId })),
+                ...selectedGroups.value.map(groupId => ({ group: groupId }))
+            ]
+        };
+
+        const result = await createSession(sessionData);
+
+        if (result) {
+            toast.add({
+                title: 'Success',
+                description: 'Session created successfully!',
+                color: 'success'
+            });
+            router.push('/dashboard/sessions');
+        }
+    } catch (error) {
+        console.error('Error creating session:', error);
+        toast.add({
+            title: 'Error',
+            description: 'Failed to create session',
+            color: 'error'
+        });
+    } finally {
+        isLoading.value = false;
+    }
 }
 </script>
 
@@ -167,6 +288,7 @@ const createNewSession = async () => {
                     </div>
 
                     <MemberSelector v-model:selectedMembers="selectedMembers" :available-friends="availableFriends" :is-loading="isLoading" label="Members" placeholder="Add members to session" :show-label="true" />
+                    <GroupSelector v-model:selectedGroups="selectedGroups" :available-groups="availableGroups" :is-loading="isLoading" label="Groups" placeholder="Add groups to session" :show-label="true" />
 
                     <div class="flex justify-end gap-4 pt-2">
                         <button type="button" @click="router.push('/dashboard/sessions')" class="px-5 py-2 border border-primary-700 rounded-xl hover:bg-surface-700 transition-colors">

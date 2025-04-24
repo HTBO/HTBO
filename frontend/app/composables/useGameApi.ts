@@ -15,10 +15,12 @@ export const useGameApi = () => {
     }
 
     const getGameById = (id: string) => {
-        return $fetch<Game>(`${API_URL}/search`, {
+        return $fetch<Game[]>(`${API_URL}/search`, {
             method: 'POST',
             headers: getAuthHeaders(),
             body: { id },
+        }).then((response) => {
+            return response[0];
         });
     };
 

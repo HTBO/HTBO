@@ -1,16 +1,25 @@
+import type { Game } from "./Game"
 import type { User } from "./User"
 
 export interface Session {
-    _id: string
+    id: string
     hostId: string
     gameId: string
-    schduledAt: Date
+    game?: Game
+    scheduledAt: Date
     description: string
     participants: Array<{
         user: string | User
-        status: 'pending' | 'accepted' | 'rejected' | 'host'
+        sessionStatus: 'pending' | 'accepted' | 'host'
     }>
     groups: any[]
     createdAt: Date
     updatedAt: Date
+}
+
+export type SessionUserStatus = 'pending' | 'accepted' | 'host' | 'none'
+
+export interface SessionTag {
+    tag: 'Live' | 'Starting Soon' | 'Upcoming'
+    color: string
 }
