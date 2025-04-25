@@ -30,7 +30,7 @@ export default function SessionsScreen() {
   const handleCardPress = (session: SessionModel) => {
     router.push({
       pathname: "/session/[id]",
-      params: { id: session._id },
+      params: { id: session.id },
     });
   };
 
@@ -151,7 +151,10 @@ export default function SessionsScreen() {
   }
 
   const acceptSessionInvite = async (sessionId: string): Promise<boolean> => {
-    if (processingSessions[sessionId]) return false;
+    const sessionObject = sessions.find(s => s._id === sessionId);
+    console.log('Session object found:', sessionObject);
+
+    if (!sessionObject || processingSessions[sessionId]) return false;
     
     setProcessingSessions(prev => ({ ...prev, [sessionId]: true }));
     
@@ -162,6 +165,13 @@ export default function SessionsScreen() {
         throw new Error("Authentication required");
       }
 
+      const requestBody = {
+        userId: currentUserId,
+        sessionId: sessionObject.id  // Using the _id from the session object
+      };
+
+      console.log('Sending request with body:', requestBody);
+
       const response = await fetch(
         `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/sessions/confirm`,
         {
@@ -170,17 +180,14 @@ export default function SessionsScreen() {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            userId: currentUserId,
-            sessionId: sessionId
-          }),
+          body: JSON.stringify(requestBody),
         }
       );
 
       if (!response.ok) {
         throw new Error("Failed to accept session invite");
       }
-
+    
       await getUserSessionInfo();
       return true;
     } catch (error) {
@@ -192,7 +199,10 @@ export default function SessionsScreen() {
   };
 
   const declineSessionInvite = async (sessionId: string): Promise<boolean> => {
-    if (processingSessions[sessionId]) return false;
+    const sessionObject = sessions.find(s => s._id === sessionId);
+    console.log('Session object found:', sessionObject);
+
+    if (!sessionObject || processingSessions[sessionId]) return false;
     
     setProcessingSessions(prev => ({ ...prev, [sessionId]: true }));
     
@@ -203,6 +213,13 @@ export default function SessionsScreen() {
         throw new Error("Authentication required");
       }
 
+      const requestBody = {
+        userId: currentUserId,
+        sessionId: sessionObject.id
+      };
+
+      console.log('Sending request with body:', requestBody);
+
       const response = await fetch(
         `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/sessions/reject`,
         {
@@ -211,10 +228,7 @@ export default function SessionsScreen() {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            userId: currentUserId,
-            sessionId: sessionId
-          }),
+          body: JSON.stringify(requestBody),
         }
       );
 
