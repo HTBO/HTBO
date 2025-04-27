@@ -1,4 +1,3 @@
-import type { Friend } from '~/types/Friend'
 import type { User } from '~/types/User'
 
 export type UserStatus = 'me' | 'none' | 'pending' | 'accepted' | 'initiator' 

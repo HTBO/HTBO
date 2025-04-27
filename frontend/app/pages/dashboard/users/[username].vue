@@ -10,6 +10,7 @@ definePageMeta({
 
 const route = useRoute()
 const authStore = useAuthStore()
+const { getUserByUsername, addFriend, updateFriendStatus, removeFriend } = useUserApi()
 const { username } = route.params as { username: string }
 
 const loading = ref(true)
@@ -24,7 +25,6 @@ const isInitiator = () => userStatus.value.isInitiator();
 const isNone = () => userStatus.value.isNone();
 
 const fetchUser = async () => {
-    const { getUserByUsername } = useUserApi()
     loading.value = true
     try {
         user.value = await getUserByUsername(username)
@@ -35,52 +35,22 @@ const fetchUser = async () => {
     }
 }
 
-const addFriend = async () => {
-    const { addFriend } = useUserApi()
-    try {
-        if (!user.value) return
-        const success = await addFriend(user.value._id)
-        if (success) {
-            await Promise.all([
-                authStore.refreshUser(),
-                fetchUser()
-            ])
-        }
-    } catch (error) {
-        throw error
-    }
+const handleAddFriend = async () => {
+    if (!user.value) return
+    await addFriend(user.value._id)
+    await fetchUser()
 };
 
-const acceptFriend = async () => {
-    const { updateFriendStatus } = useUserApi()
-    try {
-        if (!user.value) return
-        const success = await updateFriendStatus(user.value._id, 'accepted')
-        if (success) {
-            await Promise.all([
-                authStore.refreshUser(),
-                fetchUser()
-            ])
-        }
-    } catch (error) {
-        throw error
-    }
+const handleFriendRequest = async (status: 'accepted' | 'rejected') => {
+    if (!user.value) return
+    await updateFriendStatus(user.value._id, status);
+    await fetchUser()
 };
 
-const cancelFriend = async () => {
-    const { removeFriend } = useUserApi()
-    try {
-        if (!user.value) return;
-        const success = await removeFriend(user.value._id);
-        if (success) {
-            await Promise.all([
-                authStore.refreshUser(),
-                fetchUser()
-            ]);
-        }
-    } catch (error) {
-        throw error;
-    }
+const handleRemoveFriend = async () => {
+    if (!user.value) return;
+    await removeFriend(user.value._id);
+    await fetchUser()
 }
 
 const activeTab = ref<Tab | null>(profileTabs[0] ?? null)
@@ -111,28 +81,28 @@ onMounted(fetchUser)
                     </div>
                     <div class="flex-1 flex justify-end items-center">
                         <ClientOnly>
-                            <NuxtLink v-if="isMe()" to="/dashboard" class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 font-semibold py-2 px-4 rounded-lg duration-300">
+                            <!-- <NuxtLink v-if="isMe()" to="/dashboard" class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 font-semibold py-2 px-4 rounded-lg duration-300">
                                 <Icon name="icons:edit" size="1.25rem" />
                                 <p>Edit Profile</p>
-                            </NuxtLink>
-                            <button v-else-if="isNone()" @click="addFriend" class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 font-semibold py-2 px-4 rounded-lg duration-300">
+                            </NuxtLink> -->
+                            <button v-if="isNone()" @click="handleAddFriend" class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 font-semibold py-2 px-4 rounded-lg duration-300">
                                 <Icon name="icons:add" size="1.25rem" />
                                 <span>Add Friend</span>
                             </button>
-                            <button v-else-if="isInitiator()" @click="cancelFriend" class="w-28 flex justify-center items-center gap-2 border border-yellow-500 text-yellow-500 hover:border-transparent hover:text-white hover:bg-red-600/70 font-semibold py-2 px-4 rounded-lg duration-300 group">
+                            <button v-else-if="isInitiator()" @click="handleFriendRequest('rejected')" class="w-28 flex justify-center items-center gap-2 border border-yellow-500 text-yellow-500 hover:border-transparent hover:text-white hover:bg-red-600/70 font-semibold py-2 px-4 rounded-lg duration-300 group">
                                 <span><span class="group-hover:hidden">Pending</span><span class="hidden group-hover:inline">Cancel</span></span>
                             </button>
                             <div v-else-if="isPending()" class="flex gap-2">
-                                <button @click="acceptFriend" class="flex items-center gap-1 bg-green-600 hover:bg-green-700 font-semibold py-2 px-4 rounded-lg duration-300">
+                                <button @click="handleFriendRequest('accepted')" class="flex items-center gap-1 bg-green-600 hover:bg-green-700 font-semibold py-2 px-4 rounded-lg duration-300">
                                     <Icon name="icons:check" size="1.25rem" />
                                     <span>Accept</span>
                                 </button>
-                                <button @click="cancelFriend" class="flex items-center gap-1 bg-red-600 hover:bg-red-700 font-semibold py-2 px-4 rounded-lg duration-300">
+                                <button @click="handleFriendRequest('rejected')" class="flex items-center gap-1 bg-red-600 hover:bg-red-700 font-semibold py-2 px-4 rounded-lg duration-300">
                                     <Icon name="icons:close" size="1.25rem" />
                                     <span>Reject</span>
                                 </button>
                             </div>
-                            <button v-else-if="isFriend()" @click="cancelFriend" class="flex items-center gap-2 border border-green-500 text-green-500 hover:border-transparent hover:text-white hover:bg-red-600 font-semibold py-2 px-4 rounded-lg duration-300 group">
+                            <button v-else-if="isFriend()" @click="handleRemoveFriend" class="flex items-center gap-2 border border-green-500 text-green-500 hover:border-transparent hover:text-white hover:bg-red-600 font-semibold py-2 px-4 rounded-lg duration-300 group">
                                 <span><span class="group-hover:hidden">Friend</span><span class="hidden group-hover:inline">Remove</span></span>
                             </button>
                         </ClientOnly>

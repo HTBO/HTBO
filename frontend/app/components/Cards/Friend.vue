@@ -2,7 +2,8 @@
 import type { User } from '~/types/User';
 
 const authStore = useAuthStore();
-const refreshUsers = inject('refreshUsers') as (() => Promise<void>);
+const { addFriend, updateFriendStatus, removeFriend } = useUserApi();
+const refreshFriends = inject('refreshFriends') as (() => Promise<void>);
 
 const props = defineProps<{
     friend: User;
@@ -16,64 +17,19 @@ const isPending = () => userStatus.value.isPending();
 const isInitiator = () => userStatus.value.isInitiator();
 const isNone = () => userStatus.value.isNone();
 
-const addFriend = async () => {
-    const { addFriend } = useUserApi();
-    try {
-        const success = await addFriend(props.friend._id);
-        if (success) {
-            await Promise.all([
-                authStore.refreshUser(),
-                refreshUsers?.()
-            ]);
-        }
-    } catch (error) {
-        throw error;
-    }
+const handleAddFriend = async () => {
+    await addFriend(props.friend._id);
+    await refreshFriends?.();
 }
 
-const acceptFriendRequest = async () => {
-    const { updateFriendStatus } = useUserApi();
-    try {
-        const success = await updateFriendStatus(props.friend._id, 'accepted');
-        if (success) {
-            await Promise.all([
-                authStore.refreshUser(),
-                refreshUsers?.()
-            ]);
-        }
-    } catch (error) {
-        throw error;
-    }
+const handleFriendRequest = async (status: 'accepted' | 'rejected') => {
+    await updateFriendStatus(props.friend._id, status);
+    await refreshFriends?.();
 };
 
-const rejectFriendRequest = async () => {
-    const { updateFriendStatus } = useUserApi();
-    try {
-        const success = await updateFriendStatus(props.friend._id, 'rejected');
-        if (success) {
-            await Promise.all([
-                authStore.refreshUser(),
-                refreshUsers?.()
-            ]);
-        }
-    } catch (error) {
-        throw error;
-    }
-};
-
-const removeFriend = async () => {
-    const { removeFriend } = useUserApi();
-    try {
-        const success = await removeFriend(props.friend._id);
-        if (success) {
-            await Promise.all([
-                authStore.refreshUser(),
-                refreshUsers?.()
-            ]);
-        }
-    } catch (error) {
-        throw error;
-    }
+const handleRemoveFriend = async () => {
+    await removeFriend(props.friend._id);
+    await refreshFriends?.();
 };
 </script>
 
@@ -90,31 +46,30 @@ const removeFriend = async () => {
             <div class="grow">
                 <div class="flex justify-end">
                     <span v-if="isMe()" class="text-sm text-primary-600 font-semibold">You</span>
-                    
+
                     <div v-else-if="isFriend()" class="flex items-center gap-2">
-                        <span class="text-sm text-green-500 font-semibold">Friend</span>
-                        <button @click="removeFriend" class="flex items-center justify-center p-1.5 bg-red-600/50 hover:bg-red-600/80 rounded-lg duration-300">
+                        <button @click="handleRemoveFriend" class="flex items-center justify-center p-1.5 bg-red-600/50 hover:bg-red-600/80 rounded-lg duration-300">
                             <Icon name="icons:remove-friend" size="1.5rem" />
                         </button>
                     </div>
-                    
+
                     <div v-else-if="isInitiator()" class="flex items-center gap-2">
                         <span class="text-sm text-yellow-500 font-semibold">Pending</span>
-                        <button @click="removeFriend" class="flex items-center justify-center p-1.5 bg-red-600/50 hover:bg-red-600/80 rounded-lg duration-300">
+                        <button @click="handleRemoveFriend" class="flex items-center justify-center p-1.5 bg-red-600/50 hover:bg-red-600/80 rounded-lg duration-300">
                             <Icon name="icons:close" size="1.5rem" />
                         </button>
                     </div>
-                    
+
                     <div v-else-if="isPending()" class="flex items-center gap-2">
-                        <button @click="acceptFriendRequest" class="flex items-center justify-center p-1.5 bg-green-600/50 hover:bg-green-600/80 rounded-lg duration-300">
+                        <button @click="handleFriendRequest('accepted')" class="flex items-center justify-center p-1.5 bg-green-600/50 hover:bg-green-600/80 rounded-lg duration-300">
                             <Icon name="icons:check" size="1.5rem" />
                         </button>
-                        <button @click="rejectFriendRequest" class="flex items-center justify-center p-1.5 bg-red-600/50 hover:bg-red-600/80 rounded-lg duration-300">
+                        <button @click="handleFriendRequest('rejected')" class="flex items-center justify-center p-1.5 bg-red-600/50 hover:bg-red-600/80 rounded-lg duration-300">
                             <Icon name="icons:close" size="1.5rem" />
                         </button>
                     </div>
-                    
-                    <button v-else-if="isNone()" @click="addFriend" class="flex items-center justify-center p-1.5 bg-green-600/50 hover:bg-green-600/80 rounded-lg duration-300">
+
+                    <button v-else-if="isNone()" @click="handleAddFriend" class="flex items-center justify-center p-1.5 bg-green-600/50 hover:bg-green-600/80 rounded-lg duration-300">
                         <Icon name="icons:add-friend" size="1.75rem" />
                     </button>
                 </div>

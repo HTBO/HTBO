@@ -12,11 +12,11 @@ const props = defineProps<{
 const isMenuOpen = inject('isUserMenuOpen') as Ref<boolean>;
 
 const menuItems = [
-    {
-        name: 'Settings',
-        icon: 'settings',
-        link: '/dashboard/settings'
-    },
+    // {
+    //     name: 'Settings',
+    //     icon: 'settings',
+    //     link: '/dashboard/settings'
+    // },
     {
         name: 'Logout',
         icon: 'logout',

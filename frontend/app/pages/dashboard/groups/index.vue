@@ -99,7 +99,10 @@ watch(searchValue, (newValue) => {
     }
 });
 
-onMounted(loadGroups);
+onMounted(async () => {
+    await authStore.refreshUser();
+    loadGroups();
+});
 
 provide('refreshGroups', loadGroups);
 </script>

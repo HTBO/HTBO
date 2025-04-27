@@ -5,18 +5,19 @@ export const useGroupApi = () => {
     const API_URL = `${runtimeConfig.public.apiBaseUrl}/groups`;
 
     const { getAuthHeaders } = useUserUtils();
-    
+
     const authStore = useAuthStore();
     const toast = useToast();
+    const router = useRouter();
 
-    // GET methods
+    // GET
     const getGroupById = (id: string) => {
         return $fetch<Group>(`${API_URL}/${id}`, {
             headers: getAuthHeaders(),
         });
     };
 
-    // POST methods
+    // POST
     const createGroup = async (groupData: any) => {
         try {
             const response = await $fetch<Group>(`${API_URL}`, {
@@ -24,18 +25,16 @@ export const useGroupApi = () => {
                 headers: getAuthHeaders(),
                 body: groupData
             });
-            
-            if (response) {
-                await authStore.refreshUser();
-                toast.add({
-                    title: 'Success',
-                    description: 'Group created successfully',
-                    color: 'success'
-                });
-                return response;
-            }
-            return null;
+            await authStore.refreshUser();
+            toast.add({
+                title: 'Success',
+                description: 'Group created successfully',
+                color: 'success'
+            });
+            router.push('/dashboard/groups');
+            return response;
         } catch (error) {
+            console.error('Error creating group:', error);
             toast.add({
                 title: 'Error',
                 description: 'Failed to create group',
@@ -52,18 +51,15 @@ export const useGroupApi = () => {
                 headers: getAuthHeaders(),
                 body: { groupId, userId }
             });
-            
-            if (response) {
-                await authStore.refreshUser();
-                toast.add({
-                    title: 'Success',
-                    description: 'You joined the group',
-                    color: 'success'
-                });
-                return true;
-            }
-            return false;
+            await authStore.refreshUser();
+            toast.add({
+                title: 'Success',
+                description: 'You joined the group',
+                color: 'success'
+            });
+            return true;
         } catch (error) {
+            console.error('Error joining group:', error);
             toast.add({
                 title: 'Error',
                 description: 'Failed to join group',
@@ -73,35 +69,33 @@ export const useGroupApi = () => {
         }
     };
 
-    const rejectGroup = async (groupId: string, userId: string) => {
+    const rejectGroup = async (groupId: string, userId: string, action: 'reject' | 'leave') => {
         try {
             const response = await $fetch(`${API_URL}/reject`, {
                 method: 'POST',
                 headers: getAuthHeaders(),
                 body: { groupId, userId }
             });
-            
-            if (response) {
-                await authStore.refreshUser();
-                toast.add({
-                    title: 'Success',
-                    description: 'You left the group',
-                    color: 'success'
-                });
-                return true;
-            }
-            return false;
+            await authStore.refreshUser();
+            toast.add({
+                title: 'Success',
+                description: action === 'reject' ? 'Group request rejected' : 'You left the group',
+                color: 'success'
+            });
+            router.push('/dashboard/groups');
+            return true;
         } catch (error) {
+            console.error('Error rejecting group:', error);
             toast.add({
                 title: 'Error',
-                description: 'Failed to leave group',
+                description: action === 'reject' ? 'Failed to reject group request' : 'Failed to leave group',
                 color: 'error'
             });
             return false;
         }
     };
 
-    // PATCH methods
+    // PATCH
     const updateGroup = async (id: string, groupData: Partial<Group>) => {
         try {
             const response = await $fetch<Group>(`${API_URL}/${id}`, {
@@ -109,17 +103,15 @@ export const useGroupApi = () => {
                 headers: getAuthHeaders(),
                 body: groupData
             });
-            
-            if (response) {
-                toast.add({
-                    title: 'Success',
-                    description: 'Group updated successfully',
-                    color: 'success'
-                });
-                return response;
-            }
-            return null;
+            await authStore.refreshUser();
+            toast.add({
+                title: 'Success',
+                description: 'Group updated successfully',
+                color: 'success'
+            });
+            return response;
         } catch (error) {
+            console.error('Error updating group:', error);
             toast.add({
                 title: 'Error',
                 description: 'Failed to update group',
@@ -137,17 +129,14 @@ export const useGroupApi = () => {
                 headers: getAuthHeaders(),
                 body: { addMember: addMembers }
             });
-            
-            if (response) {
-                toast.add({
-                    title: 'Success',
-                    description: 'Members added successfully',
-                    color: 'success'
-                });
-                return response;
-            }
-            return null;
+            toast.add({
+                title: 'Success',
+                description: 'Members added successfully',
+                color: 'success'
+            });
+            return response;
         } catch (error) {
+            console.error('Error adding members to group:', error);
             toast.add({
                 title: 'Error',
                 description: 'Failed to add members',
@@ -165,17 +154,14 @@ export const useGroupApi = () => {
                 headers: getAuthHeaders(),
                 body: { removeMember: removeMembers }
             });
-            
-            if (response) {
-                toast.add({
-                    title: 'Success',
-                    description: 'Members removed successfully',
-                    color: 'success'
-                });
-                return response;
-            }
-            return null;
+            toast.add({
+                title: 'Success',
+                description: 'Members removed successfully',
+                color: 'success'
+            });
+            return response;
         } catch (error) {
+            console.error('Error removing members from group:', error);
             toast.add({
                 title: 'Error',
                 description: 'Failed to remove members',
@@ -185,25 +171,23 @@ export const useGroupApi = () => {
         }
     };
 
-    // DELETE methods
+    // DELETE
     const deleteGroup = async (id: string) => {
         try {
             const response = await $fetch(`${API_URL}/${id}`, {
                 method: 'DELETE',
                 headers: getAuthHeaders()
             });
-            
-            if (response) {
-                await authStore.refreshUser();
-                toast.add({
-                    title: 'Success',
-                    description: 'Group deleted successfully',
-                    color: 'success'
-                });
-                return true;
-            }
-            return false;
+            await authStore.refreshUser();
+            toast.add({
+                title: 'Success',
+                description: 'Group deleted successfully',
+                color: 'success'
+            });
+            router.push('/dashboard/groups');
+            return true;
         } catch (error) {
+            console.error('Error deleting group:', error);
             toast.add({
                 title: 'Error',
                 description: 'Failed to delete group',
@@ -216,17 +200,17 @@ export const useGroupApi = () => {
     return {
         // GET
         getGroupById,
-        
+
         // POST
         createGroup,
         joinGroup,
         rejectGroup,
-        
+
         // PATCH
         updateGroup,
         addMembersToGroup,
         removeMembersFromGroup,
-        
+
         // DELETE
         deleteGroup
     };

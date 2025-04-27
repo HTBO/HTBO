@@ -34,11 +34,25 @@ export const useGroupMembershipStatus = (targetGroup: Group | null, currentUser:
         return getGroupMembershipStatus() === 'none'
     }
 
+    
+
     return {
         getGroupMembershipStatus,
         isOwner,
         isMember,
         isPending,
-        isNone
+        isNone,
     }
 }
+
+export const useGroupUtils = () => {
+    const getAcceptedMembersCount = (group: Group | null): number => {
+        if (!group) return 0
+        group.members?.filter((member: GroupMember) => member.groupStatus === 'accepted')
+        return group.members?.length || 0
+    }
+
+    return {
+        getAcceptedMembersCount,
+    }
+};

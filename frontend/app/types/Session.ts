@@ -4,6 +4,7 @@ import type { User } from "./User"
 export interface Session {
     id: string
     hostId: string
+    host?: User
     gameId: string
     game?: Game
     scheduledAt: Date
@@ -11,6 +12,7 @@ export interface Session {
     participants: Array<{
         user: string | User
         sessionStatus: 'pending' | 'accepted' | 'host'
+        userData?: User
     }>
     groups: any[]
     createdAt: Date

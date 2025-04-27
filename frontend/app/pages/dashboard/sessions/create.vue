@@ -130,84 +130,65 @@ const clearSelectedGame = () => {
     gameQuery.value = '';
 };
 
+const createNewSession = async () => {
+    if (!description.value.trim()) {
+        toast.add({
+            title: 'Error',
+            description: 'Description is required',
+            color: 'error'
+        });
+        return;
+    }
+
+    if (!selectedGame.value) {
+        toast.add({
+            title: 'Error',
+            description: 'Game is required',
+            color: 'error'
+        });
+        return;
+    }
+
+    if (!authStore.user?._id) {
+        toast.add({
+            title: 'Error',
+            description: 'You must be logged in to create a session',
+            color: 'error'
+        });
+        return;
+    }
+
+    if (!scheduledTime.value) {
+        toast.add({
+            title: 'Error',
+            description: 'Please select a valid date and time',
+            color: 'error'
+        });
+        return;
+    }
+
+    isLoading.value = true;
+
+    const sessionData = {
+        hostId: authStore.user._id,
+        gameId: selectedGame.value.id,
+        scheduledAt: scheduledTime.value,
+        description: description.value.trim(),
+        participants: [
+            ...selectedMembers.value.map(userId => ({ user: userId })),
+            ...selectedGroups.value.map(groupId => ({ group: groupId }))
+        ]
+    };
+
+    await createSession(sessionData);
+    isLoading.value = false;
+}
+
 onMounted(() => {
     loadUsers();
     loadGroups();
     updateScheduledTime(minutes.value);
 });
-
-const createNewSession = async () => {
-    try {
-        if (!description.value.trim()) {
-            toast.add({
-                title: 'Error',
-                description: 'Description is required',
-                color: 'error'
-            });
-            return;
-        }
-
-        if (!selectedGame.value) {
-            toast.add({
-                title: 'Error',
-                description: 'Game is required',
-                color: 'error'
-            });
-            return;
-        }
-
-        if (!authStore.user?._id) {
-            toast.add({
-                title: 'Error',
-                description: 'You must be logged in to create a session',
-                color: 'error'
-            });
-            return;
-        }
-
-        if (!scheduledTime.value) {
-            toast.add({
-                title: 'Error',
-                description: 'Please select a valid date and time',
-                color: 'error'
-            });
-            return;
-        }
-
-        isLoading.value = true;
-
-        const sessionData = {
-            hostId: authStore.user._id,
-            gameId: selectedGame.value.id,
-            scheduledAt: scheduledTime.value,
-            description: description.value.trim(),
-            participants: [
-                ...selectedMembers.value.map(userId => ({ user: userId })),
-                ...selectedGroups.value.map(groupId => ({ group: groupId }))
-            ]
-        };
-
-        const result = await createSession(sessionData);
-
-        if (result) {
-            toast.add({
-                title: 'Success',
-                description: 'Session created successfully!',
-                color: 'success'
-            });
-            router.push('/dashboard/sessions');
-        }
-    } catch (error) {
-        console.error('Error creating session:', error);
-        toast.add({
-            title: 'Error',
-            description: 'Failed to create session',
-            color: 'error'
-        });
-    } finally {
-        isLoading.value = false;
-    }
-}
 </script>
 
 <template>

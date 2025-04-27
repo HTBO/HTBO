@@ -21,7 +21,7 @@ const refreshUserList = async () => {
         const response = await useUserApi().getAllUsers();
         const currentUser = useAuthStore().user;
         if (!currentUser) return;
-        
+
         users.value = response.filter(user => {
             const { isNone } = useUserStatus(user, currentUser);
             return isNone();
@@ -49,11 +49,6 @@ watch(searchValue, (newValue) => {
 <template>
     <div>
         <h2 class="text-2xl mb-4">Search Results</h2>
-        <SectionsFriends 
-            :friends="filteredUsers"
-            :is-loading="isLoading"
-            :empty-message="emptyMessage"
-            :show-add-friend-link="false"
-        />
+        <SectionsFriends :friends="filteredUsers" :is-loading="isLoading" :empty-message="emptyMessage" :show-add-friend-link="false" />
     </div>
 </template>

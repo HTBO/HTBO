@@ -11,13 +11,12 @@ definePageMeta({
 const route = useRoute();
 const router = useRouter();
 const { id } = route.params;
-
-const authStore = useAuthStore();
-
 const toast = useToast();
 
+const authStore = useAuthStore();
 const { getUserById } = useUserApi();
 const { getGroupById, joinGroup, rejectGroup, updateGroup, deleteGroup } = useGroupApi();
+const { getAcceptedMembersCount } = useGroupUtils();
 
 const isLoading = ref(true);
 const group = ref<Group | null>(null);
@@ -172,39 +171,21 @@ const handleJoinGroup = async () => {
     }
 };
 
-const handleLeaveGroup = async () => {
-    try {
-        if (!group.value || !authStore.user) return;
-        if (confirm('Are you sure you want to leave this group?')) {
-            return await rejectGroup(group.value?.id, authStore.user?._id);
-        }
-    } catch (error) {
-        console.error('Error leaving group:', error);
-    }
+const handleLeaveGroup = async (action: 'reject' | 'leave') => {
+    if (!group.value || !authStore.user) return;
+    await rejectGroup(group.value?.id, authStore.user?._id, action);
 };
 
 const handleDeleteGroup = async () => {
-    try {
-        if (!group.value) return;
-        if (confirm('Are you sure you want to delete this group? This action cannot be undone.')) {
-            const success = await deleteGroup(group.value?.id);
-            if (success) {
-                router.push('/dashboard/groups');
-            }
-        }
-    } catch (error) {
-        console.error('Error deleting group:', error);
-    }
+    if (!group.value) return;
+    await deleteGroup(group.value?.id);
 };
 
 const formatDate = (date: Date | string) => {
     return new Date(date).toLocaleString();
 };
 
-const acceptedMembersCount = computed(() => {
-    if (!group.value) return 0;
-    return group.value.members.filter(member => member.groupStatus === 'accepted').length;
-});
+const acceptedMembersCount = computed(() => getAcceptedMembersCount(group.value));
 
 const getMemberId = (memberData: any): string => {
     return typeof memberData.memberId === 'string'
@@ -243,30 +224,30 @@ onMounted(loadGroup);
             </div>
 
             <div class="flex gap-3">
-                <button v-if="isOwner()" @click="handleDeleteGroup" class="flex items-center gap-2 bg-red-600 hover:bg-red-700 font-semibold py-2 px-4 rounded-lg duration-300">
+                <button v-if="isOwner()" @click="handleDeleteGroup" class="flex items-center gap-2 bg-red-600/50 hover:bg-red-700 font-semibold py-2 px-4 rounded-lg duration-300">
                     <Icon name="material-symbols:delete" size="1.25rem" />
                     <span>Delete Group</span>
                 </button>
 
-                <button v-if="isOwner()" class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 font-semibold py-2 px-4 rounded-lg duration-300">
+                <!-- <button v-if="isOwner()" class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 font-semibold py-2 px-4 rounded-lg duration-300">
                     <Icon name="material-symbols:edit" size="1.25rem" />
                     <span>Edit Group</span>
-                </button>
+                </button> -->
 
                 <div v-else-if="isPending()" class="flex gap-3">
-                    <button @click="handleLeaveGroup" class="flex items-center gap-2 bg-red-600 hover:bg-red-700 font-semibold py-2 px-4 rounded-lg duration-300">
+                    <button @click="handleLeaveGroup('reject')" class="flex items-center gap-2 bg-red-600/50 hover:bg-red-700 font-semibold py-2 px-4 rounded-lg duration-300">
                         <Icon name="material-symbols:cancel" size="1.25rem" />
-                        <span>Cancel Request</span>
+                        <span>Reject Request</span>
                     </button>
 
-                    <button @click="handleJoinGroup" class="flex items-center gap-2 bg-green-600 hover:bg-green-700 font-semibold py-2 px-4 rounded-lg duration-300">
+                    <button @click="handleJoinGroup" class="flex items-center gap-2 bg-green-600/50 hover:bg-green-700 font-semibold py-2 px-4 rounded-lg duration-300">
                         <Icon name="material-symbols:add" size="1.25rem" />
                         <span>Join Group</span>
                     </button>
                 </div>
 
 
-                <button v-if="isMember()" @click="handleLeaveGroup" class="flex items-center gap-2 bg-red-600 hover:bg-red-700 font-semibold py-2 px-4 rounded-lg duration-300">
+                <button v-if="isMember()" @click="handleLeaveGroup('leave')" class="flex items-center gap-2 bg-red-600/50 hover:bg-red-700 font-semibold py-2 px-4 rounded-lg duration-300">
                     <Icon name="material-symbols:logout" size="1.25rem" />
                     <span>Leave Group</span>
                 </button>
@@ -365,32 +346,24 @@ onMounted(loadGroup);
         </NuxtLink>
     </div>
     <div v-if="showAddMemberModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-    <div class="bg-surface-900 rounded-xl p-6 max-w-2xl w-full max-h-[80vh] flex flex-col">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold">Add Members to Group</h2>
-            <button @click="closeAddMemberModal" class="text-gray-400 hover:text-white">
-                <Icon name="material-symbols:close" size="1.5rem" />
-            </button>
-        </div>
+        <div class="bg-surface-900 rounded-xl p-6 max-w-2xl w-full max-h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold">Add Members to Group</h2>
+                <button @click="closeAddMemberModal" class="text-gray-400 hover:text-white">
+                    <Icon name="material-symbols:close" size="1.5rem" />
+                </button>
+            </div>
 
-        <MemberSelector 
-            v-model:selectedMembers="selectedFriends"
-            :available-friends="availableFriends"
-            :is-loading="isAddingMembers"
-            label="Select Friends to Add"
-            placeholder="Search friends to add"
-            emptyMessage="All your friends are already members of this group."
-            :show-label="true"
-        />
+            <MemberSelector v-model:selectedMembers="selectedFriends" :available-friends="availableFriends" :is-loading="isAddingMembers" label="Select Friends to Add" placeholder="Search friends to add" emptyMessage="All your friends are already members of this group." :show-label="true" />
 
-        <div class="flex gap-3 mt-4">
-            <button @click="closeAddMemberModal" class="px-4 py-2 border border-surface-600 rounded-lg hover:bg-surface-700 transition-colors">
-                Cancel
-            </button>
-            <button @click="addSelectedMembers" :disabled="selectedFriends.length === 0 || isAddingMembers" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors flex-grow disabled:opacity-50 disabled:cursor-not-allowed">
-                Add {{ selectedFriends.length }} {{ selectedFriends.length === 1 ? 'Member' : 'Members' }}
-            </button>
+            <div class="flex gap-3 mt-4">
+                <button @click="closeAddMemberModal" class="px-4 py-2 border border-surface-600 rounded-lg hover:bg-surface-700 transition-colors">
+                    Cancel
+                </button>
+                <button @click="addSelectedMembers" :disabled="selectedFriends.length === 0 || isAddingMembers" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors flex-grow disabled:opacity-50 disabled:cursor-not-allowed">
+                    Add {{ selectedFriends.length }} {{ selectedFriends.length === 1 ? 'Member' : 'Members' }}
+                </button>
+            </div>
         </div>
     </div>
-</div>
 </template>

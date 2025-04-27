@@ -14,14 +14,13 @@ export const useGameApi = () => {
         });
     }
 
-    const getGameById = (id: string) => {
-        return $fetch<Game[]>(`${API_URL}/search`, {
+    const getGameById = async (id: string) => {
+        const response = await $fetch<Game[]>(`${API_URL}/search`, {
             method: 'POST',
             headers: getAuthHeaders(),
             body: { id },
-        }).then((response) => {
-            return response[0];
         });
+        return response[0];
     };
 
     return {

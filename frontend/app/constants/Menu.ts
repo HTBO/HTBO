@@ -43,21 +43,3 @@ export const menu: MenuGroup[] = [
         ]
     }
 ];
-
-export const accountMenu: MenuItem[] = [
-    {
-        title: "Profile",
-        icon: "profile",
-        link: "/dashboard/profile"
-    },
-    {
-        title: "Settings",
-        icon: "settings",
-        link: "/dashboard/settings"
-    },
-    {
-        title: "Logout",
-        icon: "logout",
-        link: "/logout"
-    }
-];

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-const runtimeConfig = useRuntimeConfig();
-const ENV = runtimeConfig.public.env;
 
 definePageMeta({
     layout: 'blank'
@@ -10,14 +8,9 @@ const authStore = useAuthStore();
 const router = useRouter();
 const { loginUser } = useUserApi();
 
-const emailOrUsername = ref('');
-const password = ref('');
+const emailOrUsername = ref('johndoe');
+const password = ref('johndoe');
 const errorMessage = ref('');
-
-if(ENV === 'development') {
-    emailOrUsername.value = 'johndoe';
-    password.value = 'johndoe';
-}
 
 async function signIn() {
     if (!emailOrUsername.value) {
@@ -74,9 +67,9 @@ async function signIn() {
                         <input id="remember" name="remember" type="checkbox" class="w-4 h-4 text-primary-500 border-gray-300 rounded focus:ring-primary-500" />
                         <label for="remember" class="text-sm text-gray-400">Remember me</label>
                     </div>
-                    <div class="text-sm">
+                    <!-- <div class="text-sm">
                         <NuxtLink to="/login" class="text-primary-500 hover:text-primary-500/80 duration-300">Forgot password?</NuxtLink>
-                    </div>
+                    </div> -->
                 </div>
                 <div>
                     <button type="submit" class="w-full p-3.5 bg-primary-600 hover:bg-primary-600/80 font-medium shadow-xl shadow-primary-600/25 rounded-2xl duration-300">

@@ -13,11 +13,11 @@ export interface User {
     games: any[]
     sessions: Array<{
         sessionId: string,
-        status: 'pending' | 'accepted' | 'rejected'
+        sessionStatus: 'pending' | 'accepted' | 'rejected' | 'host'
     }>
     groups: Array<{
         groupId: string,
-        status: 'pending' | 'accepted' | 'rejected'
+        groupStatus: 'pending' | 'accepted' | 'rejected' | 'owner'
     }>
     created_at: string
     updated_at: string

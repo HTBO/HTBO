@@ -4,7 +4,9 @@
 
 <template>
     <div class="relative flex min-h-screen">
-        <MenuSidebar/>
+        <div>
+            <MenuSidebar/>
+        </div>
         <div class="grow flex flex-col px-10 py-5 space-y-5">
             <Header/>
             <div class="grow">

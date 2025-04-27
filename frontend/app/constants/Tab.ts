@@ -1,4 +1,4 @@
-import { SectionsFriends, SectionsSessions } from "#components";
+import { SectionsFriends, SectionsGroups, SectionsSessions } from "#components";
 import type { Tab } from "~/types/Tab";
 import type { User } from "~/types/User";
 
@@ -22,8 +22,40 @@ export const profileTabs: Tab[] = [
         }
     },
     {
+        name: 'Groups',
+        component: markRaw(SectionsGroups),
+        getProps: (user: User) => {
+            const store = useGroupsStore();
+
+            if (!store.groupsByUser[user._id] || !store.groupsByUser[user._id]!.groups) {
+                store.fetchGroups(user);
+            }
+
+            return {
+                groups: store.groupsByUser[user._id]?.groups || [],
+                isLoading: store.groupsByUser[user._id]?.isLoading ?? true,
+                emptyMessage: 'No groups yet',
+                showAddGroupLink: false
+            };
+        }
+    },
+    {
         name: 'Sessions',
-        component: markRaw(SectionsSessions)
+        component: markRaw(SectionsSessions),
+        getProps: (user: User) => {
+            const store = useSessionsStore();
+
+            if (!store.sessionsByUser[user._id] || !store.sessionsByUser[user._id]!.sessions) {
+                store.fetchSessions(user);
+            }
+
+            return {
+                sessions: store.sessionsByUser[user._id]?.sessions || [],
+                isLoading: store.sessionsByUser[user._id]?.isLoading ?? true,
+                emptyMessage: 'No sessions yet',
+                showCreateSessionLink: false
+            };
+        }
     }
 ];
 

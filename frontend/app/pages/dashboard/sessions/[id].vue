@@ -7,214 +7,209 @@ definePageMeta({
 })
 
 const route = useRoute();
-const router = useRouter();
-const { id } = route.params;
 const authStore = useAuthStore();
-const toast = useToast();
-const { getSessionById } = useSessionApi();
+const { id } = route.params;
 
-const isLoading = ref(true);
+const { confirmSession, rejectSession, deleteSession } = useSessionApi();
+const { getUserSessionStatus, getSessionTimeTag, getFormattedDate, getAcceptedParticipantsCount, loadSession } = useSessionUtils();
+
 const session = ref<Session | null>(null);
-const isOwner = ref(false);
-const membershipStatus = ref('none');
+const isLoading = ref(true);
 
-const loadSession = async () => {
+const userStatus = computed(() => getUserSessionStatus(session.value));
+const timeTag = computed(() => getSessionTimeTag(session.value));
+const acceptedParticipantsCount = computed(() => getAcceptedParticipantsCount(session.value));
+
+const fetchSession = async () => {
     isLoading.value = true;
     try {
-        const sessionResponse = await getSessionById(id as string);
-        
-        session.value = sessionResponse;
-        
-        if (session.value && authStore.user) {
-            isOwner.value = session.value.hostId === authStore.user._id;
-            
-            const participation = session.value.participants.find(
-                p => typeof p.user === 'string' 
-                    ? p.user === authStore.user?._id 
-                    : p.user._id === authStore.user?._id
-            );
-            
-            membershipStatus.value = participation ? participation.status : 'none';
-        }
-    } catch (error) {
-        console.error('Error loading session:', error);
-        toast.add({
-            title: 'Error',
-            description: 'Failed to load session details',
-            color: 'error'
+        const enrichedSession = await loadSession(id as string, {
+            loadParticipantDetails: true,
+            redirectOnError: true
         });
-        router.push('/dashboard/sessions');
+        
+        if (enrichedSession) {
+            session.value = enrichedSession;
+        }
     } finally {
         isLoading.value = false;
     }
 };
 
-const formatDate = (date: Date | string) => {
-    return new Date(date).toLocaleString();
+const handleSessionAction = async (action: 'accept' | 'reject' | 'leave') => {
+    if(!session.value?.id) return;
+
+    if(action === 'accept') {
+        await confirmSession({ sessionId: session.value?.id, userId: authStore.user?._id || '' });
+    } else if(action === 'reject' || action === 'leave') {
+        await rejectSession({ sessionId: session.value?.id, userId: authStore.user?._id || '' }, action);
+    }
+    await fetchSession();
 };
 
-onMounted(loadSession);
+const handleEndSession = async () => {
+    if(!session.value?.id) return;
+    await deleteSession(session.value.id);
+};
+
+onMounted(fetchSession);
 </script>
 
 <template>
     <Loading v-if="isLoading" />
     <div v-else-if="session" class="space-y-6">
-        <div class="flex justify-between items-center">
+        <div class="flex items-center justify-between">
             <div class="flex items-center gap-4">
-                <NuxtLink
-                    to="/dashboard/sessions"
-                    class="flex items-center text-gray-400 hover:text-gray-300 transition-colors"
-                >
+                <NuxtLink to="/dashboard/sessions" class="flex items-center text-gray-400 hover:text-gray-300 transition-colors">
                     <Icon name="material-symbols:arrow-back" size="1.5rem" />
                 </NuxtLink>
                 <h1 class="text-2xl font-bold">Session Details</h1>
             </div>
             
-            <div class="flex gap-3">
-                <button 
-                    v-if="isOwner"
-                    class="flex items-center gap-2 bg-red-600 hover:bg-red-700 font-semibold py-2 px-4 rounded-lg duration-300"
-                >
-                    <Icon name="material-symbols:delete" size="1.25rem" />
-                    <span>Delete Session</span>
+            <div>
+                <div v-if="userStatus === 'pending'" class="flex gap-3">
+                    <button @click="handleSessionAction('reject')" class="px-5 py-2 bg-red-600/20 hover:bg-red-600/40 text-red-400/80 hover:text-red-200 rounded-xl duration-300">
+                        Decline
+                    </button>
+                    <button @click="handleSessionAction('accept')" class="px-5 py-2 bg-primary-600 hover:bg-primary-700 rounded-xl duration-300">
+                        Join Session
+                    </button>
+                </div>
+                <button v-else-if="userStatus === 'accepted'" @click="handleSessionAction('leave')" class="px-5 py-2 bg-red-600/20 hover:bg-red-600/40 text-red-400/80 hover:text-red-200 rounded-xl duration-300">
+                    Leave Session
                 </button>
-                
-                <button 
-                    v-if="isOwner"
-                    class="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 font-semibold py-2 px-4 rounded-lg duration-300"
-                >
-                    <Icon name="material-symbols:edit" size="1.25rem" />
-                    <span>Edit Session</span>
-                </button>
-                
-                <button 
-                    v-if="!isOwner && membershipStatus === 'none'"
-                    class="flex items-center gap-2 bg-green-600 hover:bg-green-700 font-semibold py-2 px-4 rounded-lg duration-300"
-                >
-                    <Icon name="material-symbols:add" size="1.25rem" />
-                    <span>Join Session</span>
-                </button>
-                
-                <button 
-                    v-if="!isOwner && membershipStatus === 'pending'"
-                    class="flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700 font-semibold py-2 px-4 rounded-lg duration-300"
-                    disabled
-                >
-                    <Icon name="material-symbols:pending" size="1.25rem" />
-                    <span>Request Pending</span>
-                </button>
-                
-                <button 
-                    v-if="!isOwner && (membershipStatus === 'accepted' || membershipStatus === 'host')"
-                    class="flex items-center gap-2 bg-red-600 hover:bg-red-700 font-semibold py-2 px-4 rounded-lg duration-300"
-                >
-                    <Icon name="material-symbols:logout" size="1.25rem" />
-                    <span>Leave Session</span>
+                <button v-else-if="userStatus === 'host'" @click="handleEndSession" class="px-5 py-2 bg-red-600/20 hover:bg-red-600/40 text-red-400/80 hover:text-red-200 rounded-xl duration-300">
+                    End Session
                 </button>
             </div>
         </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="md:col-span-2 space-y-6">
-                <div class="bg-surface-800/70 p-6 rounded-2xl">
-                    <h2 class="text-xl font-semibold mb-4">Session Information</h2>
-                    <div class="space-y-4">
-                        <div>
-                            <h3 class="text-gray-400 text-sm">Host</h3>
-                            <p class="text-lg">{{ typeof session.hostId === 'string' ? session.hostId : session.hostId }}</p>
-                        </div>
-                        <div>
-                            <h3 class="text-gray-400 text-sm">Game</h3>
-                            <p class="text-lg">{{ session.gameId }}</p>
-                        </div>
-                        <div>
-                            <h3 class="text-gray-400 text-sm">Scheduled At</h3>
-                            <p class="text-lg">{{ formatDate(session.schduledAt) }}</p>
-                        </div>
-                        <div>
-                            <h3 class="text-gray-400 text-sm">Description</h3>
-                            <p class="text-lg">{{ session.description }}</p>
-                        </div>
-                        <div>
-                            <h3 class="text-gray-400 text-sm">Status</h3>
-                            <div class="flex items-center mt-1">
-                                <span v-if="isOwner" class="text-primary-500 font-medium">Host</span>
-                                <span v-else-if="membershipStatus === 'accepted'" class="text-green-500 font-medium">
-                                    Participating
-                                </span>
-                                <span v-else-if="membershipStatus === 'pending'" class="text-yellow-500 font-medium">
-                                    Request Pending
-                                </span>
-                                <span v-else-if="membershipStatus === 'rejected'" class="text-red-500 font-medium">
-                                    Rejected
-                                </span>
-                                <span v-else class="text-gray-400 font-medium">Not Participating</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
+        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-600/30 to-surface-800 p-6">
+            <div class="absolute top-4 right-4">
+                <span class="flex items-center gap-1 text-xs font-bold px-4 py-1.5 rounded-full whitespace-nowrap" :class="timeTag.color">
+                    <Icon name="octicon:dot-fill-16" size="0.6rem"/>
+                    {{ timeTag.tag }}
+                </span>
             </div>
             
-            <div class="space-y-6">
-                <div class="bg-surface-800/70 p-6 rounded-2xl">
-                    <h2 class="text-xl font-semibold mb-4">Participants</h2>
-                    <div class="space-y-2">
-                        <div v-if="session.participants.length === 0" class="text-gray-400">
-                            No participants yet
-                        </div>
-                        
-                        <div v-for="participant in session.participants" :key="typeof participant.user === 'string' ? participant.user : participant.user._id" class="flex justify-between items-center p-2 bg-surface-700/50 rounded-lg">
-                            <div class="flex items-center gap-3">
-                                <div class="size-10 bg-surface-600 rounded-full flex items-center justify-center">
-                                    <Icon name="material-symbols:person" size="1.25rem" class="text-gray-300" />
-                                </div>
-                                <span>{{ typeof participant.user === 'string' ? participant.user : participant.user.username }}</span>
-                            </div>
-                            <span 
-                                :class="{
-                                    'text-green-500': participant.status === 'accepted',
-                                    'text-yellow-500': participant.status === 'pending',
-                                    'text-red-500': participant.status === 'rejected',
-                                    'text-primary-500': participant.status === 'host'
-                                }"
-                                class="text-sm font-medium"
-                            >
-                                {{ participant.status.charAt(0).toUpperCase() + participant.status.slice(1) }}
-                            </span>
-                        </div>
+            <div class="flex items-center gap-4 mt-4">
+                <div class="w-24 h-32 rounded-lg overflow-hidden shadow-lg">
+                    <img v-if="session.game?.cover" :src="`https:${session.game.cover}`" :alt="session.game?.name" class="w-full h-full object-cover" />
+                    <div v-else class="w-full h-full bg-surface-950 flex items-center justify-center">
+                        <Icon name="material-symbols:videogame-asset" size="2rem" class="text-gray-400" />
                     </div>
                 </div>
                 
-                <div v-if="isOwner && session.participants.some(p => p.status === 'pending')" class="bg-surface-800/70 p-6 rounded-2xl">
-                    <h2 class="text-xl font-semibold mb-4">Pending Requests</h2>
-                    <div class="space-y-2">
-                        <div v-for="participant in session.participants.filter(p => p.status === 'pending')" :key="typeof participant.user === 'string' ? participant.user : participant.user._id" class="flex justify-between items-center p-2 bg-surface-700/50 rounded-lg">
-                            <div class="flex items-center gap-3">
-                                <div class="size-10 bg-surface-600 rounded-full flex items-center justify-center">
-                                    <Icon name="material-symbols:person" size="1.25rem" class="text-gray-300" />
-                                </div>
-                                <span>{{ typeof participant.user === 'string' ? participant.user : participant.user.username }}</span>
-                            </div>
-                            <div class="flex gap-2">
-                                <button class="p-1.5 bg-green-600 hover:bg-green-700 rounded-lg transition-colors">
-                                    <Icon name="material-symbols:check" size="1.25rem" />
-                                </button>
-                                <button class="p-1.5 bg-red-600 hover:bg-red-700 rounded-lg transition-colors">
-                                    <Icon name="material-symbols:close" size="1.25rem" />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                <div class="flex flex-col">
+                    <h2 class="text-2xl font-bold mb-2">{{ session.game?.name || 'Unknown Game' }}</h2>
+                    <p class="text-gray-400">{{ session.description }}</p>
                 </div>
             </div>
         </div>
-    </div>
-    <div v-else class="flex flex-col items-center justify-center p-12">
-        <Icon name="material-symbols:error" size="3rem" class="text-red-500 mb-4" />
-        <h2 class="text-xl font-bold mb-2">Session Not Found</h2>
-        <p class="text-gray-400 mb-6">The session you're looking for doesn't exist or has been deleted.</p>
-        <NuxtLink to="/dashboard/sessions" class="text-primary-500 hover:text-primary-400 transition-colors">
-            Return to Sessions
-        </NuxtLink>
+
+        <div class="bg-surface-800/70 p-6 rounded-2xl">
+            <h3 class="text-gray-400 text-sm mb-3">Host</h3>
+            <div class="flex items-center gap-4">
+                <div class="size-12 bg-surface-600 rounded-full flex items-center justify-center overflow-hidden">
+                    <img v-if="session.host?.avatarUrl" :src="session.host.avatarUrl" :alt="session.host?.username" class="w-full h-full object-cover" />
+                    <Icon v-else name="material-symbols:person" size="1.5rem" class="text-gray-300" />
+                </div>
+                <div>
+                    <NuxtLink 
+                        :to="`/dashboard/users/${session.host?.username}`" 
+                        class="text-lg font-medium hover:text-primary-500 transition-colors"
+                    >
+                        {{ session.host?.username || 'Unknown User' }}
+                    </NuxtLink>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-surface-800/70 p-6 rounded-2xl">
+                <h3 class="text-xl font-semibold mb-4">Session Details</h3>
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="text-gray-400 text-sm">Scheduled Time</h4>
+                        <p class="text-lg">{{ session.scheduledAt ? getFormattedDate(session.scheduledAt) : 'Not scheduled' }}</p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-gray-400 text-sm">Participants</h4>
+                        <p class="text-lg">{{ acceptedParticipantsCount }}/{{ session.participants.length }} members joined</p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-gray-400 text-sm">Your Status</h4>
+                        <p class="text-lg">
+                            <span v-if="userStatus === 'host'" class="text-primary-500">Host</span>
+                            <span v-else-if="userStatus === 'accepted'" class="text-green-500">Joined</span>
+                            <span v-else-if="userStatus === 'pending'" class="text-yellow-500">Invited</span>
+                            <span v-else class="text-gray-400">Not a member</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-surface-800/70 p-6 rounded-2xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold">Members</h3>
+                    <button class="text-sm text-primary-500 hover:text-primary-400">View All</button>
+                </div>
+                
+                <ul class="space-y-4">
+                    <li class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="size-10 bg-surface-600 rounded-full flex items-center justify-center overflow-hidden">
+                                <img v-if="session.host?.avatarUrl" :src="session.host.avatarUrl" :alt="session.host?.username" class="w-full h-full object-cover" />
+                                <Icon v-else name="material-symbols:person" size="1.25rem" class="text-gray-300" />
+                            </div>
+                            <div>
+                                <NuxtLink 
+                                    :to="`/dashboard/users/${session.host?.username}`" 
+                                    class="hover:text-primary-500 transition-colors"
+                                >
+                                    {{ session.host?.username || 'Unknown User' }}
+                                </NuxtLink>
+                                <p class="text-xs text-primary-500">Host</p>
+                            </div>
+                        </div>
+                    </li>
+                    
+                   
+                    <li v-for="participant in session.participants.slice(0, 3)" :key="participant.userData?._id" class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="size-10 bg-surface-600 rounded-full flex items-center justify-center overflow-hidden">
+                                <img 
+                                    v-if="participant.userData?.avatarUrl" 
+                                    :src="participant.userData?.avatarUrl" 
+                                    :alt="participant.userData?.username" 
+                                    class="w-full h-full object-cover" 
+                                />
+                                <Icon v-else name="material-symbols:person" size="1.25rem" class="text-gray-300" />
+                            </div>
+                            <div>
+                                <NuxtLink 
+                                    :to="`/dashboard/users/${participant.userData?.username}`" 
+                                    class="hover:text-primary-500 transition-colors"
+                                >
+                                    {{ participant.userData?.username || 'Unknown User' }}
+                                </NuxtLink>
+                                <p class="text-xs" :class="{
+                                    'text-green-500': participant.sessionStatus === 'accepted',
+                                    'text-yellow-500': participant.sessionStatus === 'pending'
+                                }">
+                                    {{ participant.sessionStatus === 'accepted' ? 'Joined' : 'Pending' }}
+                                </p>
+                            </div>
+                        </div>
+                    </li>
+                    
+                    <li v-if="session.participants.length > 3" class="text-center text-sm text-gray-400">
+                        + {{ session.participants.length - 3 }} more members
+                    </li>
+                </ul>
+            </div>
+        </div>
     </div>
 </template>
