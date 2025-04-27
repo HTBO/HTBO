@@ -7,15 +7,24 @@ export default defineNuxtConfig({
   
   runtimeConfig: {
     public: {
-      apiBase: process.env.API_BASE || 'http://localhost:5000/api'
+      env: process.env.NODE_ENV || 'development',
+      apiBaseUrl: process.env.NUXT_API_BASE_URL || 'http://localhost:5000/api'
     }
   },
-
+  
   future: {
     compatibilityVersion: 4,
   },
 
   css: ['~/assets/css/main.css'],
+  icon: {
+    customCollections: [
+      {
+        prefix: 'icons',
+        dir: './app/assets/icons',
+      }
+    ]
+  },
 
   vite: {
     plugins: [
@@ -23,5 +32,5 @@ export default defineNuxtConfig({
     ],
   },
 
-  modules: ['@nuxt/icon', '@pinia/nuxt'],
+  modules: ['@nuxt/icon', '@nuxt/image', '@pinia/nuxt', '@nuxt/ui'],
 })

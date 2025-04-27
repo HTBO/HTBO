@@ -9,7 +9,7 @@ const { wsAuthMiddleware } = require('./middleware/webSocketAuth');
 
 dotenv.config();
 
-const PORT = process.env.PORT;
+const PORT = process.env.NODE_PORT;
 const MONGODB_URI = process.env.MONGODB_URI;
 
 const server = http.createServer(app);
