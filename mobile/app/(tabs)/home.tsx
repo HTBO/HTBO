@@ -1,14 +1,23 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <View style={styles.header}>
         <Text style={styles.headerTitle}>HTBO App</Text>
+        <TouchableOpacity 
+          style={styles.notificationButton}
+          onPress={() => router.push('/notifications')}
+        >
+          <Ionicons name="notifications-outline" size={24} color="white" />
+        </TouchableOpacity>
+      </View>
 
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.welcomeSection}>
           <Text style={styles.welcomeTitle}>Welcome to HTBO!</Text>
           <Text style={styles.welcomeSubtitle}>Your Gaming Social Hub</Text>
@@ -60,11 +69,26 @@ const styles = StyleSheet.create({
   scrollContainer: {
     padding: 16,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    marginBottom: 24,
+  },
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
     color: 'white',
-    marginBottom: 24,
+  },
+  notificationButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#1F2937',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   welcomeSection: {
     marginBottom: 32,
