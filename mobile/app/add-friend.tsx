@@ -14,8 +14,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router, Stack } from "expo-router";
 import { UserModel } from "../models/UserModel";
-import { Friend, FriendStatus } from "../models/FriendModel"; // Add this import
+import { Friend, FriendStatus } from "../models/FriendModel"; 
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { NotificationService } from '../services/notificationService';
 import { authService } from "../services/authService";
 
 // Add this helper function
@@ -166,49 +167,60 @@ export default function AddFriendScreen() {
     setIsAddingFriend((prev) => ({ ...prev, [friendId]: true }));
 
     try {
-      const token = await authService.getToken();
+        const token = await authService.getToken();
+        if (!token) throw new Error("Not authenticated");
 
-      if (!token) {
-        throw new Error("Not authenticated");
-      }
-
-      const payload = {
-        friendAction: {
-          action: "add",
-          friendId: friendId,
-        },
-      };
-
-      const response = await fetch(
-        `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/${currentUserId}`,
-        {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            Accept: "application/json",
+        const payload = {
+          friendAction: {
+            action: "add",
+            friendId: friendId,
           },
-          body: JSON.stringify(payload),
-        }
-      );
+        };
 
-      const responseText = await response.text();
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to add friend. Status: ${response.status}. Response: ${responseText}`
+        const response = await fetch(
+          `https://htbo-backend-ese0ftgke9hza0dj.germanywestcentral-01.azurewebsites.net/api/users/${currentUserId}`,
+          {
+            method: "PATCH",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify(payload),
+          }
         );
-      }
 
-      setAddedFriends((prev) => ({ ...prev, [friendId]: true }));
-      // alert('Friend request sent successfully!');
+        const responseText = await response.text();
+
+        if (!response.ok) {
+          throw new Error(
+            `Failed to add friend. Status: ${response.status}. Response: ${responseText}`
+          );
+        }
+
+        // Find the user's information from searchResults
+        if (response.ok) {
+            const addedUser = searchResults.find(user => 
+                normalizeId(user._id || user.id) === friendId
+            );
+
+            if (addedUser) {
+                await NotificationService.schedulePushNotification({
+                    title: 'Friend Request Sent',
+                    body: `You sent a friend request to @${addedUser.username}`,
+                    data: {
+                        type: 'friend_request',
+                        userId: friendId
+                    },
+                    showInApp: true // This will show the notification inside the app
+                });
+            }
+
+            setAddedFriends((prev) => ({ ...prev, [friendId]: true }));
+        }
     } catch (err) {
       console.error("Error adding friend:", err);
-      alert(
-        `Failed to add friend: ${
-          err instanceof Error ? err.message : "Unknown error"
-        }`
-      );
+      alert(`Failed to add friend: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
       setIsAddingFriend((prev) => ({ ...prev, [friendId]: false }));
     }
