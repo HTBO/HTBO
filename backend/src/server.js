@@ -23,7 +23,7 @@ const io = new Server(server, {
 io.use(wsAuthMiddleware);
 
 const validateEnvironment = () => {
-  const requiredVars = ['MONGODB_URI', 'LOGS_MONGODB_URI', 'PORT', 'JWT_SECRET', 'JWT_EXPIRES_IN', 'IGDB_CLIENT_ID', 'IGDB_ACCESS_TOKEN', 'XRL_WINDOW_MS', 'XRL_MAX_REQUESTS'];
+  const requiredVars = ['MONGODB_URI', 'LOGS_MONGODB_URI', 'NODE_PORT', 'JWT_SECRET', 'JWT_EXPIRES_IN', 'IGDB_CLIENT_ID', 'IGDB_ACCESS_TOKEN', 'XRL_WINDOW_MS', 'XRL_MAX_REQUESTS'];
   requiredVars.forEach(varName => {
     if (!process.env[varName]) {
 
