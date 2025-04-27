@@ -163,12 +163,8 @@ const addSelectedMembers = async () => {
 };
 
 const handleJoinGroup = async () => {
-    try {
-        if (!group.value || !authStore.user) return;
-        return await joinGroup(group.value?.id, authStore.user?._id);
-    } catch (error) {
-        console.error('Error joining group:', error);
-    }
+    if (!group.value || !authStore.user) return;
+    return await joinGroup(group.value?.id, authStore.user?._id);
 };
 
 const handleLeaveGroup = async (action: 'reject' | 'leave') => {

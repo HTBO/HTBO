@@ -7,7 +7,7 @@
     "build": "pnpm -r build",
     "dev": "pnpm --parallel dev",
     "dev:frontend": "pnpm --filter htbo-frontend dev",
-    "dev:frontend:test": "pnpm --filter htbo-frontend test:e2e",
+    "dev:frontend:test": "concurrently -k \"pnpm --filter htbo-frontend dev\" \"wait-on http://localhost:3000 && pnpm --filter htbo-frontend test:e2e\"",
     "dev:backend": "pnpm --filter htbo-backend dev",
     "dev:backend:test": "pnpm --filter htbo-backend test",
     "dev:backend:coverage": "pnpm --filter htbo-backend coverage",

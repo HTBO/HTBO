@@ -8,9 +8,13 @@ const authStore = useAuthStore();
 const router = useRouter();
 const { loginUser } = useUserApi();
 
-const emailOrUsername = ref('johndoe');
-const password = ref('johndoe');
+const emailOrUsername = ref('');
+const password = ref('');
 const errorMessage = ref('');
+
+if (authStore.isAuthenticated) {
+    router.push('/dashboard');
+}
 
 async function signIn() {
     if (!emailOrUsername.value) {
