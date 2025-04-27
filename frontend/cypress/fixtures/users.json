@@ -1,0 +1,14 @@
+{
+    "mainUser": {
+      "username": "testuser1",
+      "password": "password123"
+    },
+    "friendUser": {
+      "username": "testuser2",
+      "password": "password123"
+    },
+    "pendingUser": {
+      "username": "testuser3",
+      "password": "password123"
+    }
+  }
