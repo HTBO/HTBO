@@ -2,17 +2,19 @@ const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 dotenv.config({ path: '../.env' });
 
-
 const LOGS_URI = process.env.LOGS_MONGODB_URI;
-if (!LOGS_URI) {
+
+if (!LOGS_URI)
   console.error('No logs database URL defined. Please set the LOGS_MONGODB_URI environment variable');
-}
 const logDB = mongoose.createConnection(LOGS_URI);
+logDB.on('error', (err) => 
+  console.error('Logs DB connection error:', err));
 
 const logSchema = new mongoose.Schema({
     ip: { type: String, required: true },
     endpoint: { type: String, required: true },
     method: { type: String, required: true },
+    visitTimes: { type: Number },
     timestampString: { 
       type: String,
       default: () => {
@@ -40,4 +42,4 @@ const logSchema = new mongoose.Schema({
 
 const Log = logDB.model('Log', logSchema);
 
-module.exports = Log;
+module.exports = {Log, logDB};

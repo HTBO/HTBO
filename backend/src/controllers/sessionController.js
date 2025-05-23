@@ -1,101 +1,41 @@
 const mongoose = require('mongoose');
-const Session = require('../models/Session')
+const Session = require('../models/Session');
 const User = require('../models/User');
 const Group = require('../models/Group');
-const { db } = require('../config/firebase');
-const admin = require('firebase-admin');
 
 const createSession = async (req, res) => {
-    let firestoreSessionRef = null;
     let mongoSession = null;
     const sessionId = new mongoose.Types.ObjectId().toString();
 
     try {
         const { hostId, gameId, scheduledAt, description, participants: reqParticipants } = req.body;
 
-        // 1. Validate host in both databases
-        const [mongoHost, firestoreHost] = await Promise.all([
-            User.findById(hostId),
-            db.collection('users').doc(hostId).get()
-        ]);
+        const mongoHost = await User.findById(hostId);
+        if (!mongoHost) return res.status(404).json({ error: "Host not found" });
 
-        if (!mongoHost || !firestoreHost.exists) {
-            return res.status(404).json({ error: "Host not found" });
-        }
+        const existingMongoSession = await Session.findOne({ hostId });
+        if (existingMongoSession)
+            return res.status(400).json({ error: "Host already has a session" });
 
-        // 2. Check existing sessions in both databases
-        const [existingMongoSession, firestoreSessionQuery] = await Promise.all([
-            Session.findOne({ hostId }),
-            db.collection('sessions').where('hostId', '==', hostId).limit(1).get()
-        ]);
-
-        if (existingMongoSession || !firestoreSessionQuery.empty) {
-            return res.status(400).json({ 
-                error: "Host already has a session",
-                existsIn: {
-                    mongoDB: !!existingMongoSession,
-                    firestore: !firestoreSessionQuery.empty
-                }
-            });
-        }
-
-        // 3. Process participants with Firestore validation
         const userIds = new Set();
-        const firestore = admin.firestore();
-        const batch = firestore.batch();
-
         for (const p of reqParticipants) {
             if (p.user) {
-                // Validate user in both databases
-                const [mongoUser, firestoreUser] = await Promise.all([
-                    User.findById(p.user),
-                    firestore.collection('users').doc(p.user).get()
-                ]);
-                
-                if (!mongoUser || !firestoreUser.exists) {
+                const mongoUser = await User.findById(p.user);
+                if (!mongoUser)
                     return res.status(404).json({ error: `User not found: ${p.user}` });
-                }
                 userIds.add(p.user);
             } else if (p.group) {
-                // Validate group in both databases
-                const [mongoGroup, firestoreGroup] = await Promise.all([
-                    Group.findById(p.group),
-                    firestore.collection('groups').doc(p.group).get()
-                ]);
-
-                if (!mongoGroup || !firestoreGroup.exists) {
+                const mongoGroup = await Group.findById(p.group);
+                if (!mongoGroup)
                     return res.status(404).json({ error: `Group not found: ${p.group}` });
-                }
-
-                // Add group members from Firestore
-                const groupMembers = await firestoreGroup.ref.collection('members').get();
-                groupMembers.forEach(member => userIds.add(member.id));
-                userIds.add(firestoreGroup.data().ownerId);
+                mongoGroup.members.forEach(member => userIds.add(member.memberId.toString()));
+                userIds.add(mongoGroup.ownerId.toString());
             } else {
                 return res.status(400).json({ error: "Each participant must specify either a user or a group" });
             }
         }
 
         userIds.delete(hostId);
-
-        // 4. Create Firestore session document
-        firestoreSessionRef = firestore.collection('sessions').doc(sessionId);
-        const firestoreSessionData = {
-            hostId,
-            gameId,
-            scheduledAt: admin.firestore.Timestamp.fromDate(new Date(scheduledAt)),
-            description,
-            participants: Array.from(userIds).map(userId => ({
-                userId,
-                status: 'pending'
-            })),
-            mongoId: sessionId,
-            createdAt: admin.firestore.FieldValue.serverTimestamp()
-        };
-
-        await firestoreSessionRef.set(firestoreSessionData);
-
-        // 5. Create MongoDB session document
         mongoSession = await Session.create({
             _id: sessionId,
             hostId,
@@ -104,38 +44,27 @@ const createSession = async (req, res) => {
             description,
             participants: Array.from(userIds).map(userId => ({
                 user: userId,
-                status: 'pending'
+                sessionStatus: 'pending'
             }))
         });
 
-        // 6. Update users in both databases
-        const userUpdates = Array.from(userIds).map(userId => ({
-            userId,
-            update: {
-                sessions: admin.firestore.FieldValue.arrayUnion({
-                    sessionId: firestoreSessionRef.id,
-                    status: userId === hostId ? 'host' : 'pending'
-                })
+        await User.findByIdAndUpdate(hostId, {
+            $addToSet: {
+                sessions: {
+                    sessionId: mongoSession._id,
+                    sessionStatus: 'host'
+                }
             }
-        }));
-
-        // Firestore bulk update
-        userUpdates.forEach(({ userId, update }) => {
-            const userRef = firestore.collection('users').doc(userId);
-            batch.update(userRef, update);
         });
 
-        await batch.commit();
-
-        // MongoDB bulk update
-        const bulkOps = userUpdates.map(({ userId, update }) => ({
+        const bulkOps = Array.from(userIds).map(userId => ({
             updateOne: {
                 filter: { _id: userId },
                 update: {
                     $addToSet: {
                         sessions: {
                             sessionId: mongoSession._id,
-                            status: update.status
+                            sessionStatus: 'pending'
                         }
                     }
                 }
@@ -144,39 +73,101 @@ const createSession = async (req, res) => {
 
         await User.bulkWrite(bulkOps);
 
-        res.status(201).json({
-            mongoSession,
-            firestoreSession: {
-                id: firestoreSessionRef.id,
-                ...firestoreSessionData
-            }
-        });
+        res.status(201).json({ mongoSession });
 
     } catch (error) {
         console.error('Error during session creation:', error);
 
-        // Cleanup both databases if error occurs
-        const cleanupPromises = [];
-        if (firestoreSessionRef) {
-            cleanupPromises.push(firestoreSessionRef.delete());
-        }
-        if (mongoSession) {
-            cleanupPromises.push(Session.deleteOne({ _id: mongoSession._id }));
-        }
-
-        await Promise.all(cleanupPromises);
-
+        if (mongoSession) await Session.deleteOne({ _id: mongoSession._id });
         if (error.name === 'ValidationError') {
             const messages = Object.values(error.errors).map(err => err.message);
             return res.status(400).json({ errors: messages });
         }
 
-        res.status(500).json({ 
-            error: 'Server error',
-            details: error.message 
-        });
+        res.status(500).json({ error: 'Server error', details: error.message });
     }
 };
+
+const confirmSession = async (req, res) => {
+    try {
+        const { userId, sessionId } = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(userId))
+            return res.status(400).json({ error: 'Invalid user ID' });
+        if (!mongoose.Types.ObjectId.isValid(sessionId))
+            return res.status(400).json({ error: 'Invalid session ID' });
+
+        const updatedUser = await User.findOneAndUpdate(
+            {
+                _id: userId,
+                "sessions.sessionId": sessionId
+            },
+            { $set: { "sessions.$.sessionStatus": "accepted" } },
+            { new: true }
+        );
+
+        const updatedSession = await Session.findOneAndUpdate(
+            {
+                _id: sessionId,
+                "participants.user": userId,
+            },
+            { $set: { "participants.$.sessionStatus": "accepted" } },
+            { new: true }
+        );
+
+        if (!updatedUser)
+            return res.status(404).json({ error: "No pending session invitation found for this user" });
+        if (!updatedSession)
+            return res.status(404).json({ error: "No pending session invitation found" });
+
+        res.status(200).json({
+            message: `Session invitation accepted successfully`,
+            session: updatedSession,
+            user: updatedUser
+        });
+
+    } catch (error) {
+        console.error("Session confirmation error:", error);
+        res.status(500).json({ error: "Server error", details: error.message });
+    }
+};
+
+const rejectSession = async (req, res) => {
+    try {
+        const { userId, sessionId } = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(userId))
+            return res.status(400).json({ error: 'Invalid user ID' });
+        if (!mongoose.Types.ObjectId.isValid(sessionId))
+            return res.status(400).json({ error: 'Invalid session ID' });
+
+        const updatedUser = await User.findOneAndUpdate(
+            { _id: userId, "sessions.sessionId": sessionId },
+            { $pull: { sessions: { sessionId } } },
+            { new: true }
+        );
+        const updatedSession = await Session.findOneAndUpdate(
+            { 'participants.user': userId },
+            { $pull: { participants: { user: userId } } },
+            { new: true }
+        );
+
+        if (!updatedUser)
+            return res.status(404).json({ error: "No pending session invitation found for this user" });
+        if (!updatedSession)
+            return res.status(404).json({ error: "No pending session invitation found" });
+
+        res.status(200).json({
+            message: `Session invitation rejected successfully`,
+            session: updatedSession,
+            user: updatedUser
+        });
+
+    } catch (error) {
+        console.error("Session rejection error:", error);
+        res.status(500).json({ error: "Server error", details: error.message });
+    }
+}
 
 const getAllSessions = async (req, res) => {
     try {
@@ -212,7 +203,7 @@ const updateSession = async (req, res) => {
             for (const entry of addParticipants) {
                 if (entry.user && entry.group) return res.status(400).json({ error: "Cannot specify both user and group in one entry" });
                 if (entry.user) {
-                    if (!mongoose.Types.ObjectId.isValid(entry.user)) 
+                    if (!mongoose.Types.ObjectId.isValid(entry.user))
                         return res.status(400).json({ error: `Invalid user ID: ${entry.user}` });
                     userIds.add(entry.user.toString());
                 } else if (entry.group) {
@@ -243,13 +234,13 @@ const updateSession = async (req, res) => {
                 if (!userExists)
                     return res.status(404).json({ error: `User not found: ${userId}` });
 
-                newParticipants.push({ user: userId, status: 'pending' });
+                newParticipants.push({ user: userId, sessionStatus: 'pending' });
                 bulkOps.push({
                     updateOne: {
                         filter: { _id: userId },
                         update: {
                             $addToSet: {
-                                sessions: { sessionId: session._id, status: 'pending' }
+                                sessions: { sessionId: session._id, sessionStatus: 'pending' }
                             }
                         }
                     }
@@ -262,70 +253,69 @@ const updateSession = async (req, res) => {
             session.participants.push(...newParticipants);
             await session.save();
 
-            if (bulkOps.length > 0) 
+            if (bulkOps.length > 0)
                 await User.bulkWrite(bulkOps);
 
             return res.json(session);
         }
-         else if (req.body.removeParticipant) {
-        const removeParticipants = Array.isArray(req.body.removeParticipant) 
-            ? req.body.removeParticipant 
-            : [req.body.removeParticipant];
+        else if (req.body.removeParticipant) {
+            const removeParticipants = Array.isArray(req.body.removeParticipant)
+                ? req.body.removeParticipant
+                : [req.body.removeParticipant];
 
-        for (const entry of removeParticipants) {
-            if (entry.user && entry.group) 
-                return res.status(400).json({ error: "Cannot specify both user and group in one entry" });
+            for (const entry of removeParticipants) {
+                if (entry.user && entry.group)
+                    return res.status(400).json({ error: "Cannot specify both user and group in one entry" });
 
-            if (entry.user) {
-                if (!mongoose.Types.ObjectId.isValid(entry.user)) {
-                    return res.status(400).json({ error: `Invalid user ID: ${entry.user}` });
+                if (entry.user) {
+                    if (!mongoose.Types.ObjectId.isValid(entry.user))
+                        return res.status(400).json({ error: `Invalid user ID: ${entry.user}` });
+                    userIds.add(entry.user.toString());
+                } else if (entry.group) {
+                    if (!mongoose.Types.ObjectId.isValid(entry.group))
+                        return res.status(400).json({ error: `Invalid group ID: ${entry.group}` });
+                    const group = await Group.findById(entry.group);
+                    if (!group)
+                        return res.status(404).json({ error: `Group not found: ${entry.group}` });
+                    group.members.forEach(member => {
+                        userIds.add(member.memberId.toString());
+                    });
+                } else {
+                    return res.status(400).json({ error: "Each entry must specify either user or group" });
                 }
-                userIds.add(entry.user.toString());
-            } else if (entry.group) {
-                if (!mongoose.Types.ObjectId.isValid(entry.group)) 
-                    return res.status(400).json({ error: `Invalid group ID: ${entry.group}` });
-                const group = await Group.findById(entry.group);
-                if (!group) 
-                    return res.status(404).json({ error: `Group not found: ${entry.group}` });
-                group.members.forEach(member => {
-                    userIds.add(member.memberId.toString());
-                });
-            } else {
-                return res.status(400).json({ error: "Each entry must specify either user or group" });
             }
-        }
 
-        userIds.delete(session.hostId.toString());
+            userIds.delete(session.hostId.toString());
 
-        const participantsToRemove = Array.from(userIds).filter(userId => 
-            session.participants.some(p => p.user.toString() === userId)
-        );
+            const participantsToRemove = Array.from(userIds).filter(userId =>
+                session.participants.some(p => p.user.toString() === userId)
+            );
 
-        if (participantsToRemove.length === 0) 
-            return res.status(400).json({ error: 'No valid participants to remove' });
+            if (participantsToRemove.length === 0)
+                return res.status(400).json({ error: 'No valid participants to remove' });
 
-        session.participants = session.participants.filter(p => 
-            !participantsToRemove.includes(p.user.toString())
-        );
+            session.participants = session.participants.filter(p =>
+                !participantsToRemove.includes(p.user.toString())
+            );
 
-        participantsToRemove.forEach(userId => {
-            bulkOps.push({
-                updateOne: {
-                    filter: { _id: userId },
-                    update: {
-                        $pull: { sessions: { sessionId: session._id } }
+            participantsToRemove.forEach(userId => {
+                bulkOps.push({
+                    updateOne: {
+                        filter: { _id: userId },
+                        update: {
+                            $pull: { sessions: { sessionId: session._id } }
+                        }
                     }
-                }
+                });
             });
-        });
 
-        await session.save();
+            await session.save();
 
-        if (bulkOps.length > 0)
-            await User.bulkWrite(bulkOps);
+            if (bulkOps.length > 0)
+                await User.bulkWrite(bulkOps);
 
-        return res.json(session);
-        
+            return res.json(session);
+
         } else {
             const allowedUpdates = ['gameId', 'scheduledAt', 'description'];
             const updates = Object.keys(req.body).filter(update => allowedUpdates.includes(update));
@@ -378,6 +368,8 @@ const deleteSession = async (req, res) => {
 
 module.exports = {
     createSession,
+    confirmSession,
+    rejectSession,
     getAllSessions,
     getSessionById,
     updateSession,

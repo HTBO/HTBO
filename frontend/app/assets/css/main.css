@@ -1,19 +1,42 @@
 @import "tailwindcss";
+@import "@nuxt/ui";
 
 @theme {
-  --color-primary-50: #f2fbf9;
-  --color-primary-100: #d2f5f0;
-  --color-primary-200: #a5eae0;
-  --color-primary-300: #62d5c8;
-  --color-primary-400: #42bfb5;
-  --color-primary-500: #28a49b;
-  --color-primary-600: #1e837e;
-  --color-primary-700: #1c6966;
-  --color-primary-800: #1b5454;
-  --color-primary-900: #1a4746;
-  --color-primary-950: #092a2a;
+  --color-primary-50: #f7f3ff;
+  --color-primary-100: #f1e9fe;
+  --color-primary-200: #e5d6fe;
+  --color-primary-300: #d0b5fd;
+  --color-primary-400: #b48bfa;
+  --color-primary-500: #955cf6;
+  --color-primary-600: #7c3aed;
+  --color-primary-700: #6928d9;
+  --color-primary-800: #5821b6;
+  --color-primary-900: #491d95;
+  --color-primary-950: #2f1065;
+
+  --color-surface-50: #f9fafb;
+  --color-surface-100: #f3f4f6;
+  --color-surface-200: #e5e7eb;
+  --color-surface-300: #d1d5db;
+  --color-surface-400: #9ca3af;
+  --color-surface-500: #6b7280;
+  --color-surface-600: #4b5563;
+  --color-surface-700: #414e63;
+  --color-surface-800: #374151;
+  --color-surface-900: #1F2937;
+  --color-surface-950: #111827;
 }
 
 button {
   cursor: pointer;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }

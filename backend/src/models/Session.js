@@ -7,7 +7,7 @@ const participantSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    status: {
+    sessionStatus: {
         type: String,
         enum: ['pending', 'accepted', 'rejected', 'host'],
         default: 'pending'
@@ -21,8 +21,7 @@ const sessionSchema = new mongoose.Schema({
         required: [true, 'Please provide a host ID']
     },
     gameId: {
-        type: mongoose.Types.ObjectId,
-        ref: 'Game',
+        type: Number,
         required: [true, 'Please provide an game']
     },
     scheduledAt: {
@@ -50,6 +49,8 @@ const sessionSchema = new mongoose.Schema({
         virtuals: true,
         transform: function(doc, ret){
             delete ret.passwordHash; //Password excluding from response
+            ret.id = ret._id;
+            delete ret._id;
             return ret;
         }
     }

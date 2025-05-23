@@ -1,11 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const gameController = require('../controllers/gameController');
+const igdbGameController = require('../controllers/igdbGameController');
 
-router.post('/', gameController.createGame);
-router.get('/', gameController.getAllGames);
-router.get('/:id', gameController.getGameById);
-router.patch('/:id', gameController.updateGame);
-router.delete('/:id', gameController.deleteGame);
+router.post('/search', igdbGameController.searchGame);
 
 module.exports = router;

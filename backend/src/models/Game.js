@@ -1,23 +1,6 @@
 const mongoose = require('mongoose');
 
-const storeInfoSchema = new mongoose.Schema({
-  storeId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Store',
-    required: true
-  },
-  link: {
-    type: String,
-    required: true,
-    match: /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/
-  }
-}, { _id: false });
-
 const gameSchema = new mongoose.Schema({
-  firebaseId: {
-    type: String,
-    unique: true
-  },
   name: {
     type: String,
     required: true,
@@ -41,8 +24,7 @@ const gameSchema = new mongoose.Schema({
     type: Number,
     required: true,
     maxlength: 4
-  },
-  stores: [storeInfoSchema]
+  }
 }, {
   timestamps: true,
   toJSON: {

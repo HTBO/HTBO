@@ -1,7 +1,12 @@
 export default defineNuxtRouteMiddleware((to) => {
-    if (process.client) {
-        const token = localStorage.getItem('token')
-        if (!token && to.path !== '/login') {
+    const authStore = useAuthStore()
+
+    if(import.meta.client){
+        if(!authStore.initialized) {
+            return navigateTo('/loading')
+        }
+    
+        if(!authStore.isAuthenticated && to.path !== '/login' && to.path !== '/register') {
             return navigateTo('/login')
         }
     }

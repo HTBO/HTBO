@@ -1,7 +1,7 @@
 ### userController.js
 ## POST
 > registerUser
-`POST http://localhost:5000/api/users`
+`POST` `{{API_URL}}/users/register`
 ```
 {
 "username": "test",
@@ -10,7 +10,7 @@
 }
 ```
 > loginUser
-`POST http://localhost:5000/api/users`
+`POST` `{{API_URL}}/users/login`
 ```
 {
 "username": "test",
@@ -22,21 +22,47 @@ OR
 "password": "test"
 }
 ```
+
+> logoutUser
+`POST` `{{API_URL}}/users/logout`
+```
+Bearer token needed
+```
+
+> refreshToken
+`POST` `{{API_URL}}/users/refresh`
+```
+Bearer token needed
+```
+
 ---
 ## GET
 > getAllUsers
-`GET http://localhost:5000/api/users`
+`GET` `{{API_URL}}/users`
 
 > getUserById
-`GET http://localhost:5000/api/users/<userid>`
+`GET` `{{API_URL}}/users/<userid>`
 
 > getUserByUsername
-`GET http://localhost:5000/api/users/<username>`
+`GET` `{{API_URL}}/users/<username>`
+
+> getMyInfo
+`GET` `{{API_URL}}/users/me`
+
+> getMySessions
+`GET` `{{API_URL}}/users/mysessions`
+
+> getMyGroups
+`GET` `{{API_URL}}/users/mygroups`
+
+> getMyGames
+`GET` `{{API_URL}}/users/mygames`
+
 ---
 
 ## UPDATE (PATCH)
 > updateUser
-`PATCH http://localhost:5000/api/users/<userid>`
+`PATCH` `{{API_URL}}/users/<userid>`
 - User updates:
     - username
     - email
@@ -105,23 +131,5 @@ OR
 ---
 ## DELETE
 > deleteUser
-`DELETE http://localhost:5000/api/users/<userid>`
+`DELETE` `{{API_URL}}/users/<userid>`
 ---
-
-# Error codes:
-`| ERRC: 01` - No Authorization provided OR Authorization provided, but Bearer is empty
-
-`| ERRC: 02` - Failed to get the token
-
-`| ERRC: 10` - User is not the owner of the account he tries to access
-
-`| ERRC: 20` - User search failed by username
-
-`| ERRC: 21` - User search failed by email
-
-`| ERRC: 22` - User failed to provide username or email
-
-`| ERRC: 23` - Password not provided
-
-`| ERRC: 24` - User's password doesn't match
-
