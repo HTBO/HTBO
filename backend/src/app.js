@@ -3,6 +3,8 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const {Log} = require('./models/Log');
 const rateLimiter = require('./middleware/rateLimiter');
+const UserRouter = require('./routes/userRoutes');
+const userController = require('./controllers/userController')
 
 dotenv.config({ path: '../.env' });
 
@@ -43,7 +45,8 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(cors());
 
-app.use('/api/users', require('./routes/userRoutes'));
+const userRouter = new UserRouter(userController);
+app.use('/api/users', userRouter.getRouter());
 app.use('/api/games', require('./routes/gameRoutes'));
 app.use('/api/sessions', require('./routes/sessionRoutes'));
 app.use('/api/groups', require('./routes/groupRoutes'));

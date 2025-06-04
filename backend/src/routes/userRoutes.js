@@ -1,29 +1,41 @@
 const express = require('express');
-const router = express.Router();
-const { verifyToken, checkUserPermission } = require('../middleware/authMiddleware')
-const userController = require('../controllers/userController')
+const { verifyToken, checkUserPermission } = require('../middleware/authMiddleware');
 
-// Public routes
-router.get('/', userController.getAllUsers);
-router.post('/register', userController.registerUser);
-router.post('/login', userController.loginUser);
+class UserRouter {
+  constructor(controller) {
+    if(!controller) throw new Error('dik hianycikk');
+    this.router = express.Router();
+    this.controller = controller;
+    this.initializeRoutes();
+  }
 
-// Protected authorization routes
-router.post('/refresh', verifyToken,userController.refreshToken);
-router.post('/logout', verifyToken, userController.logoutUser);
+  initializeRoutes() {
+    // Public routes
+    this.router.get('/', this.controller.getAllUsers.bind(this.controller));
+    this.router.post('/register', this.controller.registerUser.bind(this.controller));
+    this.router.post('/login', this.controller.loginUser.bind(this.controller));
 
-// Protected info routes
-router.get('/me', verifyToken, userController.getMyInfo);
-router.get('/mysessions', verifyToken, userController.getMySessions);
-router.get('/mygroups', verifyToken, userController.getMyGroups);
-router.get('/myfriends', verifyToken, userController.getMyFriends);
-router.get('/mygames', verifyToken, userController.getMyGames);
+    // Protected authorization routes
+    // this.router.post('/refresh', verifyToken, this.controller.refreshToken.bind(this.controller));
+    this.router.post('/logout', verifyToken, this.controller.logoutUser.bind(this.controller));
 
-// Protected routes
-router.get('/username/:username',  userController.getUserByUsername);
-router.get('/:id', verifyToken, userController.getUserById);
-router.patch('/:id', verifyToken, checkUserPermission, userController.updateUser);
-router.delete('/:id', verifyToken, checkUserPermission, userController.deleteUser);
+    // Protected info routes
+    this.router.get('/me', verifyToken, this.controller.getMyInfo.bind(this.controller));
+    this.router.get('/mysessions', verifyToken, this.controller.getMySessions.bind(this.controller));
+    this.router.get('/mygroups', verifyToken, this.controller.getMyGroups.bind(this.controller));
+    this.router.get('/myfriends', verifyToken, this.controller.getMyFriends.bind(this.controller));
+    this.router.get('/mygames', verifyToken, this.controller.getMyGames.bind(this.controller));
 
+    // Protected routes
+    this.router.get('/username/:username', this.controller.getUserByUsername.bind(this.controller));
+    this.router.get('/:id', verifyToken, this.controller.getUserById.bind(this.controller));
+    this.router.patch('/:id', verifyToken, checkUserPermission, this.controller.updateUser.bind(this.controller));
+    this.router.delete('/:id', verifyToken, checkUserPermission, this.controller.deleteUser.bind(this.controller));
+  }
 
-module.exports = router;
+  getRouter() {
+    return this.router;
+  }
+}
+
+module.exports = UserRouter;
